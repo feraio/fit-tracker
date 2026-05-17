@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central de Comando - Recomposição</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #09090b; color: #d4d4d8; }
+        .card { background-color: #18181b; border: 1px solid #27272a; }
+        .sub-card { background-color: #202024; border: 1px solid #3f3f46; }
+        .bar-bg { background-color: #27272a; }
+        
+        /* Estilo para os checkboxes concluídos riscarem o texto */
+        input[type="checkbox"]:checked + div > span.exercise-name { text-decoration: line-through; opacity: 0.5; transition: all 0.2s; }
+        input[type="checkbox"]:checked + div > span.muscle-name { opacity: 0.3; transition: all 0.2s; }
+
+        /* Checkboxes customizados */
+        input[type="checkbox"]{
+            -webkit-appearance: none;
+            appearance: none;
+            border: 1px solid #3f3f46;
+            background-color: #09090b;
+            border-radius: 0.4rem;
+            display: inline-grid;
+            place-content: center;
+        }
+        input[type="checkbox"]:hover{ border-color: #52525b; }
+        input[type="checkbox"]:focus-visible{ outline: 2px solid rgba(59,130,246,0.5); outline-offset: 2px; }
+        input[type="checkbox"]:checked{
+            background-color: #3b82f6;
+            border-color: #3b82f6;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M13.333 4.5 6.5 11.333 3 7.833' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: 0.9rem 0.9rem;
+        }
+
+        /* Ocultar as setas numéricas do input para manter layout limpo */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto space-y-12">
+
+        <header class="text-center md:text-left border-b border-zinc-800 pb-6 mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-3xl md:text-5xl font-extrabold text-white tracking-tight">Planejamento de Treino</h1>
+                <p class="text-zinc-400 mt-2 text-lg">Diretriz Estratégica: Recomposição Corporal em Manutenção</p>
+            </div>
+            <div class="bg-zinc-900 border border-emerald-900/50 p-4 rounded-xl text-center shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+                <p class="text-xs text-zinc-400 uppercase tracking-widest font-semibold">Alvo Base Diário</p>
+                <p class="text-3xl font-bold text-emerald-400">2460 <span class="text-sm text-zinc-500">kcal</span></p>
+            </div>
+        </header>
+
+        <section>
+            <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex items-center">
+                    <i class="fas fa-dumbbell text-2xl text-blue-500 mr-3"></i>
+                    <h2 class="text-2xl font-bold text-white uppercase tracking-wider">Treinamento</h2>
+                </div>
+                <button id="btn-reset-checks" class="text-xs bg-zinc-900 hover:bg-zinc-800 text-zinc-400 px-4 py-2 rounded border border-zinc-800 transition-colors flex items-center shadow-md">
+                    <i class="fas fa-undo mr-2"></i> Resetar Séries
+                </button>
+            </div>
+
+            <div class="card p-6 rounded-xl mb-6 shadow-xl border-t-4 border-t-blue-500">
+                <h3 class="text-lg font-bold text-white mb-4"><i class="fas fa-calendar-alt mr-2 text-blue-400"></i>Logística Semanal (Ciclo PPL)</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-7 gap-3">
+                    <div class="sub-card p-3 rounded text-center bg-zinc-950 border-zinc-800/50 opacity-60">
+                        <div class="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">Seg</div>
+                        <div class="font-bold text-zinc-500 text-sm">Descanso</div>
+                    </div>
+                    <div class="sub-card p-3 rounded text-center border border-amber-500/30 bg-amber-900/10">
+                        <div class="text-[10px] text-amber-500 uppercase tracking-widest mb-1">Ter</div>
+                        <div class="font-bold text-amber-400 text-sm">Personal</div>
+                        <div class="text-xs mt-1 text-zinc-400">+ Futebol</div>
+                    </div>
+                    <div class="sub-card p-3 rounded text-center bg-zinc-950 border-zinc-800/50 opacity-60">
+                        <div class="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">Qua</div>
+                        <div class="font-bold text-zinc-500 text-sm">Descanso</div>
+                    </div>
+                    <div class="sub-card p-3 rounded text-center border-b-2 border-b-blue-500">
+                        <div class="text-[10px] text-blue-400 uppercase tracking-widest mb-1">Qui</div>
+                        <div class="font-bold text-white text-sm">Treino Solo</div>
+                    </div>
+                    <div class="sub-card p-3 rounded text-center border-b-2 border-b-purple-500">
+                        <div class="text-[10px] text-purple-400 uppercase tracking-widest mb-1">Sex</div>
+                        <div class="font-bold text-white text-sm">Personal</div>
+                    </div>
+                    <div class="sub-card p-3 rounded text-center border border-emerald-500/30 bg-emerald-900/10">
+                        <div class="text-[10px] text-emerald-400 uppercase tracking-widest mb-1">Sáb</div>
+                        <div class="font-bold text-emerald-300 text-sm">Livre</div>
+                        <div class="text-xs mt-1 text-emerald-500/70">Pesagem</div>
+                    </div>
+                    <div class="sub-card p-3 rounded text-center border-b-2 border-b-blue-500">
+                        <div class="text-[10px] text-blue-400 uppercase tracking-widest mb-1">Dom</div>
+                        <div class="font-bold text-white text-sm">Treino Solo</div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 p-4 bg-amber-950/30 border border-amber-800/50 rounded-lg flex items-start">
+                    <i class="fas fa-exclamation-circle mt-1 mr-3 text-amber-500 text-lg"></i>
+                    <div>
+                        <strong class="text-amber-400">O Ciclo a Cada 3 Semanas:</strong> 
+                        <span class="text-zinc-300 text-sm block mt-1">Quando a rotação fizer o <strong>Treino 3 (Pernas) cair na Terça-feira</strong>, o Futebol é CANCELADO. Neste dia específico sem o futebol, a dieta de Recarga (3100 kcal) é suspensa e você segue a dieta Padrão (2460 kcal).</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="card p-5 rounded-xl shadow-xl flex flex-col justify-between border border-zinc-800 hover:border-blue-900/50 transition-colors">
+                    <div>
+                        <h4 class="text-lg font-bold text-white mb-1 border-b border-zinc-800 pb-2"><span class="text-blue-400 mr-2">T1</span>Push (Empurrar)</h4>
+                        <p class="text-xs text-zinc-400 mb-4">Peitoral, Ombros e Tríceps</p>
+                        <ul class="space-y-2 text-sm">
+                            <li class="flex justify-between items-center bg-zinc-800/20 hover:bg-zinc-800/50 p-2 rounded transition-colors">
+                                <label class="flex items-start space-x-3 cursor-pointer w-full select-none">
+                                    <input type="checkbox" class="w-4 h-4 cursor-pointer mt-1">
+                                    <div class="flex flex-col">
+                                        <span class="text-zinc-200 font-semibold exercise-name">Supino Reto</span>
+                                        <span class="text-[10px] text-zinc-500 muscle-name">Peitoral Maior / Tríceps e Ombro</span>
+                                    </div>
+                                </label>
+                                <div class="flex items-center space-x-2 ml-2 shrink-0">
+                                    <div class="flex items-center bg-zinc-900 border border-zinc-700 rounded px-1">
+                                        <input type="number" data-exercise="supino-reto" class="weight-input w-8 bg-transparent text-emerald-400 text-xs text-right font-bold focus:outline-none" placeholder="0">
+                                        <span class="text-[9px] text-zinc-500 ml-1">kg</span>
+                                    </div>
+                                    <span class="font-bold text-white bg-zinc-800 px-2 py-1 rounded text-xs whitespace-nowrap">3 x 8-12</span>
+                                </div>
+                            </li>
+                            <li class="flex justify-between items-center bg-zinc-800/20 hover:bg-zinc-800/50 p-2 rounded transition-colors">
+                                <label class="flex items-start space-x-3 cursor-pointer w-full select-none">
+                                    <input type="checkbox" class="w-4 h-4 cursor-pointer mt-1">
+                                    <div class="flex flex-col">
+                                        <span class="text-zinc-200 font-semibold exercise-name">Supino Inclinado</span>
+                                        <span class="text-[10px] text-zinc-500 muscle-name">Peitoral Superior / Tríceps</span>
+                                    </div>
+                                </label>
+                                <div class="flex items-center space-x-2 ml-2 shrink-0">
+                                    <div class="flex items-center bg-zinc-900 border border-zinc-700 rounded px-1">
+                                        <input type="number" data-exercise="supino-inclinado" class="weight-input w-8 bg-transparent text-emerald-400 text-xs text-right font-bold focus:outline-none" placeholder="0">
+                                        <span class="text-[9px] text-zinc-500 ml-1">kg</span>
+                                    </div>
+                                    <span class="font-bold text-white bg-zinc-800 px-2 py-1 rounded text-xs whitespace-nowrap">3 x 8-12</span>
+                                </div>
+                            </li>
+                            <li class="flex justify-between items-center bg-zinc-800/20 hover:bg-zinc-800/50 p-2 rounded transition-colors">
+                                <label class="flex items-start space-x-3 cursor-pointer w-full select-none">
+                                    <input type="checkbox" class="w-4 h-4 cursor-pointer mt-1">
+                                    <div class="flex flex-col">
+                                        <span class="text-zinc-200 font-semibold exercise-name">Desenvolvimento</span>
+                                        <span class="text-[10px] text-zinc-500 muscle-name">Ombro Anterior/Médio</span>
+                                    </div>
+                                </label>
+                                <div class="flex items-center space-x-2 ml-2 shrink-0">
+                                    <div class="flex items-center bg-zinc-900 border border-zinc-700 rounded px-1">
+                                        <input type="number" data-exercise="desenvolvimento" class="weight-input w-8 bg-transparent text-emerald-400 text-xs text-right font-bold focus:outline-none" placeholder="0">
+                                        <span class="text-[9px] text-zinc-500 ml-1">kg</span>
+                                    </div>
+                                    <span class="font-bold text-white bg-zinc-800 px-2 py-1 rounded text-xs whitespace-nowrap">3 x 8-12</span>
+                                </div>
+                            </li>
+                            <li class="flex justify-between items-center bg-zinc-800/20 hover:bg-zinc-800/50 p-2 rounded transition-colors">
+                                <label class="flex items-start space-x-3 cursor-pointer w-full select-none">
+                                    <input type="checkbox" class="w-4 h-4 cursor-pointer mt-1">
+                                    <div class="flex flex-col">
+                                        <span class="text-zinc-200 font-semibold exercise-name">Elevação Lateral</span>
+                                        <span class="text-[10px] text-zinc-500 muscle-name">Ombro Médio</span>
+                                    </div>
+                                </label>
+                                <div class="flex items-center space-x-2 ml-2 shrink-0">
+                                    <div class="flex items-center bg-zinc-900 border border-zinc-700 rounded px-1">
+                                        <input type="number" data-exercise="elevacao-lateral" class="weight-input w-8 bg-transparent text-emerald-400 text-xs text-right font-bold focus:outline-none" placeholder="0">
+                                        <span class="text-[9px] text-zinc-500 ml-1">kg</span>
+                                    </div>
+                                    <span class="font-bold text-white bg-zinc-800 px-2 py-1 rounded text-xs whitespace-nowrap">3 x 8-12</span>
+                                </div>
+                            </li>
+                            <li class="flex justify-between items-center bg-zinc-800/20 hover:bg-zinc-800/50 p-2 rounded transition-colors">
+                                <label class="flex items-start space-x-3 cursor-pointer w-full select-none">
+                                    <input type="checkbox" class="w-4 h-4 cursor-pointer mt-1">
+                                    <div class="flex flex-col">
+                                        <span class="text-zinc-200 font-semibold exercise-name">Tríceps Testa</span>
+                                        <span class="text-[10px] text-zinc-500 muscle-name">Tríceps (Porção Longa)</span>
+                                    </div>
+                                </label>
+                                <div class="flex items-center space-x-2 ml-2 shrink-0">
+                                    <div class="flex items-center bg-zinc-900 border border-zinc-700 rounded px-1">
+                                        <input type="number" data-exercise="triceps-testa" class="weight-input w-8 bg-transparent text-emerald-400 text-xs text-right font-bold focus:outline-none" placeholder="0">
+                                        <span class="text-[9px] text-zinc-500 ml-1">kg</span>
+                                    </div>
+                                    <span class="font-bold text-white bg-zinc-800 px-2 py-1 rounded text-xs whitespace-nowrap">3 x 8-12</span>
+                                </div>
+                            </li>
+                            <li class="flex justify-between items-center bg-zinc-800/20 hover:bg-zinc-800/50 p-2 rounded transition-colors">
+                                <label class="flex items-start space-x-3 cursor-pointer w-full select-none">
+                                    <input type="checkbox" class="w-4 h-4 cursor-pointer mt-1">
+                                    <div class="flex flex-col">
+                                        <span class="text-zinc-200 font-semibold exercise-name">Tríceps Pulley</span>
+                                        <span class="text-[10px] text-zinc-500 muscle-name">Tríceps (Porção Curta)</span>
+                                    </div>
+                                </label>
+                                <div class="flex items-center space-x-2 ml-2 shrink-0">
+                                    <div class="flex items-center bg-zinc-900 border border-zinc-700 rounded px-1">
+                                        <input type="number" data-exercise="triceps-pulley" class="weight-input w-8 bg-transparent text-emerald-400 text-xs text-right font-bold focus:outline-none" placeholder="0">
+                                        <span class="text-[9px] text-zinc-500 ml-1">kg</span>
+                                    </div>
+                                    <span class="font-bold text-white bg-zinc-800 px-2 py-1 rounded text-xs whitespace-nowrap">3 x 8-12</span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card p-5 rounded-xl shadow-xl flex flex-col justify-between border border-zinc-800 hover:border-blue-900/50 transition-colors">
+                    <div>
+                        <h4 class="text-lg font-bold text-white mb-1 border-b border-zinc-800 pb-2"><span class="text-blue-400 mr-2">T2</span>Pull (Puxar)</h4>
+                        <p class="text-xs text-zinc-400 mb-4">Dorsais, Trapézio, Bíceps e Abdômen</p>
+                        <ul class="space-y-2 text-sm">
+                            <li class="flex justify-between items-center bg-zinc-800/20 hover:bg-zinc-800/50 p-2 rounded transition-colors">
+                                <label class="flex items-start space-x-3 cursor-pointer w-full select-none">
+                                    <input type="checkbox" class="w-4 h-4 cursor-pointer mt-1">
+                                    <div class="flex flex-col">
+                                        <span class="text-zinc-200 font-semibold exercise-name">Barra Fixa (Aquecimento)</span>
+                                    </div>
+                                </label>
+                                <span class="font-bold text-white bg-zinc-800 px-2 py-1 rounded text-xs whitespace-nowrap ml-2">2 x 8-12</span>
+                            </li>
+                            <li class="flex justify-between items-center bg-zinc-800/20 hover:bg-zinc-800/50 p-2 rounded transition-colors">
+                                <label class="flex items-start space-x-3 cursor-pointer w-full select-none">
+                                    <input type="checkbox" class="w-4 h-4 cursor-pointer mt-1">
+                                    <div class="flex flex-col">
+                                        <span class="text-zinc-200 font-semibold exercise-name">Puxador Frente</span>
+                                    </div>
+                                </label>
+                                <div class="flex items-center space-x-2 ml-2 shrink-0">
+                                    <div class="flex items-center bg-zinc-900 border border-zinc-700 rounded px-1">
+                                        <input type="number" data-exercise="puxador-frente" class="weight-input w-8 bg-transparent text-emerald-400 text-xs text-right font-bold focus:outline-none" placeholder="0">
+                                        <span class="text-[9px] text-zinc-500 ml-1">kg</span>
+                                    </div>
+                                    <span class="font-bold text-white bg-zinc-800 px-2 py-1 rounded text-xs whitespace-nowrap">3 x 8-12</span>
+                                </div>
+                            </li>
+                            <li class="flex justify-between items-center bg-zinc-800/20 hover:bg-zinc-800/50 p-2 rounded transition-colors">
+                                <label class="flex items-start space-x-3 cursor-pointer w-full select-none">
+                                    <input type="checkbox" class="w-4 h-4 cursor-pointer mt-1">
+                                    <div class="flex flex-col">
+                                        <span class="text-zinc-200 font-semibold exercise-name">Remada Unilateral</span>
+                                    </div>
+                                </label>
+                                <div class="flex items-center space-x-2 ml-2 shrink-0">
+                                    <div class="flex items-center bg-zinc-900 border border-zinc-700 rounded px-1">
+                                        <input type="number" data-exercise="remada-unil" class="weight-input w-8 bg-transparent text-emerald-400 text-xs text-right font-bold focus:outline-none" placeholder="0">
+                                        <span class="text-[9px] text-zinc-500 ml-1">kg</span>
+                                    </div>
+                                    <span class="font-bold text-white bg-zinc-800 px-2 py-1 rounded text-xs whitespace-nowrap">3 x 8-12</span>
+                                </div>
+                            </li>
+                            <li class="flex justify-between items-center bg-zinc-800/20 hover:bg-zinc-800/50 p-2 rounded transition-colors">
+                                <label class="flex items-start space-x-3 cursor-pointer w-full select-none">
+                                    <input type="checkbox" class="w-4 h-4 cursor-pointer mt-1">
+                                    <div class="flex flex-col">
+                                        <span class="text-zinc-200 font-semibold exercise-name">Encolhimento Ombro</span>
+                                    </div>
+                                </label>
+                                <div class="flex items-center space-x-2 ml-2 shrink-0">
+                                    <div class="flex items-center bg-zinc-900 border border-zinc-700 rounded px-1">
+                                        <input type="number" data-exercise="encolhimento" class="weight-input w-8 bg-transparent text-emerald-400 text-xs text-right font-bold focus:outline-none" placeholder="0">
+                                        <span class="text-[9px] text-zinc-500 ml-1">kg</span>
+                                    </div>
+                                    <span class="font-bold text-white bg-zinc-800 px-2 py-1 rounded text-xs whitespace-nowrap">3 x 8-12</span>
+                                </div>
+                            </li>
+                            <li class="flex justify-between items-center bg-zinc-800/20 hover:bg-zinc-800/50 p-2 rounded transition-colors">
+                                <label class="flex items-start space-x-3 cursor-pointer w-full select-none">
+                                    <input type="checkbox" class="w-4 h-4 cursor-pointer mt-1">
+                                    <div class="flex flex-col">
+                                        <span class="text-zinc-200 font-semibold exercise-name">Rosca Direta</span>
+                                    </div>
+                                </label>
+                                <div class="flex items-center space-x-2 ml-2 shrink-0">
+                                    <div class="flex items-center bg-zinc-900 border border-zinc-700 rounded px-1">
+                                        <input type="number" data-exercise="rosca-direta" class="weight-input w-8 bg-transparent text-emerald-400 text-xs text-right font-bold focus:outline-none" placeholder="0">
+                                        <span class="text-[9px] text-zinc-500 ml-1">kg</span>
+                                    </div>
+                                    <span class="font-bold text-white bg-zinc-800 px-2 py-1 rounded text-xs whitespace-nowrap">3 x 8-12</span>
+                                </div>
+                            </li>
+                            <li class="flex justify-between items-center bg-zinc-800/20 hover:bg-zinc-800/50 p-2 rounded transition-colors">
+                                <label class="flex items-start space-x-3 cursor-pointer w-full select-none">
+                                    <input type="checkbox" class="w-4 h-4 cursor-pointer mt-1">
+                                    <div class="flex flex-col">
+                                        <span class="text-zinc-200 font-semibold exercise-name">Rosca Alternada</span>
+                                    </div>
+                                </label>
+                                <div class="flex items-center space-x-2 ml-2 shrink-0">
+                                    <div class="flex items-center bg-zinc-900 border border-zinc-700 rounded px-1">
+                                        <input type="number" data-exercise="rosca-alternada" class="weight-input w-8 bg-transparent text-emerald-400 text-xs text-right font-bold focus:outline-none" placeholder="0">
+                                        <span class="text-[9px] text-zinc-500 ml-1">kg</span>
+                                    </div>
+                                    <span class="font-bold text-white bg-zinc-800 px-2 py-1 rounded text-xs whitespace-nowrap">3 x 8-12</span>
+                                </div>
+                            </li>
+                            <li class="flex justify-between items-center bg-blue-900/10 border border-blue-900/30 p-2 rounded mt-2 transition-colors">
+                                <label class="flex items-start space-x-3 cursor-pointer w-full select-none">
+                                    <input type="checkbox" class="w-4 h-4 cursor-pointer mt-1">
+                                    <div class="flex flex-col">
+                                        <span class="text-blue-300 font-semibold exercise-name">Abd. Pulley</span>
+                                    </div>
+                                </label>
+                                <div class="flex items-center space-x-2 ml-2 shrink-0">
+                                    <div class="flex items-center bg-zinc-900 border border-blue-900/50 rounded px-1">
+                                        <input type="number" data-exercise="abd-pulley-t2" class="weight-input w-8 bg-transparent text-blue-300 text-xs text-right font-bold focus:outline-none" placeholder="0">
+                                        <span class="text-[9px] text-blue-400/60 ml-1">kg</span>
+                                    </div>
+                                    <span class="font-bold text-blue-300 bg-blue-900/40 px-2 py-1 rounded text-xs whitespace-nowrap">3 x 15</span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card p-5 rounded-xl shadow-xl flex flex-col justify-between border border-zinc-800 hover:border-blue-900/50 transition-colors">
+                    <div>
+                        <h4 class="text-lg font-bold text-white mb-1 border-b border-zinc-800 pb-2"><span class="text-blue-400 mr-2">T3</span>Legs (Pernas)</h4>
+                        <p class="text-xs text-zinc-400 mb-4">Quadríceps, Posteriores, Panturrilhas e Core</p>
+                        <ul class="space-y-2 text-sm">
+                            <li class="flex justify-between items-center bg-zinc-800/20 hover:bg-zinc-800/50 p-2 rounded transition-colors">
+                                <label class="flex items-start space-x-3 cursor-pointer w-full select-none">
+                                    <input type="checkbox" class="w-4 h-4 cursor-pointer mt-1">
+                                    <div class="flex flex-col">
+                                        <span class="text-zinc-200 font-semibold exercise-name">Bike (Aquecimento)</span>
+                                    </div>
+                                </label>
+                                <span class="font-bold text-white bg-zinc-800 px-2 py-1 rounded text-xs whitespace-nowrap ml-2">10 min</span>
+                            </li>
+                            <li class="flex justify-between items-center bg-zinc-800/20 hover:bg-zinc-800/50 p-2 rounded transition-colors">
+                                <label class="flex items-start space-x-3 cursor-pointer w-full select-none">
+                                    <input type="checkbox" class="w-4 h-4 cursor-pointer mt-1">
+                                    <div class="flex flex-col">
+                                        <span class="text-zinc-200 font-semibold exercise-name">Agachamento Hack</span>
+                                    </div>
+                                </label>
+                                <div class="flex items-center space-x-2 ml-2 shrink-0">
+                                    <div class="flex items-center bg-zinc-900 border border-zinc-700 rounded px-1">
+                                        <input type="number" data-exercise="agachamento-hack" class="weight-input w-8 bg-transparent text-emerald-400 text-xs text-right font-bold focus:outline-none" placeholder="0">
+                                        <span class="text-[9px] text-zinc-500 ml-1">kg</span>
+                                    </div>
+                                    <span class="font-bold text-white bg-zinc-800 px-2 py-1 rounded text-xs whitespace-nowrap">4 x 8-12</span>
+                                </div>
+                            </li>
+                            <li class="flex justify-between items-center bg-zinc-800/20 hover:bg-zinc-800/50 p-2 rounded transition-colors">
+                                <label class="flex items-start space-x-3 cursor-pointer w-full select-none">
+                                    <input type="checkbox" class="w-4 h-4 cursor-pointer mt-1">
+                                    <div class="flex flex-col">
+                                        <span class="text-zinc-200 font-semibold exercise-name">Cadeira Extensora</span>
+                                    </div>
+                                </label>
+                                <div class="flex items-center space-x-2 ml-2 shrink-0">
+                                    <div class="flex items-center bg-zinc-900 border border-zinc-700 rounded px-1">
+                                        <input type="number" data-exercise="cadeira-extensora" class="weight-input w-8 bg-transparent text-emerald-400 text-xs text-right font-bold focus:outline-none" placeholder="0">
+                                        <span class="text-[9px] text-zinc-500 ml-1">kg</span>
+                                    </div>
+                                    <span class="font-bold text-white bg-zinc-800 px-2 py-1 rounded text-xs whitespace-nowrap">3 x 8-12</span>
+                                </div>
+                            </li>
+                            <li class="flex justify-between items-center bg-zinc-800/20 hover:bg-zinc-800/50 p-2 rounded transition-colors">
+                                <label class="flex items-start space-x-3 cursor-pointer w-full select-none">
+                                    <input type="checkbox" class="w-4 h-4 cursor-pointer mt-1">
+                                    <div class="flex flex-col">
+                                        <span class="text-zinc-200 font-semibold exercise-name">Stiff</span>
+                                    </div>
+                                </label>
+                                <div class="flex items-center space-x-2 ml-2 shrink-0">
+                                    <div class="flex items-center bg-zinc-900 border border-zinc-700 rounded px-1">
+                                        <input type="number" data-exercise="stiff" class="weight-input w-8 bg-transparent text-emerald-400 text-xs text-right font-bold focus:outline-none" placeholder="0">
+                                        <span class="text-[9px] text-zinc-500 ml-1">kg</span>
+                                    </div>
+                                    <span class="font-bold text-white bg-zinc-800 px-2 py-1 rounded text-xs whitespace-nowrap">4 x 8-12</span>
+                                </div>
+                            </li>
+                            <li class="flex justify-between items-center bg-zinc-800/20 hover:bg-zinc-800/50 p-2 rounded transition-colors">
+                                <label class="flex items-start space-x-3 cursor-pointer w-full select-none">
+                                    <input type="checkbox" class="w-4 h-4 cursor-pointer mt-1">
+                                    <div class="flex flex-col">
+                                        <span class="text-zinc-200 font-semibold exercise-name">Avanço</span>
+                                    </div>
+                                </label>
+                                <div class="flex items-center space-x-2 ml-2 shrink-0">
+                                    <div class="flex items-center bg-zinc-900 border border-zinc-700 rounded px-1">
+                                        <input type="number" data-exercise="avanco" class="weight-input w-8 bg-transparent text-emerald-400 text-xs text-right font-bold focus:outline-none" placeholder="0">
+                                        <span class="text-[9px] text-zinc-500 ml-1">kg</span>
+                                    </div>
+                                    <span class="font-bold text-white bg-zinc-800 px-2 py-1 rounded text-xs whitespace-nowrap">3 x 8-12</span>
+                                </div>
+                            </li>
+                            <li class="flex justify-between items-center bg-emerald-900/10 border border-emerald-900/30 p-2 rounded mt-2 transition-colors">
+                                <label class="flex items-start space-x-3 cursor-pointer w-full select-none">
+                                    <input type="checkbox" class="w-4 h-4 cursor-pointer mt-1">
+                                    <div class="flex flex-col">
+                                        <span class="text-emerald-300 font-semibold exercise-name">Panturrilha</span>
+                                    </div>
+                                </label>
+                                <div class="flex items-center space-x-2 ml-2 shrink-0">
+                                    <div class="flex items-center bg-zinc-900 border border-emerald-900/50 rounded px-1">
+                                        <input type="number" data-exercise="panturrilha" class="weight-input w-8 bg-transparent text-emerald-400 text-xs text-right font-bold focus:outline-none" placeholder="0">
+                                        <span class="text-[9px] text-emerald-400/60 ml-1">kg</span>
+                                    </div>
+                                    <span class="font-bold text-emerald-300 bg-emerald-900/40 px-2 py-1 rounded text-xs whitespace-nowrap">4 x 20</span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <div class="mb-6 flex items-center mt-10">
+                <i class="fas fa-utensils text-2xl text-emerald-500 mr-3"></i>
+                <h2 class="text-2xl font-bold text-white uppercase tracking-wider">Nutricional</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="card p-6 rounded-xl shadow-xl border-t-4 border-t-emerald-500">
+                    <div class="flex justify-between items-center mb-4 border-b border-zinc-800 pb-2">
+                        <h3 class="text-xl font-bold text-white">Dieta Padrão</h3>
+                        <span class="bg-emerald-900/40 text-emerald-400 border border-emerald-800 font-bold px-3 py-1 rounded text-sm">2460 kcal</span>
+                    </div>
+                    <p class="text-sm text-zinc-400 mb-6">Aplicação: Todos os dias sem Futebol duplo.</p>
+                    
+                    <div class="space-y-5">
+                        <div>
+                            <div class="flex justify-between mb-1 text-sm font-semibold text-zinc-300"><span>Proteínas</span><span class="text-red-400">154g</span></div>
+                            <div class="w-full bar-bg rounded-full h-2"><div class="bg-red-500 h-2 rounded-full" style="width: 25%"></div></div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1 text-sm font-semibold text-zinc-300"><span>Carboidratos</span><span class="text-emerald-400">301g</span></div>
+                            <div class="w-full bar-bg rounded-full h-2"><div class="bg-emerald-500 h-2 rounded-full" style="width: 49%"></div></div>
+                            <p class="text-xs text-zinc-500 mt-1 text-right">Contém meta de 25-35g Fibras</p>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1 text-sm font-semibold text-zinc-300"><span>Gorduras</span><span class="text-amber-400">71g</span></div>
+                            <div class="w-full bar-bg rounded-full h-2"><div class="bg-amber-500 h-2 rounded-full" style="width: 26%"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card p-6 rounded-xl shadow-xl border-t-4 border-t-amber-500 bg-amber-900/5">
+                    <div class="flex justify-between items-center mb-4 border-b border-zinc-800 pb-2">
+                        <h3 class="text-xl font-bold text-white">Recarga (Refeed)</h3>
+                        <span class="bg-amber-900/40 text-amber-500 border border-amber-800 font-bold px-3 py-1 rounded text-sm"><i class="fas fa-fire mr-1"></i>3100 kcal</span>
+                    </div>
+                    <p class="text-sm text-zinc-400 mb-6">Exclusivo para Terças-feiras com Treino + Futebol.</p>
+                    
+                    <div class="space-y-4 text-sm mt-8">
+                        <div class="flex justify-between items-center border-b border-zinc-800/50 pb-2">
+                            <span class="text-zinc-300">Proteínas (Manutenção)</span>
+                            <span class="font-bold text-red-400">150g</span>
+                        </div>
+                        <div class="flex justify-between items-center border-b border-zinc-800/50 pb-2">
+                            <span class="text-zinc-300">Carboidratos (Glicogênio Extra)</span>
+                            <span class="font-bold text-emerald-400">450g</span>
+                        </div>
+                        <div class="flex justify-between items-center border-b border-zinc-800/50 pb-2">
+                            <span class="text-zinc-300">Gorduras (Controle Rígido)</span>
+                            <span class="font-bold text-amber-400">75g</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. Memória de Carga (Inputs de Peso)
+            const inputs = document.querySelectorAll('.weight-input');
+            inputs.forEach(input => {
+                const exerciseKey = 'carga_' + input.dataset.exercise;
+                const savedWeight = localStorage.getItem(exerciseKey);
+                
+                if (savedWeight) input.value = savedWeight;
+
+                input.addEventListener('input', (e) => {
+                    localStorage.setItem(exerciseKey, e.target.value);
+                });
+            });
+
+            // 2. Memória de Execução (Checkboxes)
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach((checkbox, index) => {
+                const checkKey = 'status_check_' + index;
+                
+                // Carregar estado ao abrir
+                if (localStorage.getItem(checkKey) === 'true') {
+                    checkbox.checked = true;
+                }
+
+                // Salvar ao clicar
+                checkbox.addEventListener('change', (e) => {
+                    localStorage.setItem(checkKey, e.target.checked);
+                });
+            });
+
+            // 3. Protocolo de Limpeza (Reset das Séries)
+            const btnReset = document.getElementById('btn-reset-checks');
+            if(btnReset) {
+                btnReset.addEventListener('click', () => {
+                    checkboxes.forEach((checkbox, index) => {
+                        checkbox.checked = false; // Desmarca visualmente
+                        localStorage.setItem('status_check_' + index, 'false'); // Apaga da memória
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>
