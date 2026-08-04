@@ -121,6 +121,7 @@
   }
   .day .mark.a{background:var(--red25);border-color:var(--red25);color:#fff}
   .day .mark.b{background:var(--blue20);border-color:var(--blue20);color:#fff}
+  .day .mark.pt{border-color:var(--ink);color:var(--ink);font-size:11px;letter-spacing:.02em}
   .day .what{
     font-size:9.5px;
     line-height:1.15;
@@ -167,6 +168,23 @@
     font-size:11px;
     color:var(--ink3);
   }
+
+  .phase{
+    display:flex;align-items:center;gap:6px;
+    margin:0 0 12px;flex-wrap:wrap;
+  }
+  .phase + .note{margin:0 0 20px}
+  .phase-label{
+    font-family:var(--mono);font-size:10px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ink3);margin-right:4px;
+  }
+  .ph{
+    font-family:var(--mono);font-size:11px;letter-spacing:.06em;
+    background:transparent;border:1px solid var(--line);
+    border-radius:var(--r);padding:7px 11px;cursor:pointer;color:var(--ink2);
+  }
+  .ph[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+  .goal{color:var(--ink3);font-size:11px;margin-left:6px}
 
   /* ---------- Cartão de treino ---------- */
   .treino{
@@ -254,6 +272,7 @@
     margin-left:6px;
     cursor:help;
   }
+  .flag.ok{color:var(--green10)}
   .ex-note{
     font-size:12px;
     color:var(--ink2);
@@ -261,6 +280,7 @@
     padding-left:10px;
     border-left:2px solid var(--yellow15);
   }
+  .ex-note.ok{border-left-color:var(--green10)}
   .ex-bottom{
     display:flex;
     align-items:center;
@@ -390,9 +410,7 @@
 <header>
   <p class="eyebrow">Central de comando · Ganho de massa</p>
   <h1>Ciclo <span class="slash">A</span>/<span class="slash">B</span></h1>
-  <p class="lede">Duas sessões de musculação por semana, com acompanhamento da personal. Cada grupo muscular uma vez, sem rotação móvel.</p>
-
-  <p class="note"><strong>Retorno pós lesão lombar.</strong> Carga e repetições reduzidas até fechar quatro semanas completas nas duas sessões. Quando precisar cortar, corte séries e não exercícios. Terceiro dia de musculação só depois disso, e como repetição encurtada, não como treino novo.</p>
+  <p class="lede">Duas sessões próprias por semana, sozinho, somadas aos treinos com a personal na terça e na sexta. Cada grupo muscular uma vez, sem rotação móvel.</p>
 
   <p class="legend" style="margin-top:26px">SEMANA FIXA · hoje em destaque</p>
   <div class="week" id="week"></div>
@@ -403,6 +421,12 @@
     <h2>Treinamento</h2>
     <span class="meta" id="totalMeta"></span>
   </div>
+  <div class="phase">
+    <span class="phase-label">Fase</span>
+    <button class="ph" type="button" data-mode="retorno">Retorno · 3 séries</button>
+    <button class="ph" type="button" data-mode="completo">Prescrição completa</button>
+  </div>
+  <p class="note"><strong>Retorno pós lesão lombar.</strong> Três séries por exercício, confirmado com a personal e alinhado ao que já vem sendo feito nos treinos com ela. A prescrição cheia continua guardada como alvo.</p>
   <div id="treinos"></div>
   <button class="btn" id="resetAll">Zerar a semana inteira</button>
 </section>
@@ -427,7 +451,7 @@
     <div class="macro rec">
       <h3>Recarga</h3>
       <p class="kcal">3100<small>kcal</small></p>
-      <p class="when">Terça-feira: Treino B mais futebol às 20:30. Todo o acréscimo vem de carboidrato.</p>
+      <p class="when">Terça-feira: treino com a personal mais futebol às 20:30. Todo o acréscimo vem de carboidrato.</p>
       <dl>
         <div><dt>Proteínas<span class="fixed">fixa</span></dt><dd>154 g</dd></div>
         <div><dt>Carboidratos</dt><dd>460 g</dd></div>
@@ -440,7 +464,7 @@
 
 <footer>
   Cores das anilhas: vermelho 25 kg (Treino A), azul 20 kg (Treino B), amarelo 15 kg (recarga).<br>
-  Marcações <span style="color:var(--yellow15)">LOMBAR</span> são pontos a confirmar com a personal, não alterações por conta própria.<br>
+  <span style="color:var(--green10)">AJUSTE</span>: troca já definida pela personal por conta da lombar. <span style="color:var(--yellow15)">LOMBAR</span>: ponto ainda em aberto.<br>
   Progresso salvo neste navegador. Atualizado em agosto de 2026.
 </footer>
 
@@ -458,18 +482,18 @@ var KEY = 'fittracker.ab.v1.';
 
 /* ---------- Dados ---------- */
 var semana = [
-  {dow:'Seg', mark:'·', what:'Preparo leve'},
-  {dow:'Ter', mark:'B', cls:'b', what:'Personal + futebol'},
-  {dow:'Qua', mark:'·', what:'Piscina leve'},
-  {dow:'Qui', mark:'·', what:'Livre'},
-  {dow:'Sex', mark:'A', cls:'a', what:'Personal'},
-  {dow:'Sáb', mark:'·', what:'Endurance + pesagem'},
-  {dow:'Dom', mark:'·', what:'Livre'}
+  {dow:'Seg', mark:'·', what:'Leve: bike ou natação'},
+  {dow:'Ter', mark:'PT', cls:'pt', what:'Personal + futebol'},
+  {dow:'Qua', mark:'·', what:'Repouso'},
+  {dow:'Qui', mark:'B', cls:'b', what:'Superiores, solo'},
+  {dow:'Sex', mark:'PT', cls:'pt', what:'Personal'},
+  {dow:'Sáb', mark:'·', what:'Leve + pesagem'},
+  {dow:'Dom', mark:'A', cls:'a', what:'Pernas, solo'}
 ];
 
 var treinos = [
   {
-    id:'B', cls:'b', nome:'Superiores', dia:'Terça · com a personal',
+    id:'B', cls:'b', nome:'Superiores', dia:'Quinta · sozinho',
     ex:[
       {n:'Puxada Frontal', s:4, r:'10'},
       {n:'Remada Articulada', s:4, r:'10'},
@@ -481,22 +505,22 @@ var treinos = [
       {n:'Elevação Lateral Máquina', s:4, r:'12'},
       {n:'Rosca Scott Máquina', s:4, r:'10-12'},
       {n:'Tríceps Máquina', s:4, r:'10-12'},
-      {n:'Abdominal Máquina', s:4, r:'20', flag:'Lombar',
-       nota:'80 repetições de flexão de coluna com carga por sessão. Perguntar à personal se prancha ou Pallof press substituem enquanto o disco segue em observação.'}
+      {n:'Abdominal no Pulley', s:4, r:'20', flag:'Lombar',
+       nota:'Trocado pela personal. Segue sendo flexão de coluna sob carga, então vale controlar a amplitude e revisar as 80 repetições por sessão.'}
     ]
   },
   {
-    id:'A', cls:'a', nome:'Pernas', dia:'Sexta · com a personal',
+    id:'A', cls:'a', nome:'Pernas', dia:'Domingo · sozinho',
     ex:[
       {n:'Agachamento Hack', s:5, r:'10'},
-      {n:'Leg Press 45°', s:5, r:'12', flag:'Lombar',
-       nota:'Parar a descida antes do quadril começar a sair do encosto.'},
+      {n:'Leg Press Reto', s:5, r:'12', flag:'Ajuste', flagOk:true,
+       nota:'Trocado pela personal, no lugar do 45°. Mesmo assim, parar a descida antes do quadril começar a sair do encosto.', notaOk:true},
       {n:'Afundo Smith', s:4, r:'10 cada'},
       {n:'Extensora', s:4, r:'15 + drop'},
       {n:'Mesa Flexora', s:4, r:'12'},
       {n:'Flexora Sentada', s:4, r:'12'},
-      {n:'Stiff Smith', s:4, r:'10', flag:'Lombar',
-       nota:'A barra em trajetória fixa obriga o quadril a se ajustar à máquina. Perguntar sobre versão com halteres ou no cabo.'},
+      {n:'Stiff apoiado na parede', s:4, r:'10', flag:'Ajuste', flagOk:true,
+       nota:'Trocado pela personal, no lugar do Smith. A parede serve de referência para o recuo do quadril, mantendo a lombar neutra.', notaOk:true},
       {n:'Panturrilha Sentado', s:5, r:'20'},
       {n:'Panturrilha Leg Press', s:4, r:'20'}
     ]
@@ -518,12 +542,20 @@ var treinos = [
   document.getElementById('week').innerHTML = html;
 })();
 
+/* ---------- Fase ---------- */
+var RETORNO = 3;
+var modo = store.get(KEY + 'modo') || 'retorno';
+function seriesDe(e){ return modo === 'retorno' ? Math.min(RETORNO, e.s) : e.s; }
+
 /* ---------- Treinos ---------- */
 function render(){
   var total = 0;
   var html = '';
+  document.querySelectorAll('.ph').forEach(function(b){
+    b.setAttribute('aria-pressed', String(b.dataset.mode === modo));
+  });
   treinos.forEach(function(t){
-    var soma = t.ex.reduce(function(a,e){ return a + e.s; }, 0);
+    var soma = t.ex.reduce(function(a,e){ return a + seriesDe(e); }, 0);
     total += soma;
     html += '<article class="treino ' + t.cls + '" data-t="' + t.id + '">' +
       '<div class="t-head">' +
@@ -535,8 +567,9 @@ function render(){
       '<ol class="ex">';
 
     t.ex.forEach(function(e,i){
+      var ns = seriesDe(e);
       var chips = '';
-      for (var s = 1; s <= e.s; s++){
+      for (var s = 1; s <= ns; s++){
         var k = KEY + t.id + '.' + i + '.' + s;
         var on = store.get(k) === '1';
         chips += '<button class="set" type="button" aria-pressed="' + on + '" ' +
@@ -548,11 +581,15 @@ function render(){
       html += '<li data-ex="' + i + '">' +
         '<div class="ex-top">' +
           '<span class="ex-name">' + e.n +
-            (e.flag ? '<span class="flag" title="Ponto a confirmar com a personal">' + e.flag + '</span>' : '') +
+            (e.flag ? '<span class="flag' + (e.flagOk ? ' ok' : '') + '" title="' +
+              (e.flagOk ? 'Ajuste já definido pela personal' : 'Ponto a confirmar com a personal') +
+              '">' + e.flag + '</span>' : '') +
           '</span>' +
-          '<span class="ex-presc">' + e.s + ' × ' + e.r + '</span>' +
+          '<span class="ex-presc">' + ns + ' × ' + e.r +
+            (ns !== e.s ? '<span class="goal">alvo ' + e.s + '</span>' : '') +
+          '</span>' +
         '</div>' +
-        (e.nota ? '<p class="ex-note">' + e.nota + '</p>' : '') +
+        (e.nota ? '<p class="ex-note' + (e.notaOk ? ' ok' : '') + '">' + e.nota + '</p>' : '') +
         '<div class="ex-bottom">' +
           '<div class="sets">' + chips + '</div>' +
           '<div class="kgwrap"><label for="' + kgKey + '">KG</label>' +
@@ -597,6 +634,13 @@ document.addEventListener('click', function(ev){
     set.setAttribute('aria-pressed', String(!on));
     if (on) store.del(set.dataset.k); else store.set(set.dataset.k, '1');
     updateProg(set.dataset.t);
+    return;
+  }
+  var ph = ev.target.closest('.ph');
+  if (ph){
+    modo = ph.dataset.mode;
+    store.set(KEY + 'modo', modo);
+    render();
     return;
   }
   var rst = ev.target.closest('[data-reset]');
