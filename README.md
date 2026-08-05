@@ -6,7 +6,5 @@ carga por exercício, mais o resumo da semana e das macros.
 Página estática de arquivo único, sem build nem dependências, feita para ser aberta no celular
 durante o treino. O progresso fica salvo no `localStorage` do próprio navegador.
 
-**No ar:** https://feraio.github.io/fit-tracker/
-
-As convenções do projeto — o contrato do `id` dos exercícios, como adicionar ilustrações e
+As convenções do projeto, o contrato do `id` dos exercícios, como adicionar ilustrações e
 quais decisões técnicas foram tomadas de propósito — estão em [`CLAUDE.md`](CLAUDE.md).
