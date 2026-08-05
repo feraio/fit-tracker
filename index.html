@@ -394,6 +394,96 @@
     line-height:1.6;
   }
 
+  /* ---------- Mídia do exercício ---------- */
+  .ex-media{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    vertical-align:-2px;
+    margin-left:6px;
+    padding:0;
+    border:0;
+    background:transparent;
+    line-height:0;
+    color:var(--ink3);
+    cursor:pointer;
+  }
+  /* Alvo de toque de 36px (mesma medida do .set) sem alterar o fluxo do texto */
+  .ex-media::after{
+    content:'';
+    position:absolute;
+    top:50%;
+    left:50%;
+    width:36px;
+    height:36px;
+    transform:translate(-50%,-50%);
+  }
+  .ex-media:hover{color:var(--ink)}
+
+  #mediaBox{
+    border:0;
+    padding:0;
+    margin:auto;
+    width:min(92vw,640px);
+    background:var(--card);
+    border-radius:var(--r);
+    color:var(--ink);
+    overflow:hidden;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  #mediaBox::backdrop{background:rgba(22,24,27,.72)}
+  .mb-head{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:11px 8px 11px 14px;
+    border-bottom:1px solid var(--line2);
+  }
+  .mb-head h4{
+    margin:0;
+    font-family:var(--cond);
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    font-size:15px;
+    font-weight:700;
+  }
+  .mb-close{
+    margin-left:auto;
+    flex:none;
+    width:36px;height:36px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0;
+    border:0;
+    border-radius:var(--r);
+    background:transparent;
+    font-size:22px;
+    line-height:1;
+    color:var(--ink2);
+    cursor:pointer;
+  }
+  .mb-close:hover{color:var(--ink)}
+  #mediaImg{
+    display:block;
+    width:100%;
+    height:auto;
+    max-height:78vh;
+    max-height:78dvh;
+    object-fit:contain;
+    background:var(--line2);
+  }
+  #mediaImg[hidden]{display:none}
+  .mb-erro{
+    margin:0;
+    padding:28px 14px;
+    text-align:center;
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--ink3);
+  }
+
   @media (max-width:520px){
     .macros{grid-template-columns:1fr}
     .kgwrap{margin-left:0;width:100%;justify-content:flex-end}
@@ -470,6 +560,16 @@
 
 </div>
 
+<!-- Fora de .wrap e de #treinos: render() reescreve #treinos inteiro. -->
+<dialog id="mediaBox" aria-labelledby="mediaTitulo">
+  <div class="mb-head">
+    <h4 id="mediaTitulo"></h4>
+    <button class="mb-close" type="button" aria-label="Fechar ilustração">&times;</button>
+  </div>
+  <img id="mediaImg" alt="">
+  <p class="mb-erro" hidden>Ilustração ainda não adicionada.</p>
+</dialog>
+
 <script>
 /* ---------- Armazenamento com fallback ---------- */
 var mem = {};
@@ -491,41 +591,60 @@ var semana = [
   {dow:'Dom', mark:'A', cls:'a', what:'Pernas, solo'}
 ];
 
+/* O `id` de cada exercício é contratual: serve de chave de persistência e de nome
+   do arquivo em assets/ex/. Renomear `n` é livre; renomear `id` zera a carga salva
+   e quebra o caminho da ilustração.
+   `img:1` marca que existe assets/ex/<id>.webp e faz aparecer o ícone de mídia. */
 var treinos = [
   {
     id:'B', cls:'b', nome:'Superiores', dia:'Quinta · sozinho',
     ex:[
-      {n:'Puxada Frontal', s:4, r:'10'},
-      {n:'Remada Articulada', s:4, r:'10'},
-      {n:'Remada Baixa', s:4, r:'12'},
-      {n:'Pullover Máquina', s:3, r:'15'},
-      {n:'Supino Inclinado Máquina', s:4, r:'10'},
-      {n:'Supino Reto Máquina', s:4, r:'10'},
-      {n:'Desenv. Ombros Máquina', s:4, r:'10'},
-      {n:'Elevação Lateral Máquina', s:4, r:'12'},
-      {n:'Rosca Scott Máquina', s:4, r:'10-12'},
-      {n:'Tríceps Máquina', s:4, r:'10-12'},
-      {n:'Abdominal no Pulley', s:4, r:'20', flag:'Lombar',
+      {id:'puxada-frontal', n:'Puxada Frontal', s:4, r:'10'},
+      {id:'remada-articulada', n:'Remada Articulada', s:4, r:'10'},
+      {id:'remada-baixa', n:'Remada Baixa', s:4, r:'12'},
+      {id:'pullover', n:'Pullover Máquina', s:3, r:'15'},
+      {id:'supino-inclinado', n:'Supino Inclinado Máquina', s:4, r:'10'},
+      {id:'supino-reto', n:'Supino Reto Máquina', s:4, r:'10'},
+      {id:'desenvolvimento-ombros', n:'Desenv. Ombros Máquina', s:4, r:'10'},
+      {id:'elevacao-lateral', n:'Elevação Lateral Máquina', s:4, r:'12'},
+      {id:'rosca-scott', n:'Rosca Scott Máquina', s:4, r:'10-12'},
+      {id:'triceps', n:'Tríceps Máquina', s:4, r:'10-12'},
+      {id:'abdominal-pulley', n:'Abdominal no Pulley', s:4, r:'20', flag:'Lombar',
        nota:'Trocado pela personal. Segue sendo flexão de coluna sob carga, então vale controlar a amplitude e revisar as 80 repetições por sessão.'}
     ]
   },
   {
     id:'A', cls:'a', nome:'Pernas', dia:'Domingo · sozinho',
     ex:[
-      {n:'Agachamento Hack', s:5, r:'10'},
-      {n:'Leg Press Reto', s:5, r:'12', flag:'Ajuste', flagOk:true,
+      {id:'agachamento-hack', n:'Agachamento Hack', s:5, r:'10', img:1},
+      {id:'leg-press-reto', n:'Leg Press Reto', s:5, r:'12', flag:'Ajuste', flagOk:true,
        nota:'Trocado pela personal, no lugar do 45°. Mesmo assim, parar a descida antes do quadril começar a sair do encosto.', notaOk:true},
-      {n:'Afundo Smith', s:4, r:'10 cada'},
-      {n:'Extensora', s:4, r:'15 + drop'},
-      {n:'Mesa Flexora', s:4, r:'12'},
-      {n:'Flexora Sentada', s:4, r:'12'},
-      {n:'Stiff apoiado na parede', s:4, r:'10', flag:'Ajuste', flagOk:true,
+      {id:'afundo-smith', n:'Afundo Smith', s:4, r:'10 cada'},
+      {id:'extensora', n:'Extensora', s:4, r:'15 + drop'},
+      {id:'mesa-flexora', n:'Mesa Flexora', s:4, r:'12'},
+      {id:'flexora-sentada', n:'Flexora Sentada', s:4, r:'12'},
+      {id:'stiff-parede', n:'Stiff apoiado na parede', s:4, r:'10', flag:'Ajuste', flagOk:true,
        nota:'Trocado pela personal, no lugar do Smith. A parede serve de referência para o recuo do quadril, mantendo a lombar neutra.', notaOk:true},
-      {n:'Panturrilha Sentado', s:5, r:'20'},
-      {n:'Panturrilha Leg Press', s:4, r:'20'}
+      {id:'panturrilha-sentado', n:'Panturrilha Sentado', s:5, r:'20'},
+      {id:'panturrilha-leg-press', n:'Panturrilha Leg Press', s:4, r:'20'}
     ]
   }
 ];
+
+/* ---------- Mídia ---------- */
+var MEDIA_DIR = 'assets/ex/';
+var ICON_MIDIA =
+  '<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" focusable="false">' +
+    '<rect x="1.5" y="2.5" width="13" height="11" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/>' +
+    '<circle cx="5.5" cy="6.5" r="1.2" fill="currentColor"/>' +
+    '<path d="M2.5 11.5l3.2-3.2 2.4 2.4 2.6-2.6 2.8 2.8" fill="none" stroke="currentColor" ' +
+      'stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>' +
+  '</svg>';
+
+function midiaDe(e){ return e.img ? MEDIA_DIR + e.id + '.webp' : ''; }
+function esc(s){
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
 
 /* ---------- Semana ---------- */
 (function(){
@@ -566,24 +685,28 @@ function render(){
       '<div class="bar"><i data-bar="' + t.id + '"></i></div>' +
       '<ol class="ex">';
 
-    t.ex.forEach(function(e,i){
+    t.ex.forEach(function(e){
       var ns = seriesDe(e);
       var chips = '';
       for (var s = 1; s <= ns; s++){
-        var k = KEY + t.id + '.' + i + '.' + s;
+        var k = KEY + t.id + '.' + e.id + '.' + s;
         var on = store.get(k) === '1';
         chips += '<button class="set" type="button" aria-pressed="' + on + '" ' +
                  'aria-label="Série ' + s + ' de ' + e.n + '" ' +
                  'data-k="' + k + '" data-t="' + t.id + '">' + s + '</button>';
       }
-      var kgKey = KEY + 'kg.' + t.id + '.' + i;
+      var kgKey = KEY + 'kg.' + t.id + '.' + e.id;
       var kgVal = store.get(kgKey) || '';
-      html += '<li data-ex="' + i + '">' +
+      var mid = midiaDe(e);
+      html += '<li data-ex="' + e.id + '">' +
         '<div class="ex-top">' +
           '<span class="ex-name">' + e.n +
             (e.flag ? '<span class="flag' + (e.flagOk ? ' ok' : '') + '" title="' +
               (e.flagOk ? 'Ajuste já definido pela personal' : 'Ponto a confirmar com a personal') +
               '">' + e.flag + '</span>' : '') +
+            (mid ? '<button class="ex-media" type="button" data-media="' + esc(mid) + '" ' +
+              'data-nome="' + esc(e.n) + '" aria-label="Ver ilustração de ' + esc(e.n) + '">' +
+              ICON_MIDIA + '</button>' : '') +
           '</span>' +
           '<span class="ex-presc">' + ns + ' × ' + e.r +
             (ns !== e.s ? '<span class="goal">alvo ' + e.s + '</span>' : '') +
@@ -627,7 +750,37 @@ function updateProg(id){
   });
 }
 
+/* ---------- Mídia: overlay ---------- */
+var mediaBox = document.getElementById('mediaBox');
+var mediaImg = document.getElementById('mediaImg');
+var mediaErro = mediaBox.querySelector('.mb-erro');
+
+mediaImg.addEventListener('error', function(){
+  /* Só interessa quando há um src de verdade: limpar o src no fechamento
+     também dispara 'error' em alguns navegadores. */
+  if (!this.getAttribute('src')) return;
+  this.hidden = true;
+  mediaErro.hidden = false;
+});
+
+function abrirMidia(src, nome){
+  document.getElementById('mediaTitulo').textContent = nome;
+  mediaErro.hidden = true;
+  mediaImg.hidden = false;
+  mediaImg.alt = 'Ilustração: ' + nome;
+  mediaImg.src = src;          // única requisição de imagem da página
+  mediaBox.showModal();
+}
+
 document.addEventListener('click', function(ev){
+  var med = ev.target.closest('[data-media]');
+  if (med){
+    abrirMidia(med.dataset.media, med.dataset.nome);
+    return;
+  }
+  if (ev.target.closest('.mb-close')){ mediaBox.close(); return; }
+  if (ev.target === mediaBox){ mediaBox.close(); return; }   /* toque no backdrop */
+
   var set = ev.target.closest('.set');
   if (set){
     var on = set.getAttribute('aria-pressed') === 'true';
