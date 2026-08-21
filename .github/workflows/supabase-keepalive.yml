@@ -1,0 +1,39 @@
+# O plano gratuito do Supabase pausa o projeto após 7 dias sem atividade no
+# banco. Treinar 2–4x por semana já mantém vivo, mas férias ou uma pausa por
+# lesão pausariam o projeto — e aí o celular não sincroniza até religar no painel.
+#
+# Este workflow bate no REST a cada 3 dias só para marcar atividade.
+#
+# Requer um secret SUPABASE_URL e outro SUPABASE_ANON_KEY no repositório
+# (Settings > Secrets and variables > Actions). São públicos por natureza, mas
+# ficam como secret para não vazarem nos logs.
+#
+# Atenção: o GitHub desativa workflows agendados após 60 dias sem commits no
+# repositório. Ele avisa por e-mail, e basta reativar na aba Actions.
+name: Supabase keepalive
+
+on:
+  schedule:
+    - cron: '17 6 */3 * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Consultar o REST para marcar atividade
+        run: |
+          if [ -z "${{ secrets.SUPABASE_URL }}" ]; then
+            echo "SUPABASE_URL não configurado — nada a fazer."
+            exit 0
+          fi
+          codigo=$(curl -s -o /dev/null -w '%{http_code}' \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/estado?select=chave&limit=1")
+          echo "HTTP $codigo"
+          # 200 com [] é o esperado: sem JWT o RLS não devolve linha nenhuma.
+          # Qualquer 2xx/4xx serve como atividade; 5xx ou 000 indica projeto fora.
+          case "$codigo" in
+            2*|4*) echo "Projeto acordado." ;;
+            *) echo "::error::Projeto pode estar pausado (HTTP $codigo)"; exit 1 ;;
+          esac

@@ -45,10 +45,15 @@
   .wrap{max-width:720px;margin:0 auto}
 
   /* ---------- Abas de plano ---------- */
+  .topo{
+    display:flex;
+    align-items:stretch;
+    border-bottom:1px solid var(--line);
+  }
   .planos{
     display:flex;
     gap:2px;
-    border-bottom:1px solid var(--line);
+    min-width:0;
   }
   .plano-tab{
     font-family:var(--mono);
@@ -77,6 +82,109 @@
   }
   .plano-tab:hover{color:var(--ink)}
   #treinos:focus{outline:none}
+
+  /* ---------- Estado da sincronização ---------- */
+  .sync{
+    margin-left:auto;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    flex:none;
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    background:transparent;
+    border:0;
+    padding:16px 2px 12px 10px;
+    color:var(--ink3);
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .sync:hover{color:var(--ink)}
+  .sync[hidden]{display:none}
+  .sync i{
+    width:7px;height:7px;
+    border-radius:50%;
+    background:var(--ink3);
+    flex:none;
+  }
+  .sync.ok i{background:var(--green10)}
+  .sync.pend i{background:var(--yellow15)}
+  .sync.erro i{background:var(--red25)}
+  .sync.voando i{animation:pulsa 1s ease-in-out infinite}
+  @keyframes pulsa{50%{opacity:.25}}
+
+  /* ---------- Diálogo de conta ---------- */
+  #loginBox{
+    border:0;
+    padding:0;
+    margin:auto;
+    width:min(92vw,380px);
+    background:var(--card);
+    border-radius:var(--r);
+    color:var(--ink);
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  #loginBox::backdrop{background:rgba(22,24,27,.72)}
+  #loginBox form{padding:16px 14px 14px}
+  #loginBox h4{
+    margin:0 0 4px;
+    font-family:var(--cond);
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    font-size:16px;
+    font-weight:700;
+  }
+  #loginBox p.ajuda{
+    margin:0 0 14px;
+    font-size:12px;
+    line-height:1.4;
+    color:var(--ink2);
+  }
+  #loginBox label{
+    display:block;
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--ink3);
+    margin:10px 0 4px;
+  }
+  #loginBox input{
+    width:100%;
+    padding:9px 10px;
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    background:#fff;
+    font-family:var(--sans);
+    font-size:16px;          /* 16px evita o zoom automático do iOS no foco */
+    color:var(--ink);
+  }
+  .login-acoes{display:flex;align-items:center;gap:8px;margin-top:16px}
+  .login-acoes .btn.primario{
+    background:var(--ink);
+    border-color:var(--ink);
+    color:#fff;
+    margin-left:auto;
+  }
+  .login-erro{
+    margin:12px 0 0;
+    padding:8px 10px;
+    border-left:3px solid var(--red25);
+    background:#FBEDEC;
+    font-size:12px;
+    line-height:1.4;
+    color:var(--ink2);
+  }
+  .login-erro[hidden]{display:none}
+  .login-quem{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--ink2);
+    margin:0 0 4px;
+    word-break:break-all;
+  }
 
   /* ---------- Cabeçalho ---------- */
   header{padding:32px 0 8px}
@@ -533,7 +641,11 @@
 <body>
 <div class="wrap">
 
-<nav class="planos" id="planos" role="tablist" aria-label="Plano de treino"></nav>
+<div class="topo">
+  <nav class="planos" id="planos" role="tablist" aria-label="Plano de treino"></nav>
+  <!-- Fora de #planos: renderAbas() reescreve a nav inteira. -->
+  <button class="sync" id="sync" type="button" hidden></button>
+</div>
 
 <header>
   <p class="eyebrow" id="eyebrow"></p>
@@ -556,7 +668,6 @@
   </div>
   <p class="note" id="planoNota"></p>
   <div id="treinos" role="tabpanel" tabindex="-1"></div>
-  <button class="btn" id="resetAll">Zerar a semana inteira</button>
 </section>
 
 <section>
@@ -598,6 +709,25 @@
 
 </div>
 
+<dialog id="loginBox" aria-labelledby="loginTitulo">
+  <form id="loginForm" method="dialog">
+    <h4 id="loginTitulo">Conta</h4>
+    <p class="ajuda" id="loginAjuda"></p>
+    <div id="loginCampos">
+      <label for="loginEmail">E-mail</label>
+      <input id="loginEmail" name="email" type="email" autocomplete="username"
+             inputmode="email" autocapitalize="none" spellcheck="false" required>
+      <label for="loginSenha">Senha</label>
+      <input id="loginSenha" name="senha" type="password" autocomplete="current-password" required>
+    </div>
+    <p class="login-erro" id="loginErro" hidden></p>
+    <div class="login-acoes">
+      <button class="btn" type="button" data-fechar-login>Fechar</button>
+      <button class="btn primario" type="submit" id="loginEnviar">Entrar</button>
+    </div>
+  </form>
+</dialog>
+
 <!-- Fora de .wrap e de #treinos: render() reescreve #treinos inteiro.
      Inerte enquanto MIDIA_ATIVA for false: nada abre este diálogo. -->
 <dialog id="mediaBox" aria-labelledby="mediaTitulo">
@@ -610,13 +740,217 @@
 </dialog>
 
 <script>
-/* ---------- Armazenamento com fallback ---------- */
+/* ---------- Supabase ----------
+   Chaves do projeto. A anônima é pública por design e pode ficar no fonte: quem
+   protege os dados é o Row Level Security no banco, não esconder esta chave.
+   Nunca colocar aqui a service_role — ela ignora o RLS.
+
+   Enquanto as duas estiverem vazias a sincronização fica desligada e a página
+   funciona exatamente como antes: só localStorage, nenhuma requisição. */
+var SUPA_URL = 'https://oyxdcimzakdidprhfyid.supabase.co';
+var SUPA_KEY = 'sb_publishable_dabnLFccPCB7syT-uyVAWg_u9tlfAnb';
+
+/* ---------- Armazenamento com fallback ----------
+   `bruto` fala direto com o localStorage. `store` é o que a página usa: grava
+   igual e ainda marca a chave como suja, para subir na próxima sincronização.
+   O pull grava por `bruto` de propósito — usar `store` ali sujaria de novo o que
+   acabou de chegar do servidor, e a fila nunca esvaziaria. */
 var mem = {};
-var store = {
+var bruto = {
   get: function(k){ try { return localStorage.getItem(k); } catch(e){ return k in mem ? mem[k] : null; } },
   set: function(k,v){ try { localStorage.setItem(k,v); } catch(e){ mem[k]=v; } },
   del: function(k){ try { localStorage.removeItem(k); } catch(e){ delete mem[k]; } }
 };
+var store = {
+  get: bruto.get,
+  set: function(k,v){ bruto.set(k,v); sujar(k); },
+  del: function(k){ bruto.del(k); sujar(k); }
+};
+
+/* ---------- Fila de sincronização ---------- */
+var KEY_FILA    = 'fittracker.sync.fila';
+var KEY_DESDE   = 'fittracker.sync.desde';
+var KEY_SESSAO  = 'fittracker.sync.sessao';
+var KEY_MIGRADO = 'fittracker.sync.migrado';
+
+/* A aba escolhida é preferência de aparelho, não dado de treino: sincronizar
+   faria o celular pular de aba porque o tablet foi aberto. */
+function sincronizavel(k){
+  return k.indexOf('fittracker.') === 0 &&
+         k.indexOf('fittracker.sync.') !== 0 &&
+         k !== KEY_PLANO;
+}
+
+function lerFila(){
+  try { return JSON.parse(bruto.get(KEY_FILA) || '[]'); } catch(e){ return []; }
+}
+function gravarFila(f){ bruto.set(KEY_FILA, JSON.stringify(f)); }
+
+function sujar(k){
+  if (!sincronizavel(k)) return;
+  var f = lerFila();
+  if (f.indexOf(k) === -1){ f.push(k); gravarFila(f); }
+  pintarSync();
+  agendarSync();
+}
+
+/* ---------- Sessão e chamadas ao Supabase ----------
+   Tudo por fetch contra a API REST, sem SDK: mantém a página sem dependências e
+   sem baixar biblioteca nenhuma na rede da academia. */
+var sessao = null;
+try { sessao = JSON.parse(bruto.get(KEY_SESSAO) || 'null'); } catch(e){ sessao = null; }
+
+function syncLigado(){ return !!(SUPA_URL && SUPA_KEY); }
+function logado(){ return !!(sessao && sessao.access_token); }
+
+function salvarSessao(s){
+  sessao = s;
+  if (s) bruto.set(KEY_SESSAO, JSON.stringify(s));
+  else bruto.del(KEY_SESSAO);
+}
+
+function apiAuth(caminho, corpo){
+  return fetch(SUPA_URL + '/auth/v1/' + caminho, {
+    method:'POST',
+    headers:{'apikey':SUPA_KEY, 'Content-Type':'application/json'},
+    body: JSON.stringify(corpo)
+  }).then(function(r){
+    return r.json().then(function(j){ return {ok:r.ok, corpo:j}; },
+                         function(){ return {ok:r.ok, corpo:{}}; });
+  });
+}
+
+function entrar(email, senha){
+  return apiAuth('token?grant_type=password', {email:email, password:senha}).then(function(r){
+    if (!r.ok) throw new Error(r.corpo.error_description || r.corpo.msg || 'Não foi possível entrar.');
+    salvarSessao(r.corpo);
+    return r.corpo;
+  });
+}
+
+function sair(){
+  salvarSessao(null);
+  /* O cursor do delta é por conta: zerar evita que a próxima pessoa a entrar
+     neste aparelho perca o primeiro lote de mudanças. */
+  bruto.del(KEY_DESDE);
+  bruto.del(KEY_MIGRADO);
+  pintarSync();
+}
+
+function renovar(){
+  if (!sessao || !sessao.refresh_token) return Promise.reject(new Error('sem sessão'));
+  return apiAuth('token?grant_type=refresh_token', {refresh_token: sessao.refresh_token}).then(function(r){
+    if (!r.ok){ salvarSessao(null); throw new Error('sessão expirada'); }
+    salvarSessao(r.corpo);
+    return r.corpo;
+  });
+}
+
+/* 401 significa access_token vencido: renova uma vez e repete. */
+function rest(caminho, opcoes, jaRenovou){
+  opcoes = opcoes || {};
+  var h = opcoes.headers || {};
+  h['apikey'] = SUPA_KEY;
+  h['Authorization'] = 'Bearer ' + sessao.access_token;
+  opcoes.headers = h;
+  return fetch(SUPA_URL + '/rest/v1/' + caminho, opcoes).then(function(r){
+    if (r.status === 401 && !jaRenovou){
+      return renovar().then(function(){ return rest(caminho, opcoes, true); });
+    }
+    return r;
+  });
+}
+
+/* ---------- Push e pull ---------- */
+function push(){
+  var fila = lerFila();
+  if (!fila.length) return Promise.resolve(false);
+  var linhas = fila.map(function(k){ return {chave:k, valor: bruto.get(k)}; });
+  return rest('estado', {
+    method:'POST',
+    headers:{'Content-Type':'application/json', 'Prefer':'resolution=merge-duplicates'},
+    body: JSON.stringify(linhas)
+  }).then(function(r){
+    if (!r.ok) throw new Error('push ' + r.status);
+    /* Tira da fila só o que subiu: uma chave sujada durante a requisição
+       continua na fila e sobe na próxima rodada. */
+    var restante = lerFila().filter(function(k){ return fila.indexOf(k) === -1; });
+    gravarFila(restante);
+    return true;
+  });
+}
+
+function pull(){
+  var desde = bruto.get(KEY_DESDE) || '1970-01-01T00:00:00Z';
+  var url = 'estado?select=chave,valor,atualizado_em' +
+            '&atualizado_em=gt.' + encodeURIComponent(desde) +
+            '&order=atualizado_em.asc';
+  return rest(url, {}).then(function(r){
+    if (!r.ok) throw new Error('pull ' + r.status);
+    return r.json();
+  }).then(function(linhas){
+    var fila = lerFila(), mudou = false, maior = desde;
+    linhas.forEach(function(l){
+      if (l.atualizado_em > maior) maior = l.atualizado_em;
+      /* Chave ainda suja: a versão local não subiu, então ela vence. Evita
+         comparar relógio de cliente, que erra. */
+      if (fila.indexOf(l.chave) > -1) return;
+      var atual = bruto.get(l.chave);
+      if (l.valor === null){                         /* lápide */
+        if (atual !== null){ bruto.del(l.chave); mudou = true; }
+      } else if (atual !== l.valor){
+        bruto.set(l.chave, l.valor); mudou = true;
+      }
+    });
+    bruto.set(KEY_DESDE, maior);
+    return mudou;
+  });
+}
+
+/* Primeira entrada neste aparelho: tudo que já está no localStorage precisa
+   subir, senão o que foi treinado antes do login ficaria só aqui. */
+function migrar(){
+  if (bruto.get(KEY_MIGRADO)) return;
+  var f = lerFila(), k;
+  try {
+    for (var i = 0; i < localStorage.length; i++){
+      k = localStorage.key(i);
+      if (sincronizavel(k) && f.indexOf(k) === -1) f.push(k);
+    }
+  } catch(e){}
+  gravarFila(f);
+  bruto.set(KEY_MIGRADO, '1');
+}
+
+/* ---------- Orquestração ---------- */
+var emVoo = false;
+var timerSync = null;
+var ultimoErro = '';
+
+function agendarSync(){
+  if (!syncLigado() || !logado()) return;
+  clearTimeout(timerSync);
+  /* Debounce: tocar em cinco chips vira uma requisição, não cinco. */
+  timerSync = setTimeout(sincronizar, 2000);
+}
+
+function sincronizar(){
+  if (!syncLigado() || !logado() || emVoo) return Promise.resolve();
+  if (!navigator.onLine){ pintarSync(); return Promise.resolve(); }
+  emVoo = true;
+  ultimoErro = '';
+  pintarSync();
+  /* Push antes de pull, sempre: assim o pull nunca sobrescreve edição local
+     que ainda não subiu. */
+  return push().then(pull).then(function(mudou){
+    if (mudou) render();
+  }).catch(function(e){
+    ultimoErro = e && e.message ? e.message : 'falha';
+  }).then(function(){
+    emVoo = false;
+    pintarSync();
+  });
+}
 /* Cada plano tem o seu prefixo de persistência. O do Ciclo A/B não muda nunca:
    é onde já estão as cargas e as séries salvas no navegador. */
 var KEY_AB = 'fittracker.ab.v1.';
@@ -757,6 +1091,86 @@ function planoAtual(){
   for (var i = 0; i < planos.length; i++){ if (planos[i].id === planoId) return planos[i]; }
   planoId = planos[0].id;
   return planos[0];
+}
+
+/* ---------- Estado visível da sincronização ----------
+   Fica fora de #planos e de #treinos, então sobrevive a render() e a
+   renderAbas(); é sempre esta função que reescreve o botão. */
+function pintarSync(){
+  var el = document.getElementById('sync');
+  if (!el) return;
+  if (!syncLigado()){ el.hidden = true; return; }
+  el.hidden = false;
+
+  var cls = '', texto;
+  if (!logado()){
+    texto = 'entrar';
+  } else {
+    var pend = lerFila().length;
+    if (emVoo){ cls = 'voando'; texto = 'sincronizando'; }
+    else if (!navigator.onLine){ cls = 'pend'; texto = pend ? 'offline · ' + pend : 'offline'; }
+    else if (ultimoErro){ cls = 'erro'; texto = 'erro'; }
+    else if (pend){ cls = 'pend'; texto = pend + ' pendente' + (pend > 1 ? 's' : ''); }
+    else { cls = 'ok'; texto = 'sincronizado'; }
+  }
+  el.className = 'sync' + (cls ? ' ' + cls : '');
+  el.innerHTML = '<i></i>' + texto;
+  el.setAttribute('aria-label',
+    logado() ? 'Sincronização: ' + texto + '. Abrir opções da conta.' : 'Entrar na conta');
+}
+
+/* ---------- Diálogo de conta ---------- */
+function abrirLogin(){
+  var box = document.getElementById('loginBox');
+  var campos = document.getElementById('loginCampos');
+  var erro = document.getElementById('loginErro');
+  var enviar = document.getElementById('loginEnviar');
+  var ajuda = document.getElementById('loginAjuda');
+  erro.hidden = true;
+  enviar.disabled = false;
+
+  if (logado()){
+    var quem = (sessao.user && sessao.user.email) || 'sessão ativa';
+    campos.innerHTML = '<p class="login-quem">' + esc(quem) + '</p>';
+    ajuda.textContent = 'O progresso deste aparelho sobe para a sua conta e volta em qualquer outro.';
+    enviar.textContent = 'Sair';
+  } else {
+    ajuda.textContent = 'Entrar sincroniza o progresso entre os aparelhos. Sem entrar, tudo continua salvo só neste navegador.';
+    enviar.textContent = 'Entrar';
+    var u = new URLSearchParams(location.search).get('u');
+    var email = document.getElementById('loginEmail');
+    if (email && u && !email.value) email.value = u;
+  }
+  box.showModal();
+}
+
+function enviarLogin(ev){
+  ev.preventDefault();
+  var box = document.getElementById('loginBox');
+  var erro = document.getElementById('loginErro');
+  var enviar = document.getElementById('loginEnviar');
+
+  if (logado()){ sair(); box.close(); return; }
+
+  var email = document.getElementById('loginEmail').value.trim();
+  var senha = document.getElementById('loginSenha').value;
+  erro.hidden = true;
+  enviar.disabled = true;
+  enviar.textContent = 'Entrando…';
+
+  entrar(email, senha).then(function(){
+    document.getElementById('loginSenha').value = '';
+    box.close();
+    migrar();          /* o que já estava neste aparelho precisa subir */
+    pintarSync();
+    return sincronizar();
+  }).catch(function(e){
+    erro.textContent = e && e.message ? e.message : 'Não foi possível entrar.';
+    erro.hidden = false;
+  }).then(function(){
+    enviar.disabled = false;
+    enviar.textContent = logado() ? 'Sair' : 'Entrar';
+  });
 }
 
 /* ---------- Mídia ----------
@@ -947,6 +1361,10 @@ function abrirMidia(src, nome){
 }
 
 document.addEventListener('click', function(ev){
+  if (ev.target.closest('#sync')){ abrirLogin(); return; }
+  if (ev.target.closest('[data-fechar-login]')){ document.getElementById('loginBox').close(); return; }
+  if (ev.target === document.getElementById('loginBox')){ document.getElementById('loginBox').close(); return; }
+
   var aba = ev.target.closest('[data-plano]');
   if (aba){ trocarPlano(aba.dataset.plano); return; }
 
@@ -973,6 +1391,8 @@ document.addEventListener('click', function(ev){
     render();
     return;
   }
+  /* Único zerar que existe: por treino, no rodapé do card. Varre o DOM, então
+     nunca alcança o outro plano nem o treino vizinho. */
   var rst = ev.target.closest('[data-reset]');
   if (rst){
     var id = rst.dataset.reset;
@@ -982,14 +1402,6 @@ document.addEventListener('click', function(ev){
     });
     updateProg(id);
     return;
-  }
-  if (ev.target.id === 'resetAll'){
-    /* Varre o DOM, então zera apenas o plano que está em tela. */
-    document.querySelectorAll('.set').forEach(function(b){
-      b.setAttribute('aria-pressed','false');
-      store.del(b.dataset.k);
-    });
-    planoAtual().treinos.forEach(function(t){ updateProg(t.id); });
   }
 });
 
@@ -1010,6 +1422,13 @@ document.addEventListener('keydown', function(ev){
   trocarPlano(planos[i].id);
 });
 
+/* Submit delegado: o formulário precisa ser <form> de verdade para o Enter e
+   para os gerenciadores de senha funcionarem. Delegado pelo mesmo motivo dos
+   outros — um listener só, no document. */
+document.addEventListener('submit', function(ev){
+  if (ev.target.id === 'loginForm') enviarLogin(ev);
+});
+
 document.addEventListener('change', function(ev){
   var kg = ev.target.closest('[data-kg]');
   if (!kg) return;
@@ -1019,6 +1438,27 @@ document.addEventListener('change', function(ev){
 
 renderCabecalho();
 render();
+pintarSync();
+
+/* ---------- Gatilhos de sincronização ----------
+   A página já renderizou do localStorage antes de qualquer um destes disparar:
+   nada aqui atrasa a primeira pintura. */
+/* O service worker é o que faz a página abrir sem sinal. Registrado depois da
+   primeira pintura para não competir com ela. */
+if ('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('sw.js').catch(function(){ /* sem SW, a página só perde o offline */ });
+  });
+}
+
+if (syncLigado()){
+  sincronizar();
+  document.addEventListener('visibilitychange', function(){
+    if (!document.hidden) sincronizar();
+  });
+  window.addEventListener('online', function(){ pintarSync(); sincronizar(); });
+  window.addEventListener('offline', pintarSync);
+}
 </script>
 </body>
 </html>

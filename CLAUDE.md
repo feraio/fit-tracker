@@ -6,8 +6,13 @@ qualquer outra coisa nesta página.
 
 ## Arquitetura e restrições
 
-- **Arquivo único.** Todo o HTML, CSS e JS vivem em `index.html`. Sem build, sem
-  dependências, sem framework, sem bundler. Servida pelo GitHub Pages a partir de `main`.
+- **Arquivo único, com três exceções nomeadas.** Todo o HTML, CSS e JS da página vivem em
+  `index.html`. Sem build, sem dependências, sem framework, sem bundler. Servida pelo GitHub
+  Pages a partir de `main`. As exceções, todas obrigatórias e nenhuma delas código de página:
+  `sw.js` (um service worker **precisa** ser arquivo próprio, no escopo certo — não dá para
+  embutir), `ana/index.html` (três linhas de redirecionamento) e `supabase/schema.sql`
+  (documentação do banco). O Supabase é acessado por `fetch` na API REST, sem SDK, justamente
+  para não reintroduzir dependência.
 - JS em estilo ES5: templating por concatenação de string dentro de `render()`, e **um único
   listener de clique delegado no `document`**. Por causa da delegação, componentes novos não
   precisam ser re-ligados depois que `render()` reescreve `#treinos`.
@@ -47,6 +52,42 @@ no `localStorage` e nome do arquivo da ilustração em `assets/ex/`.
   ilustração.
 - **Nunca voltar a chavear persistência por índice de array.** Era assim antes: reordenar ou
   inserir um exercício reatribuía séries e cargas ao exercício errado, em silêncio.
+
+## Sincronização e contas
+
+A fonte de verdade continua sendo o `localStorage`: **a página renderiza dele na hora e nunca
+espera rede**. O Supabase é uma cópia durável por cima disso.
+
+- **`store` é a única costura de persistência.** `bruto` fala direto com o `localStorage`;
+  `store` grava igual e ainda marca a chave como suja. O pull grava por `bruto` de propósito —
+  usar `store` ali sujaria de novo o que acabou de chegar, e a fila nunca esvaziaria.
+- **Push antes de pull, sempre.** Chave ainda na fila nunca é sobrescrita pelo remoto. Quem
+  decide o vencedor é o `now()` do Postgres (gatilho `estado_toca`), nunca o relógio do
+  aparelho — relógio de cliente erra.
+- **`valor = null` é lápide, não `DELETE`.** Sem isso, desmarcar uma série no celular seria
+  ressuscitado pela linha velha do tablet.
+- **A aba escolhida (`fittracker.plano.v1`) não sincroniza.** É preferência de aparelho;
+  sincronizar faria o celular pular de aba porque o tablet foi aberto. Quem decide é
+  `sincronizavel()`.
+- **Entrar é opcional e nunca bloqueia.** Sem login a página funciona inteira, só local. Isso é
+  deliberado: um erro de autenticação não pode deixar ninguém sem treino no meio da série.
+- **A chave anônima no fonte é segura, e só por causa do RLS.** O repositório é público. Toda
+  tabela precisa de RLS ligado e política explícita; uma tabela sem RLS é lida por qualquer
+  pessoa com a chave. Nunca colocar a `service_role` na página — ela ignora o RLS.
+- A Ana usa os mesmos `planos[]`, com dados separados por conta. `ana/index.html` só redireciona
+  com `?u=`, que pré-preenche o e-mail. A separação real vem do RLS, não da URL.
+
+## Service worker
+
+`sw.js` existe para a página abrir na rede da academia, ou sem rede nenhuma — o GitHub Pages
+serve com `max-age=600`, então sem ele um retorno depois de 10 minutos trava no sinal ruim.
+
+- **Subir `VERSAO` em `sw.js` a cada deploy que mexa na página.** É isso que faz o aparelho
+  largar a cópia velha. Esquecer significa publicar uma correção que não chega no celular.
+- Cache primeiro, atualização por baixo: a cópia nova entra na abertura seguinte. É o preço de
+  abrir instantâneo.
+- O SW ignora tudo que não é da mesma origem. Supabase e Google Fonts vão direto para a rede:
+  resposta velha de API seria pior que erro.
 
 ## Convenção de mídia
 
