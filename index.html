@@ -183,10 +183,13 @@
     padding-top:12px;
     border-top:1px solid var(--line2);
   }
-  .login-prefs label{
+  /* Escopadas em #loginBox de propósito: as regras genéricas `#loginBox label` e
+     `#loginBox input` acima têm ID na frente e ganhariam de seletor de classe,
+     deixando a label em display:block e a caixa com width:100%. */
+  #loginBox .login-prefs label{
     display:flex;
     align-items:center;
-    gap:8px;
+    gap:10px;
     margin:0;
     font-family:var(--sans);
     font-size:13px;
@@ -195,7 +198,17 @@
     color:var(--ink2);
     cursor:pointer;
   }
-  .login-prefs input{width:auto;flex:none;accent-color:var(--ink)}
+  #loginBox .login-prefs input{
+    width:18px;
+    height:18px;
+    flex:none;
+    margin:0;
+    padding:0;
+    border:0;
+    border-radius:0;
+    background:transparent;
+    accent-color:var(--ink);
+  }
   .login-quem{
     font-family:var(--mono);
     font-size:12px;
