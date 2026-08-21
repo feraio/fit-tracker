@@ -76,6 +76,36 @@ espera rede**. O Supabase é uma cópia durável por cima disso.
   pessoa com a chave. Nunca colocar a `service_role` na página — ela ignora o RLS.
 - A Ana usa os mesmos `planos[]`, com dados separados por conta. `ana/index.html` só redireciona
   com `?u=`, que pré-preenche o e-mail. A separação real vem do RLS, não da URL.
+- **Um handler para todo campo que guarda valor.** Carga dos exercícios e macros da nutrição
+  usam o mesmo `data-campo`, que carrega a própria chave — não existe tabela de correspondência
+  para manter em sincronia. Campo esvaziado apaga a chave, e é isso que vira lápide.
+
+## Nutrição
+
+A **estrutura** (quais cards, quais linhas, os rótulos, quais macros são fixas) é template e
+continua no código, em `NUTRI`. O que pertence a cada pessoa são só os **valores**, e esses
+vivem no `localStorage` e sobem para o Supabase como qualquer outra chave:
+`fittracker.nutri.v1.<card>.<campo>`.
+
+- Nenhuma sincronização nova foi preciso: as chaves começam com `fittracker.`, então já entram
+  na fila, na lápide e no RLS que já existiam.
+- **Não existe semente automática.** Quem entra sem valor nenhum vê o mesmo componente com os
+  campos vazios, para preencher. Semear com os números de outra pessoa mostraria dieta alheia
+  como se fosse a própria — em macro, isso é pior que campo vazio.
+- Os valores que ficaram hardcoded até agosto de 2026 (2460/154/301/71/25 a 35 e
+  3100/154/460/71) foram migrados para a conta do Felipe, não para o código. Estão registrados
+  aqui só para poderem ser reconstruídos se a conta se perder.
+- O número grande de kcal é o próprio campo. Não há valor derivado para redesenhar, então
+  digitar nunca dispara re-render — que é o que faria o foco pular no meio da edição.
+
+## Preferências de conta
+
+`fittracker.prefs.v1.*` são preferências **de conta**, não de aparelho: sincronizam, e quem
+desliga a faixa da semana a vê desligada em qualquer celular. Ficam no diálogo de conta, que já
+existia — não abrir uma tela de configurações para isso.
+
+Não confundir com `fittracker.plano.v1` (aba escolhida), que é de aparelho e por isso é a única
+chave `fittracker.` que `sincronizavel()` exclui.
 
 ## Service worker
 

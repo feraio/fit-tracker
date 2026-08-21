@@ -178,6 +178,24 @@
     color:var(--ink2);
   }
   .login-erro[hidden]{display:none}
+  .login-prefs{
+    margin-top:16px;
+    padding-top:12px;
+    border-top:1px solid var(--line2);
+  }
+  .login-prefs label{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin:0;
+    font-family:var(--sans);
+    font-size:13px;
+    letter-spacing:0;
+    text-transform:none;
+    color:var(--ink2);
+    cursor:pointer;
+  }
+  .login-prefs input{width:auto;flex:none;accent-color:var(--ink)}
   .login-quem{
     font-family:var(--mono);
     font-size:12px;
@@ -513,19 +531,57 @@
     font-weight:700;
   }
   .kcal{
+    display:flex;
+    align-items:baseline;
+    margin:6px 0 2px;
+  }
+  /* O número grande é o próprio campo: não existe valor derivado para
+     redesenhar, então digitar nunca dispara re-render. */
+  .kcal input{
     font-family:var(--cond);
     font-size:38px;
     font-weight:700;
     line-height:1;
-    margin:6px 0 2px;
     font-variant-numeric:tabular-nums;
+    width:4.2ch;
+    min-width:0;
+    padding:0;
+    border:0;
+    border-bottom:1px dashed var(--line);
+    background:transparent;
+    color:var(--ink);
+    -moz-appearance:textfield;
   }
+  .kcal input::-webkit-outer-spin-button,
+  .kcal input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .kcal input:focus{outline:none;border-bottom-color:var(--accent)}
+  .kcal input::placeholder{color:var(--line)}
   .kcal small{font-family:var(--mono);font-size:12px;font-weight:400;color:var(--ink3);margin-left:4px}
   .when{font-size:12px;color:var(--ink2);margin:0 0 12px;line-height:1.35}
   dl{margin:0;font-family:var(--mono);font-size:13px}
-  dl div{display:flex;justify-content:space-between;padding:5px 0;border-top:1px solid var(--line2)}
-  dl dt{color:var(--ink2)}
-  dl dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums}
+  dl div{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:3px 0;border-top:1px solid var(--line2)}
+  dl dt{color:var(--ink2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  dl dd{margin:0;display:flex;align-items:baseline;gap:3px;flex:none}
+  dl dd input{
+    font-family:var(--mono);
+    font-size:13px;
+    font-weight:600;
+    font-variant-numeric:tabular-nums;
+    text-align:right;
+    width:6.5ch;
+    padding:4px 2px;
+    border:0;
+    border-bottom:1px dashed var(--line);
+    background:transparent;
+    color:var(--ink);
+    -moz-appearance:textfield;
+  }
+  dl dd input.largo{width:12ch}
+  dl dd input::-webkit-outer-spin-button,
+  dl dd input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  dl dd input:focus{outline:none;border-bottom-color:var(--accent)}
+  dl dd input::placeholder{color:var(--line);font-weight:400}
+  dl dd .un{color:var(--ink3);font-size:11px}
   .fixed{color:var(--ink3);font-size:10px;letter-spacing:.06em;text-transform:uppercase;margin-left:5px}
 
   footer{
@@ -675,36 +731,14 @@
     <h2>Nutricional</h2>
     <span class="meta">Proteína e gordura fixas</span>
   </div>
-  <div class="macros">
-    <div class="macro pad">
-      <h3>Dia padrão</h3>
-      <p class="kcal">2460<small>kcal</small></p>
-      <p class="when">Todos os dias sem futebol.</p>
-      <dl>
-        <div><dt>Proteínas</dt><dd>154 g</dd></div>
-        <div><dt>Carboidratos</dt><dd>301 g</dd></div>
-        <div><dt>Gorduras</dt><dd>71 g</dd></div>
-        <div><dt>Fibras</dt><dd>25 a 35 g</dd></div>
-      </dl>
-    </div>
-    <div class="macro rec">
-      <h3>Recarga</h3>
-      <p class="kcal">3100<small>kcal</small></p>
-      <p class="when">Terça-feira: treino com a personal mais futebol às 20:30. Todo o acréscimo vem de carboidrato.</p>
-      <dl>
-        <div><dt>Proteínas<span class="fixed">fixa</span></dt><dd>154 g</dd></div>
-        <div><dt>Carboidratos</dt><dd>460 g</dd></div>
-        <div><dt>Gorduras<span class="fixed">fixa</span></dt><dd>71 g</dd></div>
-        <div><dt>Antes do jogo</dt><dd>baixa fibra</dd></div>
-      </dl>
-    </div>
-  </div>
+  <div class="macros" id="nutri"></div>
 </section>
 
 <footer>
   Cores das anilhas: vermelho 25 kg, azul 20 kg, verde 10 kg (cada card de treino), amarelo 15 kg (recarga).<br>
   <span style="color:var(--green10)">AJUSTE</span>: troca já definida pela personal por conta da lombar. <span style="color:var(--yellow15)">LOMBAR</span>: ponto ainda em aberto.<br>
-  Progresso salvo neste navegador. Atualizado em agosto de 2026.
+  Progresso salvo neste navegador e sincronizado com a sua conta quando você entra.<br>
+  Atualizado em agosto de 2026.
 </footer>
 
 </div>
@@ -721,6 +755,9 @@
       <input id="loginSenha" name="senha" type="password" autocomplete="current-password" required>
     </div>
     <p class="login-erro" id="loginErro" hidden></p>
+    <div class="login-prefs">
+      <label for="prefSemana"><input type="checkbox" id="prefSemana" data-pref="semana"> Mostrar a faixa da semana</label>
+    </div>
     <div class="login-acoes">
       <button class="btn" type="button" data-fechar-login>Fechar</button>
       <button class="btn primario" type="submit" id="loginEnviar">Entrar</button>
@@ -943,7 +980,7 @@ function sincronizar(){
   /* Push antes de pull, sempre: assim o pull nunca sobrescreve edição local
      que ainda não subiu. */
   return push().then(pull).then(function(mudou){
-    if (mudou) render();
+    if (mudou){ renderCabecalho(); render(); renderNutri(); }
   }).catch(function(e){
     ultimoErro = e && e.message ? e.message : 'falha';
   }).then(function(){
@@ -1093,6 +1130,83 @@ function planoAtual(){
   return planos[0];
 }
 
+/* ---------- Nutrição ----------
+   A estrutura (quais cards, quais linhas, os rótulos) é template e continua no
+   código. O que é de cada pessoa são só os VALORES, e esses vivem no
+   localStorage e sobem para o Supabase como qualquer outra chave — mesma fila,
+   mesma lápide, mesmo RLS. Nada de sincronização nova foi preciso.
+
+   Chave: fittracker.nutri.v1.<card>.<campo>
+
+   Quem entra sem nenhum valor vê o mesmo componente com os campos vazios, para
+   preencher. Não existe semente automática: os números de uma pessoa não podem
+   aparecer como se fossem os da outra. */
+/* Preferência de conta, não de aparelho: sincroniza, então quem desliga a faixa
+   da semana a vê desligada em qualquer celular. Padrão é ligada. */
+var KEY_SEMANA = 'fittracker.prefs.v1.semana';
+function mostrarSemana(){ return store.get(KEY_SEMANA) !== '0'; }
+
+var KEY_NUTRI = 'fittracker.nutri.v1.';
+var NUTRI = [
+  {
+    id:'padrao', cls:'pad', nome:'Dia padrão',
+    quando:'Todos os dias sem futebol.',
+    campos:[
+      {id:'prot',  rot:'Proteínas',    un:'g'},
+      {id:'carb',  rot:'Carboidratos', un:'g'},
+      {id:'gord',  rot:'Gorduras',     un:'g'},
+      {id:'fibra', rot:'Fibras',       un:'g', texto:1, dica:'25 a 35'}
+    ]
+  },
+  {
+    id:'recarga', cls:'rec', nome:'Recarga',
+    quando:'Dia de treino com a personal mais futebol. Todo o acréscimo vem de carboidrato.',
+    campos:[
+      {id:'prot',  rot:'Proteínas',    un:'g', fixa:1},
+      {id:'carb',  rot:'Carboidratos', un:'g'},
+      {id:'gord',  rot:'Gorduras',     un:'g', fixa:1},
+      {id:'jogo',  rot:'Antes do jogo', texto:1, dica:'baixa fibra'}
+    ]
+  }
+];
+
+function renderNutri(){
+  var html = '';
+  NUTRI.forEach(function(c){
+    var kKcal = KEY_NUTRI + c.id + '.kcal';
+    var kcal = store.get(kKcal) || '';
+    html += '<div class="macro ' + c.cls + '">' +
+      '<h3>' + c.nome + '</h3>' +
+      '<p class="kcal">' +
+        '<input type="number" inputmode="numeric" step="10" min="0" ' +
+          'value="' + esc(kcal) + '" placeholder="—" data-campo="' + kKcal + '" ' +
+          'aria-label="Calorias · ' + esc(c.nome) + '">' +
+        '<small>kcal</small>' +
+      '</p>' +
+      '<p class="when">' + c.quando + '</p>' +
+      '<dl>';
+
+    c.campos.forEach(function(f){
+      var k = KEY_NUTRI + c.id + '.' + f.id;
+      var v = store.get(k) || '';
+      html += '<div>' +
+        '<dt>' + f.rot + (f.fixa ? '<span class="fixed">fixa</span>' : '') + '</dt>' +
+        '<dd>' +
+          '<input class="' + (f.texto ? 'largo' : '') + '" ' +
+            'type="' + (f.texto ? 'text' : 'number') + '" ' +
+            (f.texto ? '' : 'inputmode="numeric" step="1" min="0" ') +
+            'value="' + esc(v) + '" placeholder="' + esc(f.dica || '—') + '" ' +
+            'data-campo="' + k + '" aria-label="' + esc(f.rot + ' · ' + c.nome) + '">' +
+          (f.un ? '<span class="un">' + f.un + '</span>' : '') +
+        '</dd>' +
+      '</div>';
+    });
+
+    html += '</dl></div>';
+  });
+  document.getElementById('nutri').innerHTML = html;
+}
+
 /* ---------- Estado visível da sincronização ----------
    Fica fora de #planos e de #treinos, então sobrevive a render() e a
    renderAbas(); é sempre esta função que reescreve o botão. */
@@ -1141,6 +1255,7 @@ function abrirLogin(){
     var email = document.getElementById('loginEmail');
     if (email && u && !email.value) email.value = u;
   }
+  document.getElementById('prefSemana').checked = mostrarSemana();
   box.showModal();
 }
 
@@ -1233,7 +1348,12 @@ function renderCabecalho(){
   document.getElementById('treinos').setAttribute('aria-labelledby', 'aba-' + p.id);
   document.title = p.doc;
   renderAbas();
-  renderSemana(p);
+
+  var ver = mostrarSemana();
+  document.getElementById('week').hidden = !ver;
+  document.getElementById('legenda').hidden = !ver;
+  if (ver) renderSemana(p);
+  else document.getElementById('week').innerHTML = '';
 }
 
 function trocarPlano(id){
@@ -1305,7 +1425,7 @@ function render(){
           (e.semKg ? '' :
             '<div class="kgwrap"><label for="' + kgKey + '">KG</label>' +
             '<input class="kg" id="' + kgKey + '" type="number" inputmode="decimal" step="0.5" ' +
-            'value="' + kgVal + '" data-kg="' + kgKey + '" placeholder="—"></div>') +
+            'value="' + kgVal + '" data-campo="' + kgKey + '" placeholder="—"></div>') +
         '</div>' +
       '</li>';
     });
@@ -1429,15 +1549,29 @@ document.addEventListener('submit', function(ev){
   if (ev.target.id === 'loginForm') enviarLogin(ev);
 });
 
+/* Um handler só para todo campo que guarda valor: carga dos exercícios e
+   macros da nutrição. O atributo carrega a chave, então não há tabela de
+   correspondência para manter em sincronia. Campo vazio apaga a chave, que é o
+   que vira lápide e apaga também no servidor. */
 document.addEventListener('change', function(ev){
-  var kg = ev.target.closest('[data-kg]');
-  if (!kg) return;
-  if (kg.value === '') store.del(kg.dataset.kg);
-  else store.set(kg.dataset.kg, kg.value);
+  var pref = ev.target.closest('[data-pref]');
+  if (pref){
+    if (pref.checked) store.del(KEY_SEMANA);      /* ligada é o padrão: sem chave */
+    else store.set(KEY_SEMANA, '0');
+    renderCabecalho();
+    return;
+  }
+
+  var campo = ev.target.closest('[data-campo]');
+  if (!campo) return;
+  var v = campo.value.trim();
+  if (v === '') store.del(campo.dataset.campo);
+  else store.set(campo.dataset.campo, v);
 });
 
 renderCabecalho();
 render();
+renderNutri();
 pintarSync();
 
 /* ---------- Gatilhos de sincronização ----------
