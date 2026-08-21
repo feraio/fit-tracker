@@ -17,6 +17,26 @@ qualquer outra coisa nesta página.
   card (`.treino.a` / `.treino.b`) — componentes novos devem herdá-la em vez de repetir cores.
 - Interface toda em pt-BR, incluindo os `aria-label`.
 
+## Dois planos, uma página
+
+`planos[]` guarda um objeto por plano de treino: o **Ciclo A/B** (em vigor) e o **PPL**
+(anterior, mantido só para consulta). A aba escolhida fica em `fittracker.plano.v1`.
+
+- Cada plano traz o próprio cabeçalho (`eyebrow`, `titulo`, `lede`, `legenda`, `nota`), a
+  própria faixa de semana e os próprios treinos. `renderCabecalho()` reescreve tudo isso, que
+  vive **fora** de `#treinos`; `render()` cuida só dos cards.
+- **Cada plano tem o seu prefixo de persistência** (`key`): `fittracker.ab.v1.` e
+  `fittracker.ppl.v1.`. Trocar de aba nunca mistura séries nem cargas. O prefixo do A/B não
+  muda nunca — é onde já estão os dados salvos no navegador de quem usa a página.
+- A **fase** (retorno / prescrição completa) é global aos dois planos e continua em
+  `fittracker.ab.v1.modo`, no namespace antigo de propósito: trocar essa chave descartaria a
+  fase já salva.
+- As abas seguem o padrão `tablist`, com `aria-selected`, tabindex móvel e navegação por
+  setas. O `keydown` é delegado no `document` pelo mesmo motivo do clique: `renderAbas()`
+  reescreve os botões a cada troca.
+- Os macros do bloco Nutricional são iguais nos dois planos, então ficam fora da alternância.
+- `semKg:1` no exercício esconde o campo de carga (aquecimento, trabalho por tempo).
+
 ## O contrato do `id`
 
 Cada exercício em `treinos[].ex[]` tem um `id` estável que serve para **duas** coisas: chave
@@ -29,6 +49,13 @@ no `localStorage` e nome do arquivo da ilustração em `assets/ex/`.
   inserir um exercício reatribuía séries e cargas ao exercício errado, em silêncio.
 
 ## Convenção de mídia
+
+> **Desligada por ora.** `MIDIA_ATIVA = false` no topo do bloco de mídia. Enquanto for
+> `false`, nenhum ícone é renderizado e nenhuma imagem é requisitada — mas o CSS, o
+> `<dialog>`, o handler de clique, o `img:1` nos dados e o `assets/ex/` continuam todos no
+> lugar. Voltar é virar a constante para `true`, nada mais. A decisão foi desligar em vez de
+> remover justamente para não conflitar com o trabalho de ilustrações ainda em aberto.
+> O resto desta seção descreve o comportamento com a chave ligada.
 
 - `img:1` no objeto do exercício significa que existe `assets/ex/<id>.webp`, e faz aparecer um
   ícone discreto ao lado do nome. Sem `img`, nenhum ícone e nenhuma requisição.

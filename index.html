@@ -44,6 +44,40 @@
   }
   .wrap{max-width:720px;margin:0 auto}
 
+  /* ---------- Abas de plano ---------- */
+  .planos{
+    display:flex;
+    gap:2px;
+    border-bottom:1px solid var(--line);
+  }
+  .plano-tab{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    background:transparent;
+    border:0;
+    border-bottom:2px solid transparent;
+    margin-bottom:-1px;
+    padding:16px 12px 12px;
+    color:var(--ink3);
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .plano-tab em{
+    font-style:normal;
+    font-size:10px;
+    letter-spacing:.06em;
+    color:var(--ink3);
+    margin-left:6px;
+  }
+  .plano-tab[aria-selected="true"]{
+    color:var(--ink);
+    border-bottom-color:var(--red25);
+  }
+  .plano-tab:hover{color:var(--ink)}
+  #treinos:focus{outline:none}
+
   /* ---------- Cabeçalho ---------- */
   header{padding:32px 0 8px}
   .eyebrow{
@@ -197,6 +231,7 @@
   }
   .treino.a{--accent:var(--red25)}
   .treino.b{--accent:var(--blue20)}
+  .treino.c{--accent:var(--green10)}
   .t-head{
     display:flex;
     align-items:center;
@@ -215,6 +250,7 @@
     display:flex;align-items:center;justify-content:center;
     flex:0 0 auto;
   }
+  .badge.sm{font-size:17px;letter-spacing:.02em}
   .t-title{display:flex;flex-direction:column;gap:1px;min-width:0}
   .t-title h3{
     font-family:var(--cond);
@@ -497,12 +533,14 @@
 <body>
 <div class="wrap">
 
-<header>
-  <p class="eyebrow">Central de comando · Ganho de massa</p>
-  <h1>Ciclo <span class="slash">A</span>/<span class="slash">B</span></h1>
-  <p class="lede">Duas sessões próprias por semana, sozinho, somadas aos treinos com a personal na terça e na sexta. Cada grupo muscular uma vez, sem rotação móvel.</p>
+<nav class="planos" id="planos" role="tablist" aria-label="Plano de treino"></nav>
 
-  <p class="legend" style="margin-top:26px">SEMANA FIXA · hoje em destaque</p>
+<header>
+  <p class="eyebrow" id="eyebrow"></p>
+  <h1 id="titulo"></h1>
+  <p class="lede" id="lede"></p>
+
+  <p class="legend" id="legenda" style="margin-top:26px"></p>
   <div class="week" id="week"></div>
 </header>
 
@@ -516,8 +554,8 @@
     <button class="ph" type="button" data-mode="retorno">Retorno · 3 séries</button>
     <button class="ph" type="button" data-mode="completo">Prescrição completa</button>
   </div>
-  <p class="note"><strong>Retorno pós lesão lombar.</strong> Três séries por exercício, confirmado com a personal e alinhado ao que já vem sendo feito nos treinos com ela. A prescrição cheia continua guardada como alvo.</p>
-  <div id="treinos"></div>
+  <p class="note" id="planoNota"></p>
+  <div id="treinos" role="tabpanel" tabindex="-1"></div>
   <button class="btn" id="resetAll">Zerar a semana inteira</button>
 </section>
 
@@ -553,14 +591,15 @@
 </section>
 
 <footer>
-  Cores das anilhas: vermelho 25 kg (Treino A), azul 20 kg (Treino B), amarelo 15 kg (recarga).<br>
+  Cores das anilhas: vermelho 25 kg, azul 20 kg, verde 10 kg (cada card de treino), amarelo 15 kg (recarga).<br>
   <span style="color:var(--green10)">AJUSTE</span>: troca já definida pela personal por conta da lombar. <span style="color:var(--yellow15)">LOMBAR</span>: ponto ainda em aberto.<br>
   Progresso salvo neste navegador. Atualizado em agosto de 2026.
 </footer>
 
 </div>
 
-<!-- Fora de .wrap e de #treinos: render() reescreve #treinos inteiro. -->
+<!-- Fora de .wrap e de #treinos: render() reescreve #treinos inteiro.
+     Inerte enquanto MIDIA_ATIVA for false: nada abre este diálogo. -->
 <dialog id="mediaBox" aria-labelledby="mediaTitulo">
   <div class="mb-head">
     <h4 id="mediaTitulo"></h4>
@@ -578,60 +617,154 @@ var store = {
   set: function(k,v){ try { localStorage.setItem(k,v); } catch(e){ mem[k]=v; } },
   del: function(k){ try { localStorage.removeItem(k); } catch(e){ delete mem[k]; } }
 };
-var KEY = 'fittracker.ab.v1.';
+/* Cada plano tem o seu prefixo de persistência. O do Ciclo A/B não muda nunca:
+   é onde já estão as cargas e as séries salvas no navegador. */
+var KEY_AB = 'fittracker.ab.v1.';
+var KEY_PPL = 'fittracker.ppl.v1.';
+/* A fase (retorno / completa) vale para os dois planos. Fica de propósito no
+   namespace antigo — trocar a chave descartaria a fase já salva. */
+var KEY_MODO = KEY_AB + 'modo';
+var KEY_PLANO = 'fittracker.plano.v1';
 
-/* ---------- Dados ---------- */
-var semana = [
-  {dow:'Seg', mark:'·', what:'Leve: bike ou natação'},
-  {dow:'Ter', mark:'PT', cls:'pt', what:'Personal + futebol'},
-  {dow:'Qua', mark:'·', what:'Repouso'},
-  {dow:'Qui', mark:'B', cls:'b', what:'Superiores, solo'},
-  {dow:'Sex', mark:'PT', cls:'pt', what:'Personal'},
-  {dow:'Sáb', mark:'·', what:'Leve + pesagem'},
-  {dow:'Dom', mark:'A', cls:'a', what:'Pernas, solo'}
-];
+/* ---------- Dados ----------
+   Um objeto por plano. `key` é o prefixo de persistência, e trocar de aba nunca
+   mistura séries nem cargas entre planos.
 
-/* O `id` de cada exercício é contratual: serve de chave de persistência e de nome
+   O `id` de cada exercício é contratual: serve de chave de persistência e de nome
    do arquivo em assets/ex/. Renomear `n` é livre; renomear `id` zera a carga salva
    e quebra o caminho da ilustração.
-   `img:1` marca que existe assets/ex/<id>.webp e faz aparecer o ícone de mídia. */
-var treinos = [
+   `img:1` marca que existe assets/ex/<id>.webp e faz aparecer o ícone de mídia.
+   `semKg:1` esconde o campo de carga (aquecimento, tempo). */
+var planos = [
   {
-    id:'B', cls:'b', nome:'Superiores', dia:'Quinta · sozinho',
-    ex:[
-      {id:'puxada-frontal', n:'Puxada Frontal', s:4, r:'10'},
-      {id:'remada-articulada', n:'Remada Articulada', s:4, r:'10'},
-      {id:'remada-baixa', n:'Remada Baixa', s:4, r:'12'},
-      {id:'pullover', n:'Pullover Máquina', s:3, r:'15'},
-      {id:'supino-inclinado', n:'Supino Inclinado Máquina', s:4, r:'10'},
-      {id:'supino-reto', n:'Supino Reto Máquina', s:4, r:'10'},
-      {id:'desenvolvimento-ombros', n:'Desenv. Ombros Máquina', s:4, r:'10'},
-      {id:'elevacao-lateral', n:'Elevação Lateral Máquina', s:4, r:'12'},
-      {id:'rosca-scott', n:'Rosca Scott Máquina', s:4, r:'10-12'},
-      {id:'triceps', n:'Tríceps Máquina', s:4, r:'10-12'},
-      {id:'abdominal-pulley', n:'Abdominal no Pulley', s:4, r:'20', flag:'Lombar',
-       nota:'Trocado pela personal. Segue sendo flexão de coluna sob carga, então vale controlar a amplitude e revisar as 80 repetições por sessão.'}
+    id:'ab',
+    aba:'Ciclo A/B', abaTag:'atual',
+    key:KEY_AB,
+    doc:'Central de Comando · Ciclo A/B',
+    eyebrow:'Central de comando · Ganho de massa',
+    titulo:'Ciclo <span class="slash">A</span>/<span class="slash">B</span>',
+    lede:'Duas sessões próprias por semana, sozinho, somadas aos treinos com a personal na terça e na sexta. Cada grupo muscular uma vez, sem rotação móvel.',
+    legenda:'SEMANA FIXA · hoje em destaque',
+    nota:'<strong>Retorno pós lesão lombar.</strong> Três séries por exercício, confirmado com a personal e alinhado ao que já vem sendo feito nos treinos com ela. A prescrição cheia continua guardada como alvo.',
+    semana:[
+      {dow:'Seg', mark:'·', what:'Leve: bike ou natação'},
+      {dow:'Ter', mark:'PT', cls:'pt', what:'Personal + futebol'},
+      {dow:'Qua', mark:'·', what:'Repouso'},
+      {dow:'Qui', mark:'B', cls:'b', what:'Superiores, solo'},
+      {dow:'Sex', mark:'PT', cls:'pt', what:'Personal'},
+      {dow:'Sáb', mark:'·', what:'Leve + pesagem'},
+      {dow:'Dom', mark:'A', cls:'a', what:'Pernas, solo'}
+    ],
+    treinos:[
+      {
+        id:'B', cls:'b', nome:'Superiores', sub:'Quinta · sozinho',
+        ex:[
+          {id:'puxada-frontal', n:'Puxada Frontal', s:4, r:'10'},
+          {id:'remada-articulada', n:'Remada Articulada', s:4, r:'10'},
+          {id:'remada-baixa', n:'Remada Baixa', s:4, r:'12'},
+          {id:'pullover', n:'Pullover Máquina', s:3, r:'15'},
+          {id:'supino-inclinado', n:'Supino Inclinado Máquina', s:4, r:'10'},
+          {id:'supino-reto', n:'Supino Reto Máquina', s:4, r:'10'},
+          {id:'desenvolvimento-ombros', n:'Desenv. Ombros Máquina', s:4, r:'10'},
+          {id:'elevacao-lateral', n:'Elevação Lateral Máquina', s:4, r:'12'},
+          {id:'rosca-scott', n:'Rosca Scott Máquina', s:4, r:'10-12'},
+          {id:'triceps', n:'Tríceps Máquina', s:4, r:'10-12'},
+          {id:'abdominal-pulley', n:'Abdominal no Pulley', s:4, r:'20', flag:'Lombar',
+           nota:'Trocado pela personal. Segue sendo flexão de coluna sob carga, então vale controlar a amplitude e revisar as 80 repetições por sessão.'}
+        ]
+      },
+      {
+        id:'A', cls:'a', nome:'Pernas', sub:'Domingo · sozinho',
+        ex:[
+          {id:'agachamento-hack', n:'Agachamento Hack', s:5, r:'10', img:1},
+          {id:'leg-press-reto', n:'Leg Press Reto', s:5, r:'12', flag:'Ajuste', flagOk:true,
+           nota:'Trocado pela personal, no lugar do 45°. Mesmo assim, parar a descida antes do quadril começar a sair do encosto.', notaOk:true},
+          {id:'afundo-smith', n:'Afundo Smith', s:4, r:'10 cada'},
+          {id:'extensora', n:'Extensora', s:4, r:'15 + drop'},
+          {id:'mesa-flexora', n:'Mesa Flexora', s:4, r:'12'},
+          {id:'flexora-sentada', n:'Flexora Sentada', s:4, r:'12'},
+          {id:'stiff-parede', n:'Stiff apoiado na parede', s:4, r:'10', flag:'Ajuste', flagOk:true,
+           nota:'Trocado pela personal, no lugar do Smith. A parede serve de referência para o recuo do quadril, mantendo a lombar neutra.', notaOk:true},
+          {id:'panturrilha-sentado', n:'Panturrilha Sentado', s:5, r:'20'},
+          {id:'panturrilha-leg-press', n:'Panturrilha Leg Press', s:4, r:'20'}
+        ]
+      }
     ]
   },
   {
-    id:'A', cls:'a', nome:'Pernas', dia:'Domingo · sozinho',
-    ex:[
-      {id:'agachamento-hack', n:'Agachamento Hack', s:5, r:'10', img:1},
-      {id:'leg-press-reto', n:'Leg Press Reto', s:5, r:'12', flag:'Ajuste', flagOk:true,
-       nota:'Trocado pela personal, no lugar do 45°. Mesmo assim, parar a descida antes do quadril começar a sair do encosto.', notaOk:true},
-      {id:'afundo-smith', n:'Afundo Smith', s:4, r:'10 cada'},
-      {id:'extensora', n:'Extensora', s:4, r:'15 + drop'},
-      {id:'mesa-flexora', n:'Mesa Flexora', s:4, r:'12'},
-      {id:'flexora-sentada', n:'Flexora Sentada', s:4, r:'12'},
-      {id:'stiff-parede', n:'Stiff apoiado na parede', s:4, r:'10', flag:'Ajuste', flagOk:true,
-       nota:'Trocado pela personal, no lugar do Smith. A parede serve de referência para o recuo do quadril, mantendo a lombar neutra.', notaOk:true},
-      {id:'panturrilha-sentado', n:'Panturrilha Sentado', s:5, r:'20'},
-      {id:'panturrilha-leg-press', n:'Panturrilha Leg Press', s:4, r:'20'}
+    /* Plano anterior, mantido só para consulta. Os exercícios e as prescrições
+       vieram do PPL original (commit 9107c7b), re-expressos nos componentes
+       desta página. */
+    id:'ppl',
+    aba:'PPL', abaTag:'anterior',
+    key:KEY_PPL,
+    doc:'Central de Comando · Ciclo PPL',
+    eyebrow:'Central de comando · Plano anterior',
+    titulo:'Ciclo <span class="slash">PPL</span>',
+    lede:'Push, Pull e Legs em rotação de três treinos: dois solo e dois com a personal por semana. Guardado aqui para consulta — o plano em vigor é o Ciclo A/B.',
+    legenda:'SEMANA BASE · treinos solo em rotação',
+    nota:'<strong>Rotação a cada três semanas.</strong> Quando o T3 (Pernas) caía na terça, o futebol era cancelado; só nesse dia a recarga de 3100 kcal era suspensa, valendo a dieta padrão. Os macros ao pé da página valem para os dois planos.',
+    semana:[
+      {dow:'Seg', mark:'·', what:'Descanso'},
+      {dow:'Ter', mark:'PT', cls:'pt', what:'Personal + futebol'},
+      {dow:'Qua', mark:'·', what:'Descanso'},
+      {dow:'Qui', mark:'T', cls:'pt', what:'Solo · rotação'},
+      {dow:'Sex', mark:'PT', cls:'pt', what:'Personal'},
+      {dow:'Sáb', mark:'·', what:'Livre + pesagem'},
+      {dow:'Dom', mark:'T', cls:'pt', what:'Solo · rotação'}
+    ],
+    treinos:[
+      {
+        id:'T1', cls:'a', nome:'Push', sub:'Peitoral, ombros e tríceps',
+        ex:[
+          {id:'supino-reto', n:'Supino Reto', s:3, r:'8-12'},
+          {id:'supino-inclinado', n:'Supino Inclinado', s:3, r:'8-12'},
+          {id:'desenvolvimento', n:'Desenvolvimento', s:3, r:'8-12'},
+          {id:'elevacao-lateral', n:'Elevação Lateral', s:3, r:'8-12'},
+          {id:'triceps-testa', n:'Tríceps Testa', s:3, r:'8-12'},
+          {id:'triceps-pulley', n:'Tríceps Pulley', s:3, r:'8-12'}
+        ]
+      },
+      {
+        id:'T2', cls:'b', nome:'Pull', sub:'Dorsais, trapézio, bíceps e abdômen',
+        ex:[
+          {id:'barra-fixa', n:'Barra Fixa (aquecimento)', s:3, r:'15', semKg:1},
+          {id:'puxador-frente', n:'Puxador Frente', s:3, r:'8-12'},
+          {id:'remada-unilateral', n:'Remada Unilateral', s:3, r:'8-12'},
+          {id:'encolhimento', n:'Encolhimento de Ombro', s:3, r:'8-12'},
+          {id:'rosca-direta', n:'Rosca Direta', s:3, r:'8-12'},
+          {id:'rosca-alternada', n:'Rosca Alternada', s:3, r:'8-12'},
+          {id:'abdominal-pulley', n:'Abdominal no Pulley', s:3, r:'15'}
+        ]
+      },
+      {
+        id:'T3', cls:'c', nome:'Legs', sub:'Quadríceps, posteriores, panturrilhas e core',
+        ex:[
+          {id:'bike', n:'Bike (aquecimento)', s:1, r:'10 min', semKg:1},
+          {id:'agachamento-hack', n:'Agachamento Hack', s:4, r:'8-12'},
+          {id:'cadeira-extensora', n:'Cadeira Extensora', s:3, r:'8-12'},
+          {id:'stiff', n:'Stiff', s:4, r:'8-12'},
+          {id:'avanco', n:'Avanço', s:3, r:'8-12'},
+          {id:'panturrilha', n:'Panturrilha', s:4, r:'20'}
+        ]
+      }
     ]
   }
 ];
 
-/* ---------- Mídia ---------- */
+var planoId = store.get(KEY_PLANO) || 'ab';
+function planoAtual(){
+  for (var i = 0; i < planos.length; i++){ if (planos[i].id === planoId) return planos[i]; }
+  planoId = planos[0].id;
+  return planos[0];
+}
+
+/* ---------- Mídia ----------
+   DESLIGADA por ora, a retomar depois. Virar MIDIA_ATIVA para true devolve o
+   ícone e o overlay inteiros: o CSS, o <dialog>, o handler de clique e o
+   assets/ex/ continuam todos no lugar, e o `img:1` segue nos dados.
+   Enquanto for false, nenhum ícone é renderizado e nenhuma imagem é requisitada. */
+var MIDIA_ATIVA = false;
 var MEDIA_DIR = 'assets/ex/';
 var ICON_MIDIA =
   '<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" focusable="false">' +
@@ -641,17 +774,20 @@ var ICON_MIDIA =
       'stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>' +
   '</svg>';
 
-function midiaDe(e){ return e.img ? MEDIA_DIR + e.id + '.webp' : ''; }
+function midiaDe(e){ return (MIDIA_ATIVA && e.img) ? MEDIA_DIR + e.id + '.webp' : ''; }
 function esc(s){
   return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 }
 
-/* ---------- Semana ---------- */
-(function(){
+/* ---------- Semana e cabeçalho ----------
+   Tudo isto vive fora de #treinos, então é reescrito por renderCabecalho() na
+   troca de aba, e não por render(). Nenhum listener é religado: a delegação no
+   document cobre os dois. */
+function renderSemana(p){
   var hoje = new Date().getDay();          // 0 domingo
   var idx = hoje === 0 ? 6 : hoje - 1;     // 0 segunda
   var html = '';
-  semana.forEach(function(d,i){
+  p.semana.forEach(function(d,i){
     html += '<div class="day' + (i===idx ? ' today' : '') + '">' +
               '<span class="dow">' + d.dow + '</span>' +
               '<span class="mark ' + (d.cls || '') + '">' + d.mark + '</span>' +
@@ -659,27 +795,64 @@ function esc(s){
             '</div>';
   });
   document.getElementById('week').innerHTML = html;
-})();
+}
+
+function renderAbas(){
+  var html = '';
+  planos.forEach(function(p){
+    var on = p.id === planoId;
+    html += '<button class="plano-tab" type="button" role="tab" id="aba-' + p.id + '" ' +
+            'aria-selected="' + on + '" aria-controls="treinos" ' +
+            'tabindex="' + (on ? '0' : '-1') + '" data-plano="' + p.id + '">' +
+            p.aba + '<em>' + p.abaTag + '</em></button>';
+  });
+  document.getElementById('planos').innerHTML = html;
+}
+
+function renderCabecalho(){
+  var p = planoAtual();
+  document.getElementById('eyebrow').textContent = p.eyebrow;
+  document.getElementById('titulo').innerHTML = p.titulo;
+  document.getElementById('lede').textContent = p.lede;
+  document.getElementById('legenda').textContent = p.legenda;
+  document.getElementById('planoNota').innerHTML = p.nota;
+  document.getElementById('treinos').setAttribute('aria-labelledby', 'aba-' + p.id);
+  document.title = p.doc;
+  renderAbas();
+  renderSemana(p);
+}
+
+function trocarPlano(id){
+  if (id === planoId) return;
+  planoId = id;
+  store.set(KEY_PLANO, id);
+  renderCabecalho();
+  render();
+  var aba = document.getElementById('aba-' + id);
+  if (aba) aba.focus();
+}
 
 /* ---------- Fase ---------- */
 var RETORNO = 3;
-var modo = store.get(KEY + 'modo') || 'retorno';
+var modo = store.get(KEY_MODO) || 'retorno';
 function seriesDe(e){ return modo === 'retorno' ? Math.min(RETORNO, e.s) : e.s; }
 
 /* ---------- Treinos ---------- */
 function render(){
+  var plano = planoAtual();
+  var KEY = plano.key;
   var total = 0;
   var html = '';
   document.querySelectorAll('.ph').forEach(function(b){
     b.setAttribute('aria-pressed', String(b.dataset.mode === modo));
   });
-  treinos.forEach(function(t){
+  plano.treinos.forEach(function(t){
     var soma = t.ex.reduce(function(a,e){ return a + seriesDe(e); }, 0);
     total += soma;
     html += '<article class="treino ' + t.cls + '" data-t="' + t.id + '">' +
       '<div class="t-head">' +
-        '<div class="badge">' + t.id + '</div>' +
-        '<div class="t-title"><h3>' + t.nome + '</h3><span>' + t.dia + '</span></div>' +
+        '<div class="badge' + (t.id.length > 1 ? ' sm' : '') + '">' + t.id + '</div>' +
+        '<div class="t-title"><h3>' + t.nome + '</h3><span>' + t.sub + '</span></div>' +
         '<div class="t-prog"><b data-prog="' + t.id + '">0/' + soma + '</b><small>séries</small></div>' +
       '</div>' +
       '<div class="bar"><i data-bar="' + t.id + '"></i></div>' +
@@ -715,9 +888,10 @@ function render(){
         (e.nota ? '<p class="ex-note' + (e.notaOk ? ' ok' : '') + '">' + e.nota + '</p>' : '') +
         '<div class="ex-bottom">' +
           '<div class="sets">' + chips + '</div>' +
-          '<div class="kgwrap"><label for="' + kgKey + '">KG</label>' +
-          '<input class="kg" id="' + kgKey + '" type="number" inputmode="decimal" step="0.5" ' +
-          'value="' + kgVal + '" data-kg="' + kgKey + '" placeholder="—"></div>' +
+          (e.semKg ? '' :
+            '<div class="kgwrap"><label for="' + kgKey + '">KG</label>' +
+            '<input class="kg" id="' + kgKey + '" type="number" inputmode="decimal" step="0.5" ' +
+            'value="' + kgVal + '" data-kg="' + kgKey + '" placeholder="—"></div>') +
         '</div>' +
       '</li>';
     });
@@ -732,7 +906,7 @@ function render(){
 
   document.getElementById('treinos').innerHTML = html;
   document.getElementById('totalMeta').textContent = total + ' séries por semana';
-  treinos.forEach(function(t){ updateProg(t.id); });
+  plano.treinos.forEach(function(t){ updateProg(t.id); });
 }
 
 function updateProg(id){
@@ -773,6 +947,9 @@ function abrirMidia(src, nome){
 }
 
 document.addEventListener('click', function(ev){
+  var aba = ev.target.closest('[data-plano]');
+  if (aba){ trocarPlano(aba.dataset.plano); return; }
+
   var med = ev.target.closest('[data-media]');
   if (med){
     abrirMidia(med.dataset.media, med.dataset.nome);
@@ -792,7 +969,7 @@ document.addEventListener('click', function(ev){
   var ph = ev.target.closest('.ph');
   if (ph){
     modo = ph.dataset.mode;
-    store.set(KEY + 'modo', modo);
+    store.set(KEY_MODO, modo);
     render();
     return;
   }
@@ -807,12 +984,30 @@ document.addEventListener('click', function(ev){
     return;
   }
   if (ev.target.id === 'resetAll'){
+    /* Varre o DOM, então zera apenas o plano que está em tela. */
     document.querySelectorAll('.set').forEach(function(b){
       b.setAttribute('aria-pressed','false');
       store.del(b.dataset.k);
     });
-    treinos.forEach(function(t){ updateProg(t.id); });
+    planoAtual().treinos.forEach(function(t){ updateProg(t.id); });
   }
+});
+
+/* Navegação por setas entre as abas, como manda o padrão de tablist.
+   Delegado no document pelo mesmo motivo do clique: renderAbas() reescreve os
+   botões a cada troca. */
+document.addEventListener('keydown', function(ev){
+  var aba = ev.target.closest('[data-plano]');
+  if (!aba) return;
+  var passo = ev.key === 'ArrowRight' ? 1 : ev.key === 'ArrowLeft' ? -1 : 0;
+  if (ev.key === 'Home') passo = -planos.length;
+  if (ev.key === 'End') passo = planos.length;
+  if (!passo) return;
+  ev.preventDefault();
+  var i = 0;
+  planos.forEach(function(p,k){ if (p.id === aba.dataset.plano) i = k; });
+  i = Math.max(0, Math.min(planos.length - 1, i + passo));
+  trocarPlano(planos[i].id);
 });
 
 document.addEventListener('change', function(ev){
@@ -822,6 +1017,7 @@ document.addEventListener('change', function(ev){
   else store.set(kg.dataset.kg, kg.value);
 });
 
+renderCabecalho();
 render();
 </script>
 </body>
