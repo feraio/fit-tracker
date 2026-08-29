@@ -8,8 +8,15 @@
 # (Settings > Secrets and variables > Actions). São públicos por natureza, mas
 # ficam como secret para não vazarem nos logs.
 #
-# Atenção: o GitHub desativa workflows agendados após 60 dias sem commits no
-# repositório. Ele avisa por e-mail, e basta reativar na aba Actions.
+# ESTE NÃO É O ÚNICO PINGER, e não deve ser: o GitHub desativa workflow agendado
+# após 60 dias sem commits no repositório. Isso significa que o cenário "parei de
+# treinar e parei de commitar" derruba o keepalive e o banco junto — justamente o
+# caso que ele existe para cobrir. Por isso há um segundo pinger, externo e
+# independente, no cron-job.org, em horário deslocado deste. Os dois falham por
+# motivos não correlacionados; um só não fecha o buraco.
+#
+# Se este aqui for desativado, o GitHub avisa por e-mail e basta reativar na aba
+# Actions — mas confira antes se o externo continua de pé.
 name: Supabase keepalive
 
 on:

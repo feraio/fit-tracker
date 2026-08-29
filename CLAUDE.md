@@ -76,6 +76,18 @@ espera rede**. O Supabase é uma cópia durável por cima disso.
   pessoa com a chave. Nunca colocar a `service_role` na página — ela ignora o RLS.
 - A Ana usa os mesmos `planos[]`, com dados separados por conta. `ana/index.html` só redireciona
   com `?u=`, que pré-preenche o e-mail. A separação real vem do RLS, não da URL.
+- **O `localStorage` tem dono, e `fittracker.sync.dono` é quem diz qual.** Ele sobrevive ao
+  logout de propósito. Sem isso, sair e entrar com outra conta no mesmo aparelho fazia
+  `migrar()` re-enfileirar o `localStorage` de quem saiu, e o push (que vem antes do pull)
+  gravava aquilo na conta de quem entrou, com hora nova — sobrescrevendo os dados dela no
+  servidor, não só vazando. O RLS não protege contra isso: a escrita é autenticada como quem
+  entrou. Por isso `sair()` **não** zera o `migrado`, e `migrar()` só roda em aparelho que nunca
+  teve conta.
+- **Troca de conta com a fila suja não passa.** Se sobrou chave sem enviar, o login da outra
+  conta é recusado com aviso, em vez de escolher sozinho entre gravar na conta errada e
+  descartar treino. Fila vazia: as chaves da conta anterior são apagadas e a tela é repintada
+  ali mesmo — o pull não redesenha quando volta vazio, e a tela ficaria mostrando o treino de
+  quem saiu.
 - **Um handler para todo campo que guarda valor.** Carga dos exercícios e macros da nutrição
   usam o mesmo `data-campo`, que carrega a própria chave — não existe tabela de correspondência
   para manter em sincronia. Campo esvaziado apaga a chave, e é isso que vira lápide.
@@ -149,9 +161,63 @@ Estas ausências foram escolhidas. Reintroduzi-las é regressão, não melhoria.
   destoa do tom da página.
 - **Sem biblioteca de lightbox, carrossel, swipe ou zoom customizado.** O `<dialog>` nativo já
   entrega ESC, backdrop e trap de foco.
-- **Offline / service worker está fora de escopo por decisão**, a tratar em outro momento.
-  (O GitHub Pages serve com `max-age=600`, então o cache HTTP sozinho não garante a imagem
-  sem sinal — é um problema real, só não é deste escopo.)
+- **Sem cadastro, magic link ou recuperação de senha na página.** O único endpoint de auth em
+  uso é `token?grant_type=…`; conta é criada na mão no painel do Supabase. São duas contas, e
+  cada tela dessas é rede a mais no caminho de quem só quer marcar uma série. Isto é uma
+  ausência conhecida, não um esquecimento — se um dia houver mais gente, reavaliar.
+
+(A antiga entrada sobre offline / service worker saiu: `sw.js` existe desde então, e a seção
+"Service worker" acima descreve o que ficou.)
+
+## Plataforma: por que continua Supabase + GitHub Pages
+
+Migrar para **Vercel + Turso** (com Better-Auth ou Clerk) foi avaliado em agosto de 2026 e
+recusado. As três razões, para não reabrir do zero:
+
+- **Não há segredo a esconder.** A `sb_publishable_…` no fonte é pública por design; quem
+  protege os dados é o RLS. "Esconder a chave num `.env` no servidor" resolve um problema que
+  esta página não tem.
+- **Turso não tem RLS, e o token dele é acesso total de leitura e escrita.** Ele não pode ir ao
+  browser, então a function no servidor deixaria de ser escolha e viraria obrigação — e a
+  separação Felipe/Ana sairia do Postgres para virar um `WHERE user_id = ?` escrito à mão em
+  cada rota. Errar isso não dá erro, dá dado errado. É downgrade de segurança, não upgrade.
+- **O Supabase pausar é problema de pinger, não de plataforma.** Ver a seção abaixo.
+
+Storage nunca foi o gargalo: os dados são alguns KB, e o free do Supabase dá 500MB.
+
+### Se a migração voltar à mesa
+
+Cinco armadilhas, todas silenciosas — nenhuma delas dá erro, todas dão dado errado:
+
+1. **`sw.js` ignora cross-origin, e é só por isso que ele não cacheia o Supabase.** Uma API em
+   `/api/*` na Vercel seria **same-origin** e passaria a ser cacheada: resposta velha de sync,
+   que é exatamente o que o comentário no `fetch` handler existe para evitar. Exigiria excluir
+   `/api/` explicitamente.
+2. **`estado_toca` precisa de equivalente.** Sem carimbo de servidor no UPDATE, o cursor delta
+   nunca avança e todo aparelho fica permanentemente desatualizado naquela chave.
+3. **O cursor `desde` é comparação lexicográfica de string** sobre o formato de timestamp que o
+   servidor devolve. SQLite não tem `timestamptz`; mudar o formato (`Z` vs `+00:00`, com ou sem
+   fração) para a sincronização sem avisar.
+4. **`valor: null` é lápide, não `DELETE`.** Middleware que limpe nulls do JSON faz desmarcar
+   série parar de propagar.
+5. **`user_id` nunca é enviado pelo cliente** — vem do `default auth.uid()`. Qualquer backend
+   novo tem que derivar o dono do token no servidor, ou o upsert perde a coluna de dono.
+
+## Keepalive: o banco não pode pausar
+
+O plano gratuito do Supabase pausa o projeto após 7 dias sem atividade, e religar é manual no
+painel. Treinar já mantém vivo; o risco é férias ou lesão.
+
+- **São dois pingers, de propósito.** `.github/workflows/supabase-keepalive.yml` roda a cada 3
+  dias, e há um segundo no cron-job.org, externo e em horário deslocado.
+- **Um só não basta**, e não é redundância paranoica: o GitHub desativa workflow agendado após
+  60 dias sem commits no repositório. Ou seja, "parei de treinar e parei de commitar" derruba o
+  workflow e o banco junto — que é precisamente o cenário que ele deveria cobrir. Os dois
+  pingers falham por motivos não correlacionados.
+- Não trocar por `pg_cron` dentro do próprio Supabase: a atividade que conta para o timer é
+  requisição externa.
+- A página não depende disso para funcionar. Banco pausado significa sync parado, não treino
+  perdido — o `localStorage` continua sendo a fonte de verdade.
 
 ## Ilustrações: origem e licença
 
