@@ -822,6 +822,10 @@ var KEY_FILA    = 'fittracker.sync.fila';
 var KEY_DESDE   = 'fittracker.sync.desde';
 var KEY_SESSAO  = 'fittracker.sync.sessao';
 var KEY_MIGRADO = 'fittracker.sync.migrado';
+/* De quem é o dado que está neste localStorage. Sobrevive ao logout de
+   propósito: é a única coisa que denuncia, no login seguinte, que o que está
+   guardado aqui é de outra conta. */
+var KEY_DONO    = 'fittracker.sync.dono';
 
 /* A aba escolhida é preferência de aparelho, não dado de treino: sincronizar
    faria o celular pular de aba porque o tablet foi aberto. */
@@ -849,6 +853,12 @@ function sujar(k){
    sem baixar biblioteca nenhuma na rede da academia. */
 var sessao = null;
 try { sessao = JSON.parse(bruto.get(KEY_SESSAO) || 'null'); } catch(e){ sessao = null; }
+
+/* Aparelho que já estava logado antes desta versão não tem dono gravado. Sem
+   preencher aqui, a primeira troca de conta nele ainda passaria batida. */
+if (sessao && sessao.user && sessao.user.id && !bruto.get(KEY_DONO)){
+  bruto.set(KEY_DONO, sessao.user.id);
+}
 
 function syncLigado(){ return !!(SUPA_URL && SUPA_KEY); }
 function logado(){ return !!(sessao && sessao.access_token); }
@@ -881,9 +891,15 @@ function entrar(email, senha){
 function sair(){
   salvarSessao(null);
   /* O cursor do delta é por conta: zerar evita que a próxima pessoa a entrar
-     neste aparelho perca o primeiro lote de mudanças. */
+     neste aparelho perca o primeiro lote de mudanças.
+
+     O dono e o `migrado` ficam. Zerar o `migrado` aqui é o que fazia `migrar()`
+     re-enfileirar, no login seguinte, o localStorage de quem tinha acabado de
+     sair — e como o push vem antes do pull, aquilo era gravado na conta de quem
+     entrou. Os dados também ficam: a fila pode estar suja e o aparelho offline,
+     e apagar aqui perderia treino que ainda não subiu. Quem trata a troca de
+     conta é `enviarLogin`, que é onde se sabe quem chegou. */
   bruto.del(KEY_DESDE);
-  bruto.del(KEY_MIGRADO);
   pintarSync();
 }
 
@@ -970,6 +986,23 @@ function migrar(){
   } catch(e){}
   gravarFila(f);
   bruto.set(KEY_MIGRADO, '1');
+}
+
+/* Tira do aparelho o que é da conta que saiu. A fila e o cursor vão junto: os
+   dois são por conta, e um cursor herdado faria o pull da conta nova começar do
+   meio. O dono e a preferência de aba ficam — `sincronizavel()` já os exclui.
+   Coleta antes de apagar: `localStorage.key(i)` reindexa a cada remoção. */
+function limparDados(){
+  var mortas = [], k;
+  try {
+    for (var i = 0; i < localStorage.length; i++){
+      k = localStorage.key(i);
+      if (sincronizavel(k)) mortas.push(k);
+    }
+  } catch(e){}
+  for (var j = 0; j < mortas.length; j++) bruto.del(mortas[j]);
+  bruto.del(KEY_FILA);
+  bruto.del(KEY_DESDE);
 }
 
 /* ---------- Orquestração ---------- */
@@ -1282,14 +1315,44 @@ function enviarLogin(ev){
 
   var email = document.getElementById('loginEmail').value.trim();
   var senha = document.getElementById('loginSenha').value;
+  /* Antes de entrar, porque entrar troca a sessão. */
+  var donoAntes = bruto.get(KEY_DONO);
   erro.hidden = true;
   enviar.disabled = true;
   enviar.textContent = 'Entrando…';
 
-  entrar(email, senha).then(function(){
+  entrar(email, senha).then(function(s){
+    var dono = s.user && s.user.id;
+
+    /* Conta diferente da que deixou dado aqui: o localStorage é de outra
+       pessoa. Deixar passar faria o push (que vem antes do pull) gravar o
+       treino de um na conta do outro, com hora nova — e o RLS não impede,
+       porque a escrita é autenticada como quem entrou. */
+    if (donoAntes && dono && donoAntes !== dono){
+      var pend = lerFila().length;
+      if (pend){
+        /* Subir agora escreveria na conta errada; apagar perderia treino de
+           verdade. Nenhuma das duas é do computador decidir. */
+        salvarSessao(null);
+        throw new Error('Este aparelho tem ' + pend + (pend > 1 ? ' mudanças' : ' mudança') +
+                        ' da conta anterior ainda sem enviar. Entre com ela, espere sincronizar, ' +
+                        'e só então troque de conta.');
+      }
+      limparDados();
+      /* Repintar aqui, e não deixar para o pull: se a conta nova ainda não tem
+         nada, o pull volta vazio, `sincronizar()` não redesenha, e a tela
+         continuaria mostrando o treino de quem saiu. */
+      renderCabecalho(); render(); renderNutri();
+    }
+    if (dono) bruto.set(KEY_DONO, dono);
+
     document.getElementById('loginSenha').value = '';
     box.close();
-    migrar();          /* o que já estava neste aparelho precisa subir */
+    /* Só aparelho que nunca teve conta tem dado solto para subir. Se já teve, o
+       que estava aqui ou já subiu, ou acabou de ser apagado por ser de outra
+       conta — re-enfileirar carimbaria hora nova em valor velho e derrubaria o
+       que outro aparelho gravou depois. */
+    if (!donoAntes) migrar();
     pintarSync();
     return sincronizar();
   }).catch(function(e){
