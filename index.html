@@ -822,6 +822,10 @@ var KEY_FILA    = 'fittracker.sync.fila';
 var KEY_DESDE   = 'fittracker.sync.desde';
 var KEY_SESSAO  = 'fittracker.sync.sessao';
 var KEY_MIGRADO = 'fittracker.sync.migrado';
+/* De quem é o dado que está neste localStorage. Sobrevive ao logout de
+   propósito: é a única coisa que denuncia, no login seguinte, que o que está
+   guardado aqui é de outra conta. */
+var KEY_DONO    = 'fittracker.sync.dono';
 
 /* A aba escolhida é preferência de aparelho, não dado de treino: sincronizar
    faria o celular pular de aba porque o tablet foi aberto. */
@@ -849,6 +853,12 @@ function sujar(k){
    sem baixar biblioteca nenhuma na rede da academia. */
 var sessao = null;
 try { sessao = JSON.parse(bruto.get(KEY_SESSAO) || 'null'); } catch(e){ sessao = null; }
+
+/* Aparelho que já estava logado antes desta versão não tem dono gravado. Sem
+   preencher aqui, a primeira troca de conta nele ainda passaria batida. */
+if (sessao && sessao.user && sessao.user.id && !bruto.get(KEY_DONO)){
+  bruto.set(KEY_DONO, sessao.user.id);
+}
 
 function syncLigado(){ return !!(SUPA_URL && SUPA_KEY); }
 function logado(){ return !!(sessao && sessao.access_token); }
@@ -881,9 +891,22 @@ function entrar(email, senha){
 function sair(){
   salvarSessao(null);
   /* O cursor do delta é por conta: zerar evita que a próxima pessoa a entrar
-     neste aparelho perca o primeiro lote de mudanças. */
+     neste aparelho perca o primeiro lote de mudanças.
+
+     O dono e o `migrado` ficam. Zerar o `migrado` aqui é o que fazia `migrar()`
+     re-enfileirar, no login seguinte, o localStorage de quem tinha acabado de
+     sair — e como o push vem antes do pull, aquilo era gravado na conta de quem
+     entrou. Os dados também ficam: a fila pode estar suja e o aparelho offline,
+     e apagar aqui perderia treino que ainda não subiu. Quem trata a troca de
+     conta é `enviarLogin`, que é onde se sabe quem chegou. */
   bruto.del(KEY_DESDE);
-  bruto.del(KEY_MIGRADO);
+  /* Nova geração: o que estiver em voo pela conta que saiu perde a validade.
+     Sem soltar o `emVoo` aqui, um sync que ficou pendurado na conta anterior
+     faria o primeiro `sincronizar()` de quem entrar a seguir devolver na hora,
+     e a pessoa ficaria olhando para uma tela vazia até trocar de aba. */
+  geracao++;
+  clearTimeout(timerSync);
+  emVoo = false;
   pintarSync();
 }
 
@@ -898,6 +921,9 @@ function renovar(){
 
 /* 401 significa access_token vencido: renova uma vez e repete. */
 function rest(caminho, opcoes, jaRenovou){
+  /* Sair no meio de um sync deixa a sessão nula entre o push e o pull, e a
+     linha do Bearer estouraria em cima dela. */
+  if (!logado()) return Promise.reject(new Error('sem sessão'));
   opcoes = opcoes || {};
   var h = opcoes.headers || {};
   h['apikey'] = SUPA_KEY;
@@ -912,7 +938,7 @@ function rest(caminho, opcoes, jaRenovou){
 }
 
 /* ---------- Push e pull ---------- */
-function push(){
+function push(g){
   var fila = lerFila();
   if (!fila.length) return Promise.resolve(false);
   var linhas = fila.map(function(k){ return {chave:k, valor: bruto.get(k)}; });
@@ -922,6 +948,9 @@ function push(){
     body: JSON.stringify(linhas)
   }).then(function(r){
     if (!r.ok) throw new Error('push ' + r.status);
+    /* Trocou de conta enquanto isto subia: a fila agora é da conta nova, e
+       mexer nela aqui apagaria o que ainda não subiu para ela. */
+    if (g !== geracao) return false;
     /* Tira da fila só o que subiu: uma chave sujada durante a requisição
        continua na fila e sobe na próxima rodada. */
     var restante = lerFila().filter(function(k){ return fila.indexOf(k) === -1; });
@@ -930,7 +959,7 @@ function push(){
   });
 }
 
-function pull(){
+function pull(g){
   var desde = bruto.get(KEY_DESDE) || '1970-01-01T00:00:00Z';
   var url = 'estado?select=chave,valor,atualizado_em' +
             '&atualizado_em=gt.' + encodeURIComponent(desde) +
@@ -939,6 +968,9 @@ function pull(){
     if (!r.ok) throw new Error('pull ' + r.status);
     return r.json();
   }).then(function(linhas){
+    /* Estas linhas são da conta que pediu, e ela já saiu. Gravar aqui devolveria
+       o treino dela ao aparelho e ainda adiantaria o cursor da conta nova. */
+    if (g !== geracao) return false;
     var fila = lerFila(), mudou = false, maior = desde;
     linhas.forEach(function(l){
       if (l.atualizado_em > maior) maior = l.atualizado_em;
@@ -957,25 +989,67 @@ function pull(){
   });
 }
 
-/* Primeira entrada neste aparelho: tudo que já está no localStorage precisa
-   subir, senão o que foi treinado antes do login ficaria só aqui. */
+/* Toda chave de dado que existe neste aparelho, do localStorage e também do
+   `mem` — o fallback de quando o localStorage recusa gravar. Uma varredura só,
+   usada pela migração e pela limpeza: eram duas cópias da mesma coisa, e quem
+   mexesse em uma esquecia a outra. Devolve null quando não deu para enumerar,
+   porque o custo de não saber é diferente para cada chamador. */
+function chavesSincronizaveis(){
+  var achadas = {}, lista = [], k, i;
+  try {
+    for (i = 0; i < localStorage.length; i++){
+      k = localStorage.key(i);
+      if (sincronizavel(k)) achadas[k] = 1;
+    }
+  } catch(e){ return null; }
+  for (k in mem){ if (sincronizavel(k)) achadas[k] = 1; }
+  for (k in achadas) lista.push(k);
+  return lista;
+}
+
+/* Primeira entrada neste aparelho: tudo que já está guardado precisa subir,
+   senão o que foi treinado antes do login ficaria só aqui. Best effort — não
+   conseguir enumerar significa não subir, que é ruim mas não estraga nada. */
 function migrar(){
   if (bruto.get(KEY_MIGRADO)) return;
-  var f = lerFila(), k;
-  try {
-    for (var i = 0; i < localStorage.length; i++){
-      k = localStorage.key(i);
-      if (sincronizavel(k) && f.indexOf(k) === -1) f.push(k);
-    }
-  } catch(e){}
+  var f = lerFila();
+  (chavesSincronizaveis() || []).forEach(function(k){
+    if (f.indexOf(k) === -1) f.push(k);
+  });
   gravarFila(f);
   bruto.set(KEY_MIGRADO, '1');
+}
+
+/* Tira do aparelho o que é da conta que saiu. A fila e o cursor vão junto: os
+   dois são por conta, e um cursor herdado faria o pull da conta nova começar do
+   meio. O dono e a preferência de aba ficam — `sincronizavel()` já os exclui.
+   Coleta antes de apagar: `localStorage.key(i)` reindexa a cada remoção.
+
+   Devolve false se não deu para varrer. Aqui isso não é best effort: seguir em
+   frente gravaria o dono novo por cima de dado que continua sendo do antigo, e
+   a partir daí a checagem de troca de conta nunca mais dispararia para ele. */
+function limparDados(){
+  var chaves = chavesSincronizaveis();
+  if (!chaves) return false;
+  for (var i = 0; i < chaves.length; i++) bruto.del(chaves[i]);
+  bruto.del(KEY_FILA);
+  bruto.del(KEY_DESDE);
+  return true;
 }
 
 /* ---------- Orquestração ---------- */
 var emVoo = false;
 var timerSync = null;
 var ultimoErro = '';
+
+/* Sobe a cada saída e a cada troca de conta. Uma requisição em voo é despachada
+   com a geração da conta que a pediu; se a geração mudar antes da resposta
+   chegar, o que voltou é de outra conta e vai fora. Sem isto, um pull lento do
+   Felipe que aterrissa depois da Ana entrar reescreve o localStorage dela com o
+   dado dele e ainda deixa o cursor `desde` na hora dele — e aí a Ana nunca mais
+   recebe as próprias linhas neste aparelho, porque todas são anteriores ao
+   cursor. Rede de academia é exatamente onde uma resposta demora esse tanto. */
+var geracao = 0;
 
 function agendarSync(){
   if (!syncLigado() || !logado()) return;
@@ -987,16 +1061,19 @@ function agendarSync(){
 function sincronizar(){
   if (!syncLigado() || !logado() || emVoo) return Promise.resolve();
   if (!navigator.onLine){ pintarSync(); return Promise.resolve(); }
+  var g = geracao;
   emVoo = true;
   ultimoErro = '';
   pintarSync();
   /* Push antes de pull, sempre: assim o pull nunca sobrescreve edição local
      que ainda não subiu. */
-  return push().then(pull).then(function(mudou){
+  return push(g).then(function(){ return pull(g); }).then(function(mudou){
     if (mudou){ renderCabecalho(); render(); renderNutri(); }
   }).catch(function(e){
+    if (g !== geracao) return;                 /* erro de conta que já saiu */
     ultimoErro = e && e.message ? e.message : 'falha';
   }).then(function(){
+    if (g !== geracao) return;                 /* quem manda agora é a rodada nova */
     emVoo = false;
     pintarSync();
   });
@@ -1264,6 +1341,18 @@ function abrirLogin(){
   } else {
     ajuda.textContent = 'Entrar sincroniza o progresso entre os aparelhos. Sem entrar, tudo continua salvo só neste navegador.';
     enviar.textContent = 'Entrar';
+    /* Abrir o diálogo logado troca estes campos pelo nome de quem está logado,
+       então depois de sair eles precisam voltar. Sem isto, sair e entrar de novo
+       só era possível recarregando a página — que é justamente o caminho que a
+       recusa por fila suja pede para percorrer. */
+    if (!document.getElementById('loginEmail')){
+      campos.innerHTML =
+        '<label for="loginEmail">E-mail</label>' +
+        '<input id="loginEmail" name="email" type="email" autocomplete="username" ' +
+               'inputmode="email" autocapitalize="none" spellcheck="false" required>' +
+        '<label for="loginSenha">Senha</label>' +
+        '<input id="loginSenha" name="senha" type="password" autocomplete="current-password" required>';
+    }
     var u = new URLSearchParams(location.search).get('u');
     var email = document.getElementById('loginEmail');
     if (email && u && !email.value) email.value = u;
@@ -1282,14 +1371,59 @@ function enviarLogin(ev){
 
   var email = document.getElementById('loginEmail').value.trim();
   var senha = document.getElementById('loginSenha').value;
+  /* Antes de entrar, porque entrar troca a sessão. */
+  var donoAntes = bruto.get(KEY_DONO);
   erro.hidden = true;
   enviar.disabled = true;
   enviar.textContent = 'Entrando…';
 
-  entrar(email, senha).then(function(){
+  entrar(email, senha).then(function(s){
+    var dono = s.user && s.user.id;
+
+    /* Sem saber de quem é a sessão não dá para dizer se o dado daqui é dela.
+       Uma guarda contra gravar na conta errada tem que falhar fechada. */
+    if (!dono){
+      salvarSessao(null);
+      throw new Error('A resposta do servidor não disse de quem é a conta. Tente de novo.');
+    }
+
+    /* Conta diferente da que deixou dado aqui: o localStorage é de outra
+       pessoa. Deixar passar faria o push (que vem antes do pull) gravar o
+       treino de um na conta do outro, com hora nova — e o RLS não impede,
+       porque a escrita é autenticada como quem entrou. */
+    if (donoAntes && donoAntes !== dono){
+      var pend = lerFila().length;
+      if (pend){
+        /* Subir agora escreveria na conta errada; apagar perderia treino de
+           verdade. Nenhuma das duas é do computador decidir. */
+        salvarSessao(null);
+        throw new Error('Este aparelho tem ' + pend + (pend > 1 ? ' mudanças' : ' mudança') +
+                        ' da conta anterior ainda sem enviar. Entre com ela, espere sincronizar, ' +
+                        'e só então troque de conta.');
+      }
+      if (!limparDados()){
+        salvarSessao(null);
+        throw new Error('Não foi possível limpar os dados da conta anterior neste navegador. ' +
+                        'Sem isso, o treino de um iria para a conta do outro.');
+      }
+      /* Conta nova a partir daqui: o que a anterior deixou em voo não vale
+         mais, e o `sincronizar()` lá embaixo precisa ser uma rodada nova. */
+      geracao++;
+      emVoo = false;
+      /* Repintar aqui, e não deixar para o pull: se a conta nova ainda não tem
+         nada, o pull volta vazio, `sincronizar()` não redesenha, e a tela
+         continuaria mostrando o treino de quem saiu. */
+      renderCabecalho(); render(); renderNutri();
+    }
+    bruto.set(KEY_DONO, dono);
+
     document.getElementById('loginSenha').value = '';
     box.close();
-    migrar();          /* o que já estava neste aparelho precisa subir */
+    /* Só aparelho que nunca teve conta tem dado solto para subir. Se já teve, o
+       que estava aqui ou já subiu, ou acabou de ser apagado por ser de outra
+       conta — re-enfileirar carimbaria hora nova em valor velho e derrubaria o
+       que outro aparelho gravou depois. */
+    if (!donoAntes) migrar();
     pintarSync();
     return sincronizar();
   }).catch(function(e){
@@ -1381,11 +1515,18 @@ function trocarPlano(id){
 
 /* ---------- Fase ---------- */
 var RETORNO = 3;
-var modo = store.get(KEY_MODO) || 'retorno';
+var modo = 'retorno';
+/* Reler em vez de confiar na cópia em memória: a fase muda por baixo quando o
+   pull traz a de outro aparelho, e quando a troca de conta apaga a chave. Nos
+   dois casos a variável ficaria com o valor de antes e a página desenharia a
+   prescrição errada — 5 séries para quem está em retorno, ou o contrário. */
+function lerModo(){ modo = store.get(KEY_MODO) || 'retorno'; }
+lerModo();
 function seriesDe(e){ return modo === 'retorno' ? Math.min(RETORNO, e.s) : e.s; }
 
 /* ---------- Treinos ---------- */
 function render(){
+  lerModo();
   var plano = planoAtual();
   var KEY = plano.key;
   var total = 0;

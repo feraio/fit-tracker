@@ -8,8 +8,15 @@
 # (Settings > Secrets and variables > Actions). São públicos por natureza, mas
 # ficam como secret para não vazarem nos logs.
 #
-# Atenção: o GitHub desativa workflows agendados após 60 dias sem commits no
-# repositório. Ele avisa por e-mail, e basta reativar na aba Actions.
+# ESTE NÃO É O ÚNICO PINGER, e não deve ser: o GitHub desativa workflow agendado
+# após 60 dias sem commits no repositório. Isso significa que o cenário "parei de
+# treinar e parei de commitar" derruba o keepalive e o banco junto — justamente o
+# caso que ele existe para cobrir. Por isso há um segundo pinger, externo e
+# independente, no cron-job.org, em horário deslocado deste. Os dois falham por
+# motivos não correlacionados; um só não fecha o buraco.
+#
+# Se este aqui for desativado, o GitHub avisa por e-mail e basta reativar na aba
+# Actions — mas confira antes se o externo continua de pé.
 name: Supabase keepalive
 
 on:
@@ -27,13 +34,27 @@ jobs:
             echo "SUPABASE_URL não configurado — nada a fazer."
             exit 0
           fi
-          codigo=$(curl -s -o /dev/null -w '%{http_code}' \
+          cabecalhos=$(curl -s -D - -o /dev/null \
             -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
             "${{ secrets.SUPABASE_URL }}/rest/v1/estado?select=chave&limit=1")
-          echo "HTTP $codigo"
+          codigo=$(printf '%s' "$cabecalhos" | head -1 | tr -d '\r' | cut -d' ' -f2)
+          cache=$(printf '%s' "$cabecalhos" | tr -d '\r' \
+                  | grep -i '^cf-cache-status:' | cut -d' ' -f2)
+          echo "HTTP ${codigo:-000} | CF-Cache-Status: ${cache:-ausente}"
+
           # 200 com [] é o esperado: sem JWT o RLS não devolve linha nenhuma.
           # Qualquer 2xx/4xx serve como atividade; 5xx ou 000 indica projeto fora.
           case "$codigo" in
-            2*|4*) echo "Projeto acordado." ;;
-            *) echo "::error::Projeto pode estar pausado (HTTP $codigo)"; exit 1 ;;
+            2*|4*) ;;
+            *) echo "::error::Projeto pode estar pausado (HTTP ${codigo:-000})"; exit 1 ;;
           esac
+
+          # O status sozinho não prova nada: um HIT é um 200 idêntico servido
+          # pelo Cloudflare sem tocar no Postgres, e o timer de inatividade
+          # continuaria correndo com o histórico todo verde. DYNAMIC é o que diz
+          # que a requisição chegou no banco. Ausente não reprova — só o HIT.
+          if [ "$cache" = "HIT" ]; then
+            echo "::error::Resposta veio do cache do Cloudflare: o ping não marcou atividade."
+            exit 1
+          fi
+          echo "Projeto acordado."
