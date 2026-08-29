@@ -209,7 +209,14 @@ O plano gratuito do Supabase pausa o projeto após 7 dias sem atividade, e relig
 painel. Treinar já mantém vivo; o risco é férias ou lesão.
 
 - **São dois pingers, de propósito.** `.github/workflows/supabase-keepalive.yml` roda a cada 3
-  dias, e há um segundo no cron-job.org, externo e em horário deslocado.
+  dias, e há um segundo no cron-job.org, externo, **diário** e em horário deslocado. Diário e não
+  a cada 3 dias porque o agendador de lá é grade de dia-do-mês, não expressão cron: "a cada 3
+  dias" só sairia marcando 1, 4, 7… que desalinha na virada do mês. Diário custa o mesmo e
+  sobra margem.
+- **O que confirma que o ping vale é `CF-Cache-Status: DYNAMIC` na resposta.** `HIT` seria um
+  200 idêntico servido pelo Cloudflare sem tocar no Postgres — um pinger que parece saudável e
+  não marca atividade nenhuma. Ao mexer no endereço ou nos headers, conferir isso, e não só o
+  código de status. `Content-Length: 2` (o `[]`) mostra que o RLS fez o seu papel.
 - **Um só não basta**, e não é redundância paranoica: o GitHub desativa workflow agendado após
   60 dias sem commits no repositório. Ou seja, "parei de treinar e parei de commitar" derruba o
   workflow e o banco junto — que é precisamente o cenário que ele deveria cobrir. Os dois
