@@ -81,8 +81,15 @@ espera rede**. O Supabase é uma cópia durável por cima disso.
   `migrar()` re-enfileirar o `localStorage` de quem saiu, e o push (que vem antes do pull)
   gravava aquilo na conta de quem entrou, com hora nova — sobrescrevendo os dados dela no
   servidor, não só vazando. O RLS não protege contra isso: a escrita é autenticada como quem
-  entrou. Por isso `sair()` **não** zera o `migrado`, e `migrar()` só roda em aparelho que nunca
-  teve conta.
+  entrou. Por isso `sair()` **não** zera o `migrado`, e `migrar()` só roda em aparelho sem dono
+  gravado. Fica uma janela conhecida: aparelho deslogado *antes* desta versão não tem dono, e é
+  indistinguível de um que nunca teve conta — fechar por heurística quebraria o primeiro login
+  de verdade, que é o caso comum. Fecha sozinha no primeiro login já com esta versão.
+- **Resposta em voo é da conta que a pediu.** `geracao` sobe a cada saída e a cada troca; push e
+  pull carregam a geração de quando saíram e descartam o resultado se ela mudou. Sem isso um
+  pull lento que aterrissa depois da troca reescreve o localStorage com o dado de quem saiu e
+  ainda adianta o cursor `desde` — e a conta nova nunca mais recebe as próprias linhas naquele
+  aparelho, porque todas são anteriores ao cursor.
 - **Troca de conta com a fila suja não passa.** Se sobrou chave sem enviar, o login da outra
   conta é recusado com aviso, em vez de escolher sozinho entre gravar na conta errada e
   descartar treino. Fila vazia: as chaves da conta anterior são apagadas e a tela é repintada
