@@ -29,9 +29,14 @@ qualquer outra coisa nesta página.
 só para consulta) e a **Bike** (intervalado, somente leitura). A aba escolhida fica em
 `fittracker.plano.v1`.
 
-- Cada plano traz o próprio cabeçalho (`eyebrow`, `titulo`, `lede`, `legenda`, `nota`), a
-  própria faixa de semana e os próprios treinos. `renderCabecalho()` reescreve tudo isso, que
-  vive **fora** de `#treinos`; `render()` cuida só dos cards.
+- Cada plano traz o próprio cabeçalho (`eyebrow`, `titulo`, `lede`) e os próprios treinos.
+  `renderCabecalho()` reescreve o cabeçalho, que vive **fora** de `#treinos`; `render()` cuida
+  só dos cards.
+- **Não existe mais faixa da semana nem caixa de nota por plano.** As duas saíram na revisão da
+  aba da bike: o calendário porque a informação já está no nome de cada card ("Quinta · sozinho"),
+  e as notas porque a de retorno lombar repetia o que o botão de fase já diz, e a de rotação do
+  PPL descrevia um plano que não está em vigor. Voltar a pôr bloco fixo entre o cabeçalho e os
+  cards custa a primeira tela do celular, que é o recurso mais escasso desta página.
 - **Cada plano tem o seu prefixo de persistência** (`key`): `fittracker.ab.v1.` e
   `fittracker.ppl.v1.`. Trocar de aba nunca mistura séries nem cargas. O prefixo do A/B não
   muda nunca — é onde já estão os dados salvos no navegador de quem usa a página.
@@ -120,10 +125,9 @@ vigente para conferir em cima do aparelho, e não recebe input nenhum.
   Trocar de versão é um deploy, não uma edição de dados.
 - **O componente é desenhado para ser lido de longe**, com o corpo em movimento: número grande
   sempre na mesma coluna à direita, uma etapa por linha, e o bloco principal destacado com o
-  `--accent` do card. Por isso o critério de avanço fica no **pé** do card, e o plano não tem
-  `nota`: a caixa amarela acima empurrava o bloco principal para fora da primeira tela do
-  celular, que é exatamente o que a aba existe para evitar. Ao mexer no cabeçalho desta aba,
-  conferir de novo que o bloco principal cabe sem rolagem em uma tela de 390×844.
+  `--accent` do card. O critério de avanço fica no **pé** do card, que é quando ele é lido: no
+  fim da sessão. Ao mexer no cabeçalho desta aba, conferir de novo que o bloco principal cabe
+  sem rolagem em uma tela de 390×844 — hoje sobra folga, e é ela que se gasta sem perceber.
 - O amarelo (`--yellow15`) já era a cor do que não é musculação — "15 kg · futebol / recarga".
   A bike herda ela, no card e no `h1 .slash.bk`.
 - Os macros do bloco Nutricional continuam fora da alternância, como nos outros dois planos.
@@ -149,8 +153,18 @@ vivem no `localStorage` e sobem para o Supabase como qualquer outra chave:
 ## Preferências de conta
 
 `fittracker.prefs.v1.*` são preferências **de conta**, não de aparelho: sincronizam, e quem
-desliga a faixa da semana a vê desligada em qualquer celular. Ficam no diálogo de conta, que já
-existia — não abrir uma tela de configurações para isso.
+muda uma a vê mudada em qualquer celular. Quando existir alguma, ela fica no diálogo de conta,
+que já existe — não abrir uma tela de configurações para isso.
+
+**Hoje não há nenhuma.** A única que existiu foi `fittracker.prefs.v1.semana`, que ligava e
+desligava a faixa da semana, e saiu junto com a faixa. O prefixo continua descrito aqui porque
+o padrão vale para a próxima: nada foi removido de `sincronizavel()`, então uma chave nova nesse
+namespace já sincroniza sozinha.
+
+A chave velha continua gravada no `localStorage` de quem já usou a página e na tabela `estado`
+de quem tinha conta. **De propósito**: apagar exigiria uma migração que escreve lápide no
+primeiro carregamento de cada aparelho, e uma linha órfã que ninguém lê não custa nada. Se um
+dia o nome for reaproveitado, lembrar que pode existir um `'0'` antigo lá.
 
 Não confundir com `fittracker.plano.v1` (aba escolhida), que é de aparelho e por isso é a única
 chave `fittracker.` que `sincronizavel()` exclui.
