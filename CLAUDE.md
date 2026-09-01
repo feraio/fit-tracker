@@ -6,12 +6,13 @@ qualquer outra coisa nesta página.
 
 ## Arquitetura e restrições
 
-- **Arquivo único, com três exceções nomeadas.** Todo o HTML, CSS e JS da página vivem em
+- **Arquivo único, com quatro exceções nomeadas.** Todo o HTML, CSS e JS da página vivem em
   `index.html`. Sem build, sem dependências, sem framework, sem bundler. Servida pelo GitHub
   Pages a partir de `main`. As exceções, todas obrigatórias e nenhuma delas código de página:
   `sw.js` (um service worker **precisa** ser arquivo próprio, no escopo certo — não dá para
-  embutir), `ana/index.html` (três linhas de redirecionamento) e `supabase/schema.sql`
-  (documentação do banco). O Supabase é acessado por `fetch` na API REST, sem SDK, justamente
+  embutir), `ana/index.html` (três linhas de redirecionamento), `supabase/schema.sql`
+  (documentação do banco) e `docs/bike-intervalado.md` (as versões da prescrição da bike que
+  **não** estão em vigor — ver "Bike intervalado" abaixo). O Supabase é acessado por `fetch` na API REST, sem SDK, justamente
   para não reintroduzir dependência.
 - JS em estilo ES5: templating por concatenação de string dentro de `render()`, e **um único
   listener de clique delegado no `document`**. Por causa da delegação, componentes novos não
@@ -22,14 +23,23 @@ qualquer outra coisa nesta página.
   card (`.treino.a` / `.treino.b`) — componentes novos devem herdá-la em vez de repetir cores.
 - Interface toda em pt-BR, incluindo os `aria-label`.
 
-## Dois planos, uma página
+## Três planos, uma página
 
-`planos[]` guarda um objeto por plano de treino: o **Ciclo A/B** (em vigor) e o **PPL**
-(anterior, mantido só para consulta). A aba escolhida fica em `fittracker.plano.v1`.
+`planos[]` guarda um objeto por plano: o **Ciclo A/B** (em vigor), o **PPL** (anterior, mantido
+só para consulta) e a **Bike** (intervalado, somente leitura). A aba escolhida fica em
+`fittracker.plano.v1`.
 
-- Cada plano traz o próprio cabeçalho (`eyebrow`, `titulo`, `lede`, `legenda`, `nota`), a
-  própria faixa de semana e os próprios treinos. `renderCabecalho()` reescreve tudo isso, que
-  vive **fora** de `#treinos`; `render()` cuida só dos cards.
+- Cada plano traz o próprio cabeçalho (`eyebrow`, `titulo`, `lede`, `legenda`), a própria faixa
+  de semana e os próprios treinos. `renderCabecalho()` reescreve tudo isso, que vive **fora** de
+  `#treinos`; `render()` cuida só dos cards.
+- **A faixa da semana é por plano, e a bike não tem.** Quem manda é a presença de `semana` no
+  objeto: sem ela, `renderCabecalho()` esconde a faixa e a legenda. O calendário é do ciclo de
+  força; na bike ele gastava a primeira tela sem dizer nada que o card já não diga.
+- **Não existe mais caixa de nota por plano.** As duas que havia saíram na revisão da aba da
+  bike: a de retorno lombar repetia o que o botão de fase já diz, e a de rotação do PPL
+  descrevia um plano que não está em vigor. Com isso `#planoNota` e o CSS de `.note` também
+  saíram — não sobrou caminho de render sem conteúdo. As notas **por exercício** (`ex[].nota`,
+  classe `.ex-note`) e as tarjas AJUSTE/LOMBAR são outra coisa e continuam.
 - **Cada plano tem o seu prefixo de persistência** (`key`): `fittracker.ab.v1.` e
   `fittracker.ppl.v1.`. Trocar de aba nunca mistura séries nem cargas. O prefixo do A/B não
   muda nunca — é onde já estão os dados salvos no navegador de quem usa a página.
@@ -99,6 +109,33 @@ espera rede**. O Supabase é uma cópia durável por cima disso.
   usam o mesmo `data-campo`, que carrega a própria chave — não existe tabela de correspondência
   para manter em sincronia. Campo esvaziado apaga a chave, e é isso que vira lápide.
 
+## Bike intervalado
+
+A aba **Bike** é o primeiro plano **somente leitura** da página: mostra a prescrição da versão
+vigente para conferir em cima do aparelho, e não recebe input nenhum.
+
+- **`leitura:1` no plano é o que separa os dois mundos.** `render()` desvia para
+  `renderLeitura()` antes de tocar em `plano.key` ou `plano.treinos` — a bike não tem nenhum
+  dos dois. Sem série para marcar e sem carga para guardar, **nada nesta aba encosta no
+  `localStorage`**, e por consequência nada dela entra na fila, na lápide ou no RLS. Não há
+  sincronização nova a fazer aqui, e não há nenhuma a manter.
+- A **fase** (retorno / prescrição completa) é prescrição de força e some na aba da bike.
+  `.phase` tem `display:flex`, que ganha do `[hidden]` do navegador: por isso existe
+  `.phase[hidden]{display:none}`. Tirar essa regra faz a fase reaparecer, funcionando à toa.
+- **Só a versão vigente é renderizada.** A V2, a V3, a V4 e o critério de avanço estão em
+  `docs/bike-intervalado.md`, que também traz o passo a passo de trocar de versão. Prescrição
+  que ainda não vale não pode ficar a um descuido de distância de ser desenhada.
+  Trocar de versão é um deploy, não uma edição de dados.
+- **O componente é desenhado para ser lido de longe**, com o corpo em movimento: número grande
+  sempre na mesma coluna à direita, uma etapa por linha, e o bloco principal destacado com o
+  `--accent` do card. O critério de avanço fica no **pé** do card, que é quando ele é lido: no
+  fim da sessão. Sem faixa da semana e sem nota, a sessão inteira cabe numa tela de 390×844 com
+  folga. Ao mexer no cabeçalho desta aba, conferir isso de novo — a folga é o que se gasta sem
+  perceber.
+- O amarelo (`--yellow15`) já era a cor do que não é musculação — "15 kg · futebol / recarga".
+  A bike herda ela, no card e no `h1 .slash.bk`.
+- Os macros do bloco Nutricional continuam fora da alternância, como nos outros dois planos.
+
 ## Nutrição
 
 A **estrutura** (quais cards, quais linhas, os rótulos, quais macros são fixas) é template e
@@ -122,6 +159,9 @@ vivem no `localStorage` e sobem para o Supabase como qualquer outra chave:
 `fittracker.prefs.v1.*` são preferências **de conta**, não de aparelho: sincronizam, e quem
 desliga a faixa da semana a vê desligada em qualquer celular. Ficam no diálogo de conta, que já
 existia — não abrir uma tela de configurações para isso.
+
+A preferência decide se a faixa aparece **onde existe faixa**. Ela não dá calendário à bike:
+quem decide isso é o plano ter ou não `semana`, e as duas condições valem juntas.
 
 Não confundir com `fittracker.plano.v1` (aba escolhida), que é de aparelho e por isso é a única
 chave `fittracker.` que `sincronizavel()` exclui.
@@ -168,6 +208,12 @@ Estas ausências foram escolhidas. Reintroduzi-las é regressão, não melhoria.
   destoa do tom da página.
 - **Sem biblioteca de lightbox, carrossel, swipe ou zoom customizado.** O `<dialog>` nativo já
   entrega ESC, backdrop e trap de foco.
+- **A aba da bike não é escondida de quem não entrou.** A especificação pedia "visível apenas
+  para sessão autenticada, coerente com o comportamento das demais" — mas as demais não são
+  gated, e entrar nunca bloqueia nada nesta página. Esconder também não protegeria coisa
+  alguma: a prescrição é hardcoded e o repositório é público, então ela vai no fonte do
+  `index.html` para qualquer visitante de qualquer jeito. O que sobraria era o risco de um erro
+  de autenticação deixar alguém sem o treino em cima da bike. Decidido com o Felipe.
 - **Sem cadastro, magic link ou recuperação de senha na página.** O único endpoint de auth em
   uso é `token?grant_type=…`; conta é criada na mão no painel do Supabase. São duas contas, e
   cada tela dessas é rede a mais no caminho de quem só quer marcar uma série. Isto é uma

@@ -54,7 +54,12 @@
     display:flex;
     gap:2px;
     min-width:0;
+    /* Três abas mais o botão de conta não cabem na largura de um celular. Rolar
+       a faixa é o que impede a página inteira de rolar para o lado junto. */
+    overflow-x:auto;
+    scrollbar-width:none;
   }
+  .planos::-webkit-scrollbar{display:none}
   .plano-tab{
     font-family:var(--mono);
     font-size:11px;
@@ -64,7 +69,7 @@
     border:0;
     border-bottom:2px solid transparent;
     margin-bottom:-1px;
-    padding:16px 12px 12px;
+    padding:16px 9px 12px;
     color:var(--ink3);
     cursor:pointer;
     white-space:nowrap;
@@ -96,7 +101,9 @@
     text-transform:uppercase;
     background:transparent;
     border:0;
-    padding:16px 2px 12px 10px;
+    /* Folga à esquerda maior que a dos outros lados: com três abas a faixa
+       encosta aqui, e sem ela a última aba lê como colada no botão. */
+    padding:16px 2px 12px 15px;
     color:var(--ink3);
     cursor:pointer;
     white-space:nowrap;
@@ -237,22 +244,13 @@
     margin:0;
   }
   h1 .slash{color:var(--red25)}
+  h1 .slash.bk{color:var(--yellow15)}
   .lede{
     color:var(--ink2);
     font-size:14px;
     margin:12px 0 0;
     max-width:44ch;
   }
-  .note{
-    margin:18px 0 0;
-    padding:10px 12px;
-    border-left:3px solid var(--yellow15);
-    background:#FBF6E7;
-    font-size:13px;
-    line-height:1.4;
-    color:var(--ink2);
-  }
-  .note strong{color:var(--ink);font-weight:600}
 
   /* ---------- Faixa da semana ---------- */
   .week{
@@ -262,6 +260,10 @@
     margin:24px 0 8px;
   }
   .day{
+    /* Sem isto, a trilha 1fr do grid não encolhe abaixo do conteúdo: uma
+       palavra sem espaço mais larga que a coluna alarga a faixa e faz a página
+       inteira rolar para o lado. */
+    min-width:0;
     background:var(--card);
     border:1px solid var(--line2);
     border-radius:var(--r);
@@ -344,9 +346,13 @@
 
   .phase{
     display:flex;align-items:center;gap:6px;
-    margin:0 0 12px;flex-wrap:wrap;
+    /* 20px, e não 12: a caixa de nota que separava a fase do primeiro card saiu,
+       e com 12 os botões ficavam encostados no card. */
+    margin:0 0 20px;flex-wrap:wrap;
   }
-  .phase + .note{margin:0 0 20px}
+  /* O display:flex acima ganha do [hidden] do navegador, e a fase precisa
+     sumir inteira nos planos somente leitura. */
+  .phase[hidden]{display:none}
   .phase-label{
     font-family:var(--mono);font-size:10px;letter-spacing:.14em;
     text-transform:uppercase;color:var(--ink3);margin-right:4px;
@@ -371,6 +377,7 @@
   .treino.a{--accent:var(--red25)}
   .treino.b{--accent:var(--blue20)}
   .treino.c{--accent:var(--green10)}
+  .treino.bk{--accent:var(--yellow15)}
   .t-head{
     display:flex;
     align-items:center;
@@ -509,6 +516,76 @@
     background:#F3F5F6;
   }
   .t-foot span{font-family:var(--mono);font-size:11px;color:var(--ink3)}
+  /* ---------- Etapas · prescrição somente leitura ----------
+     Este componente é lido em cima da bike, com o corpo em movimento: uma
+     etapa por linha, número grande encostado à direita sempre na mesma
+     coluna, e o bloco principal destacado para ser achado sem procurar.
+     Herda --accent do card, como todo componente desta página. */
+  ol.etapas{list-style:none;margin:0;padding:0}
+  ol.etapas li{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    border-top:1px solid var(--line2);
+    padding:13px 14px;
+  }
+  .et-ord{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--ink3);
+    width:12px;
+    flex:0 0 auto;
+    font-variant-numeric:tabular-nums;
+  }
+  .et-corpo{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .et-nome{
+    font-family:var(--cond);
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    font-size:17px;
+    line-height:1.1;
+  }
+  .et-det{font-size:12px;color:var(--ink2);line-height:1.3}
+  .et-num{
+    margin-left:auto;
+    flex:0 0 auto;
+    font-family:var(--cond);
+    font-weight:700;
+    font-size:clamp(24px,7vw,30px);
+    line-height:1;
+    letter-spacing:-.01em;
+    white-space:nowrap;
+    font-variant-numeric:tabular-nums;
+  }
+  .et-num small{
+    font-family:var(--mono);
+    font-weight:400;
+    font-size:12px;
+    color:var(--ink3);
+    margin-left:3px;
+  }
+  ol.etapas li.forte{background:#FBF6E7}
+  ol.etapas li.forte .et-nome{color:var(--accent)}
+  ol.etapas li.forte .et-num{
+    font-size:clamp(34px,11vw,44px);
+    color:var(--accent);
+  }
+  ol.etapas li.forte .et-num small{color:var(--accent)}
+  /* O critério de avanço fecha o card, que é quando ele é lido: no fim da
+     sessão. Acima das etapas ele empurrava o bloco principal para fora da tela. */
+  .et-avanco{
+    margin:0;
+    padding:12px 14px;
+    border-top:1px solid var(--line2);
+    font-size:12.5px;
+    line-height:1.4;
+    color:var(--ink2);
+  }
+  .et-avanco strong{color:var(--ink);font-weight:600}
+  /* Sem barra de progresso para preencher: a duração da sessão não é meta. */
+  .treino.leitura .t-prog b{font-size:19px}
+
   .btn{
     font-family:var(--mono);
     font-size:11px;
@@ -735,7 +812,6 @@
     <button class="ph" type="button" data-mode="retorno">Retorno · 3 séries</button>
     <button class="ph" type="button" data-mode="completo">Prescrição completa</button>
   </div>
-  <p class="note" id="planoNota"></p>
   <div id="treinos" role="tabpanel" tabindex="-1"></div>
 </section>
 
@@ -748,10 +824,9 @@
 </section>
 
 <footer>
-  Cores das anilhas: vermelho 25 kg, azul 20 kg, verde 10 kg (cada card de treino), amarelo 15 kg (recarga).<br>
   <span style="color:var(--green10)">AJUSTE</span>: troca já definida pela personal por conta da lombar. <span style="color:var(--yellow15)">LOMBAR</span>: ponto ainda em aberto.<br>
   Progresso salvo neste navegador e sincronizado com a sua conta quando você entra.<br>
-  Atualizado em agosto de 2026.
+  Atualizado em setembro de 2026.
 </footer>
 
 </div>
@@ -1099,14 +1174,13 @@ var KEY_PLANO = 'fittracker.plano.v1';
 var planos = [
   {
     id:'ab',
-    aba:'Ciclo A/B', abaTag:'atual',
+    aba:'A/B',
     key:KEY_AB,
     doc:'Central de Comando · Ciclo A/B',
     eyebrow:'Central de comando · Ganho de massa',
     titulo:'Ciclo <span class="slash">A</span>/<span class="slash">B</span>',
     lede:'Duas sessões próprias por semana, sozinho, somadas aos treinos com a personal na terça e na sexta. Cada grupo muscular uma vez, sem rotação móvel.',
     legenda:'SEMANA FIXA · hoje em destaque',
-    nota:'<strong>Retorno pós lesão lombar.</strong> Três séries por exercício, confirmado com a personal e alinhado ao que já vem sendo feito nos treinos com ela. A prescrição cheia continua guardada como alvo.',
     semana:[
       {dow:'Seg', mark:'·', what:'Leve: bike ou natação'},
       {dow:'Ter', mark:'PT', cls:'pt', what:'Personal + futebol'},
@@ -1157,14 +1231,13 @@ var planos = [
        vieram do PPL original (commit 9107c7b), re-expressos nos componentes
        desta página. */
     id:'ppl',
-    aba:'PPL', abaTag:'anterior',
+    aba:'PPL',
     key:KEY_PPL,
     doc:'Central de Comando · Ciclo PPL',
     eyebrow:'Central de comando · Plano anterior',
     titulo:'Ciclo <span class="slash">PPL</span>',
     lede:'Push, Pull e Legs em rotação de três treinos: dois solo e dois com a personal por semana. Guardado aqui para consulta — o plano em vigor é o Ciclo A/B.',
     legenda:'SEMANA BASE · treinos solo em rotação',
-    nota:'<strong>Rotação a cada três semanas.</strong> Quando o T3 (Pernas) caía na terça, o futebol era cancelado; só nesse dia a recarga de 3100 kcal era suspensa, valendo a dieta padrão. Os macros ao pé da página valem para os dois planos.',
     semana:[
       {dow:'Seg', mark:'·', what:'Descanso'},
       {dow:'Ter', mark:'PT', cls:'pt', what:'Personal + futebol'},
@@ -1210,6 +1283,40 @@ var planos = [
         ]
       }
     ]
+  },
+  {
+    /* Bike intervalado, condicionamento. Este plano é SOMENTE LEITURA: mostra a
+       prescrição da versão vigente para conferir em cima do aparelho, e não
+       recebe input nenhum. Por isso não tem `key` e não tem `treinos`: não há
+       série para marcar nem carga para guardar, então nada aqui encosta no
+       localStorage nem entra na fila de sincronização. `leitura:1` é o que
+       manda render() desenhar o componente de etapas em vez dos cards.
+
+       Trocar de versão é deploy, não edição de dados. A V2, a V3, a V4 e o
+       critério de avanço estão em docs/bike-intervalado.md, fora do código de
+       propósito: prescrição que ainda não vale não pode chegar perto da tela
+       de quem está pedalando. */
+    id:'bike',
+    aba:'Bike', abaTag:'V1',
+    leitura:1,
+    doc:'Central de Comando · Bike intervalado',
+    eyebrow:'Central de comando · Condicionamento',
+    titulo:'Bike <span class="slash bk">Intervalado</span>',
+    lede:'Sessão única nos dias leves, somada ao Ciclo A/B. Só para conferência: nada aqui é salvo.',
+    sessao:{
+      cls:'bk', badge:'V1',
+      nome:'Intervalado', sub:'Dia leve · sozinho',
+      dur:'35–40', durUn:'min',
+      meta:'V1 · sessão de 35 a 40 min',
+      avanco:'<strong>Avançar para a V2</strong> quando os tiros saírem todos completos e o último no mesmo ritmo do primeiro, em duas sessões seguidas, e a qualidade da força na sequência da semana se mantiver. Se a força cair, reduzir o número de tiros antes de trocar de versão.',
+      rodape:'Somente leitura · nada nesta aba é salvo',
+      etapas:[
+        {n:'Aquecimento',     num:'12–15', un:'min', det:'Resistência baixa, cadência confortável, subindo aos poucos'},
+        {n:'Ativação',        num:'3 × 10', un:'s',  det:'1 min fácil entre eles'},
+        {n:'Bloco principal', num:'8 × 30', un:'s',  det:'Forte · 90 s fácil entre eles', forte:1},
+        {n:'Volta à calma',   num:'5–8',   un:'min'}
+      ]
+    }
   }
 ];
 
@@ -1303,7 +1410,13 @@ function renderNutri(){
 function pintarSync(){
   var el = document.getElementById('sync');
   if (!el) return;
-  if (!syncLigado()){ el.hidden = true; return; }
+  /* Mostrar ou esconder este botão muda a largura que sobra para a faixa de
+     abas. No primeiro desenho ele ainda está escondido, então renderAbas() mede
+     uma faixa mais larga do que a real e conclui que tudo cabe. Só se refaz a
+     conta quando a visibilidade vira, e não a cada pintura: em faixa rolada à
+     mão, repetir a cada sincronização puxaria a aba de volta sem motivo. */
+  var escondidoAntes = el.hidden;
+  if (!syncLigado()){ el.hidden = true; if (!escondidoAntes) mostrarAbaAtiva(); return; }
   el.hidden = false;
 
   var cls = '', texto;
@@ -1321,6 +1434,10 @@ function pintarSync(){
   el.innerHTML = '<i></i>' + texto;
   el.setAttribute('aria-label',
     logado() ? 'Sincronização: ' + texto + '. Abrir opções da conta.' : 'Entrar na conta');
+
+  /* Só aqui, e não junto do `hidden` acima: botão visível mas ainda sem texto
+     não ocupa a largura que vai ocupar, e a faixa mediria como se coubesse. */
+  if (escondidoAntes) mostrarAbaAtiva();
 }
 
 /* ---------- Diálogo de conta ---------- */
@@ -1480,9 +1597,27 @@ function renderAbas(){
     html += '<button class="plano-tab" type="button" role="tab" id="aba-' + p.id + '" ' +
             'aria-selected="' + on + '" aria-controls="treinos" ' +
             'tabindex="' + (on ? '0' : '-1') + '" data-plano="' + p.id + '">' +
-            p.aba + '<em>' + p.abaTag + '</em></button>';
+            p.aba + (p.abaTag ? '<em>' + p.abaTag + '</em>' : '') + '</button>';
   });
   document.getElementById('planos').innerHTML = html;
+  mostrarAbaAtiva();
+}
+
+/* A faixa rola quando as abas não cabem, que é o caso de um celular estreito com
+   três planos. Sem trazer a aba escolhida para dentro da vista, abrir a página já
+   na última mostra ela cortada no meio da palavra.
+
+   Por retângulo, e não por offsetLeft: nada aqui é `position:relative`, então o
+   offsetParent dos botões é o body e a conta sairia deslocada. E só mexe no
+   scroll quando a aba está mesmo fora da vista — chamada em cima de uma faixa
+   já rolada à mão, não pode puxá-la de volta. */
+function mostrarAbaAtiva(){
+  var nav = document.getElementById('planos');
+  var sel = nav.querySelector('[aria-selected="true"]');
+  if (!sel || nav.scrollWidth <= nav.clientWidth) return;
+  var rn = nav.getBoundingClientRect(), rs = sel.getBoundingClientRect();
+  if (rs.right > rn.right) nav.scrollLeft += rs.right - rn.right;
+  else if (rs.left < rn.left) nav.scrollLeft -= rn.left - rs.left;
 }
 
 function renderCabecalho(){
@@ -1490,13 +1625,15 @@ function renderCabecalho(){
   document.getElementById('eyebrow').textContent = p.eyebrow;
   document.getElementById('titulo').innerHTML = p.titulo;
   document.getElementById('lede').textContent = p.lede;
-  document.getElementById('legenda').textContent = p.legenda;
-  document.getElementById('planoNota').innerHTML = p.nota;
+  document.getElementById('legenda').textContent = p.legenda || '';
   document.getElementById('treinos').setAttribute('aria-labelledby', 'aba-' + p.id);
   document.title = p.doc;
   renderAbas();
 
-  var ver = mostrarSemana();
+  /* Plano sem `semana` (a bike) não desenha faixa nenhuma — o calendário é do
+     ciclo de força, e na bike ele só ocupava a primeira tela. A preferência
+     continua valendo para quem tem faixa. */
+  var ver = !!p.semana && mostrarSemana();
   document.getElementById('week').hidden = !ver;
   document.getElementById('legenda').hidden = !ver;
   if (ver) renderSemana(p);
@@ -1524,10 +1661,47 @@ function lerModo(){ modo = store.get(KEY_MODO) || 'retorno'; }
 lerModo();
 function seriesDe(e){ return modo === 'retorno' ? Math.min(RETORNO, e.s) : e.s; }
 
+/* ---------- Prescrição somente leitura ----------
+   A bike não tem estado: esta função não lê nem grava chave nenhuma, e por isso
+   nada daqui entra na fila de sincronização. Desenha a sessão inteira em ordem,
+   com o bloco principal destacado — é o que se procura no meio da série. */
+function renderLeitura(plano){
+  var s = plano.sessao;
+  var html = '<article class="treino ' + s.cls + ' leitura">' +
+    '<div class="t-head">' +
+      '<div class="badge' + (s.badge.length > 1 ? ' sm' : '') + '">' + s.badge + '</div>' +
+      '<div class="t-title"><h3>' + s.nome + '</h3><span>' + s.sub + '</span></div>' +
+      '<div class="t-prog"><b>' + s.dur + '</b><small>' + s.durUn + '</small></div>' +
+    '</div>' +
+    '<ol class="etapas">';
+
+  s.etapas.forEach(function(e, i){
+    html += '<li' + (e.forte ? ' class="forte"' : '') + '>' +
+      '<span class="et-ord">' + (i + 1) + '</span>' +
+      '<div class="et-corpo">' +
+        '<span class="et-nome">' + e.n + '</span>' +
+        (e.det ? '<span class="et-det">' + e.det + '</span>' : '') +
+      '</div>' +
+      '<span class="et-num">' + e.num + '<small>' + e.un + '</small></span>' +
+    '</li>';
+  });
+
+  html += '</ol>' +
+    (s.avanco ? '<p class="et-avanco">' + s.avanco + '</p>' : '') +
+    '<div class="t-foot"><span>' + s.rodape + '</span></div></article>';
+
+  document.getElementById('treinos').innerHTML = html;
+  document.getElementById('totalMeta').textContent = s.meta;
+}
+
 /* ---------- Treinos ---------- */
 function render(){
   lerModo();
   var plano = planoAtual();
+  /* A fase (retorno / prescrição completa) é prescrição de força: não existe
+     para a bike, e deixá-la à vista sugeriria um ajuste que não faz nada. */
+  document.querySelector('.phase').hidden = !!plano.leitura;
+  if (plano.leitura){ renderLeitura(plano); return; }
   var KEY = plano.key;
   var total = 0;
   var html = '';
