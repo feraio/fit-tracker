@@ -824,7 +824,6 @@
 </section>
 
 <footer>
-  Cores das anilhas: vermelho 25 kg, azul 20 kg, verde 10 kg (cada card de treino), amarelo 15 kg (recarga e bike).<br>
   <span style="color:var(--green10)">AJUSTE</span>: troca já definida pela personal por conta da lombar. <span style="color:var(--yellow15)">LOMBAR</span>: ponto ainda em aberto.<br>
   Progresso salvo neste navegador e sincronizado com a sua conta quando você entra.<br>
   Atualizado em setembro de 2026.
@@ -1175,7 +1174,7 @@ var KEY_PLANO = 'fittracker.plano.v1';
 var planos = [
   {
     id:'ab',
-    aba:'Ciclo A/B', abaTag:'atual',
+    aba:'A/B',
     key:KEY_AB,
     doc:'Central de Comando · Ciclo A/B',
     eyebrow:'Central de comando · Ganho de massa',
@@ -1232,7 +1231,7 @@ var planos = [
        vieram do PPL original (commit 9107c7b), re-expressos nos componentes
        desta página. */
     id:'ppl',
-    aba:'PPL', abaTag:'anterior',
+    aba:'PPL',
     key:KEY_PPL,
     doc:'Central de Comando · Ciclo PPL',
     eyebrow:'Central de comando · Plano anterior',
@@ -1598,7 +1597,7 @@ function renderAbas(){
     html += '<button class="plano-tab" type="button" role="tab" id="aba-' + p.id + '" ' +
             'aria-selected="' + on + '" aria-controls="treinos" ' +
             'tabindex="' + (on ? '0' : '-1') + '" data-plano="' + p.id + '">' +
-            p.aba + '<em>' + p.abaTag + '</em></button>';
+            p.aba + (p.abaTag ? '<em>' + p.abaTag + '</em>' : '') + '</button>';
   });
   document.getElementById('planos').innerHTML = html;
   mostrarAbaAtiva();
