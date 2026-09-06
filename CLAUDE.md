@@ -119,6 +119,25 @@ vigente para conferir em cima do aparelho, e não recebe input nenhum.
   dos dois. Sem série para marcar e sem carga para guardar, **nada nesta aba encosta no
   `localStorage`**, e por consequência nada dela entra na fila, na lápide ou no RLS. Não há
   sincronização nova a fazer aqui, e não há nenhuma a manter.
+- **O contador de tiros é a única coisa interativa, e vive só em memória.** `tiros` é um objeto
+  no script, indexado pela etapa; `store` não é chamado em lugar nenhum deste caminho, e é isso
+  que mantém o parágrafo acima verdadeiro. Não persistir é escolha, não esquecimento: a
+  contagem é do treino de hoje, e gravada faria a sessão de segunda abrir com os oito tiros já
+  marcados. Em memória e **não** só no DOM porque `render()` roda por fora — o pull redesenha a
+  página quando traz mudança, e isso acontece toda vez que a aba volta ao primeiro plano;
+  guardado só no DOM, destravar o celular no meio do bloco apagaria a contagem.
+- **A intensidade é descrita em palavras, não em número.** "Resistência baixa", "forte",
+  "fácil" — no `det` da etapa, como na especificação. Não há campo de velocidade nem de PSE, e
+  isso é decisão: km/h no marcador de bike é função da calibração daquele aparelho e não
+  transfere entre bikes, e uma escala subjetiva não ajuda quem já tem marcador. Número
+  estimado aqui seria precisão falsa. `docs/bike-intervalado.md` guarda o argumento inteiro e
+  o que faria funcionar (calibrar na bike de verdade e fixar o medido).
+- **Bloco com `reps` ≥ `MIN_TIROS` (4) ganha a fileira de bolinhas.** Abaixo disso dá para
+  guardar de cabeça e a fileira só ocuparia tela — a ativação, com 3 tiros, fica sem. A bolinha
+  `.tiro` divide o CSS com a `.set` dos cards de força, porque são a mesma bolinha; o que não se
+  divide é o comportamento, e por isso são classes distintas com ramos distintos no handler de
+  clique. A marcação é **cumulativa** (tocar no 5 marca do 1 ao 5, tocar de novo volta um): tiro
+  é sequência, e a pergunta em cima da bike é "em qual eu estou".
 - A **fase** (retorno / prescrição completa) é prescrição de força e some na aba da bike.
   `.phase` tem `display:flex`, que ganha do `[hidden]` do navegador: por isso existe
   `.phase[hidden]{display:none}`. Tirar essa regra faz a fase reaparecer, funcionando à toa.
