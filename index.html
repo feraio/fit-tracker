@@ -470,8 +470,12 @@
     margin-top:10px;
     flex-wrap:wrap;
   }
+  /* `.tiro` (contador da bike) divide o visual com `.set` em vez de repetir:
+     as duas são a mesma bolinha. O que não se divide é o comportamento — a
+     `.set` grava no localStorage e a `.tiro` não, e por isso são classes
+     separadas, cada uma com o seu ramo no handler de clique. */
   .sets{display:flex;gap:6px;flex-wrap:wrap}
-  .set{
+  .set,.tiro{
     width:36px;height:36px;
     border-radius:50%;
     border:2px solid var(--line);
@@ -484,8 +488,8 @@
     padding:0;
     transition:background .12s ease,border-color .12s ease,color .12s ease;
   }
-  .set:hover{border-color:var(--ink3)}
-  .set[aria-pressed="true"]{
+  .set:hover,.tiro:hover{border-color:var(--ink3)}
+  .set[aria-pressed="true"],.tiro[aria-pressed="true"]{
     background:var(--accent);
     border-color:var(--accent);
     color:#fff;
@@ -522,12 +526,16 @@
      coluna, e o bloco principal destacado para ser achado sem procurar.
      Herda --accent do card, como todo componente desta página. */
   ol.etapas{list-style:none;margin:0;padding:0}
+  /* O <li> é coluna, e não a linha em si: a fileira de tiros entra embaixo,
+     em largura cheia. `.et-linha` é que carrega o layout de três colunas. */
   ol.etapas li{
+    border-top:1px solid var(--line2);
+    padding:13px 14px;
+  }
+  .et-linha{
     display:flex;
     align-items:center;
     gap:12px;
-    border-top:1px solid var(--line2);
-    padding:13px 14px;
   }
   .et-ord{
     font-family:var(--mono);
@@ -572,6 +580,50 @@
     color:var(--accent);
   }
   ol.etapas li.forte .et-num small{color:var(--accent)}
+
+  /* Contador de tiros. Só aparece em bloco com muitas repetições, que é onde
+     dá para perder a conta — ver MIN_TIROS no script. */
+  .tiros{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+    margin:12px 0 2px;
+  }
+  /* 34px em vez dos 36px da `.set`: com 36 os oito tiros estouram a linha em
+     390px por um fio, e o oitavo cai sozinho na linha de baixo. A diferença não
+     é perceptível ao lado dos cards de força, a quebra era. */
+  .tiro{width:34px;height:34px}
+  .tiros-meta{
+    margin-left:auto;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--ink3);
+    letter-spacing:.04em;
+  }
+  .tiros-meta b{
+    font-size:14px;
+    font-weight:600;
+    color:var(--ink);
+    font-variant-numeric:tabular-nums;
+  }
+  .tiros-zerar{
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    background:transparent;
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    padding:5px 9px;
+    color:var(--ink3);
+    cursor:pointer;
+  }
+  .tiros-zerar:hover{color:var(--ink);border-color:var(--ink3)}
+
   /* O critério de avanço fecha o card, que é quando ele é lido: no fim da
      sessão. Acima das etapas ele empurrava o bloco principal para fora da tela. */
   .et-avanco{
@@ -1309,11 +1361,19 @@ var planos = [
       dur:'35–40', durUn:'min',
       meta:'V1 · sessão de 35 a 40 min',
       avanco:'<strong>Avançar para a V2</strong> quando os tiros saírem todos completos e o último no mesmo ritmo do primeiro, em duas sessões seguidas, e a qualidade da força na sequência da semana se mantiver. Se a força cair, reduzir o número de tiros antes de trocar de versão.',
-      rodape:'Somente leitura · nada nesta aba é salvo',
+      rodape:'Prescrição fixa · o contador não é salvo e zera ao recarregar',
+      /* `reps` é quantas repetições a etapa tem, e é ele que decide se a fileira
+         de bolinhas aparece (MIN_TIROS). Etapa medida em tempo corrido, como o
+         aquecimento, não tem `reps` e não ganha contador.
+
+         Não há campo de intensidade: a especificação descreve intensidade só em
+         palavras ("resistência baixa", "forte", "fácil"), e é isso que o `det`
+         carrega. Número inventado aqui — velocidade, PSE, o que for — seria
+         precisão falsa. Ver docs/bike-intervalado.md. */
       etapas:[
         {n:'Aquecimento',     num:'12–15', un:'min', det:'Resistência baixa, cadência confortável, subindo aos poucos'},
-        {n:'Ativação',        num:'3 × 10', un:'s',  det:'1 min fácil entre eles'},
-        {n:'Bloco principal', num:'8 × 30', un:'s',  det:'Forte · 90 s fácil entre eles', forte:1},
+        {n:'Ativação',        num:'3 × 10', un:'s',  det:'1 min fácil entre eles', reps:3},
+        {n:'Bloco principal', num:'8 × 30', un:'s',  det:'Forte · 90 s fácil entre eles', forte:1, reps:8},
         {n:'Volta à calma',   num:'5–8',   un:'min'}
       ]
     }
@@ -1665,6 +1725,21 @@ function seriesDe(e){ return modo === 'retorno' ? Math.min(RETORNO, e.s) : e.s; 
    A bike não tem estado: esta função não lê nem grava chave nenhuma, e por isso
    nada daqui entra na fila de sincronização. Desenha a sessão inteira em ordem,
    com o bloco principal destacado — é o que se procura no meio da série. */
+/* A partir de quantas repetições a etapa ganha contador. Abaixo disso dá para
+   guardar de cabeça, e a fileira só ocuparia tela. */
+var MIN_TIROS = 4;
+
+/* Quantos tiros já saíram, por índice de etapa. Vive em memória e mais nada:
+   o contador é do treino de hoje, não um registro. Gravar no localStorage
+   quebraria o contrato desta aba e ainda faria a sessão de segunda começar com
+   os oito tiros marcados.
+
+   Em memória, e não só no DOM, porque render() roda de novo por fora — o pull
+   redesenha a página quando traz mudança, e isso acontece toda vez que a aba
+   volta ao primeiro plano. Sem guardar aqui, destravar o celular no meio do
+   bloco apagaria a contagem. */
+var tiros = {};
+
 function renderLeitura(plano){
   var s = plano.sessao;
   var html = '<article class="treino ' + s.cls + ' leitura">' +
@@ -1677,12 +1752,15 @@ function renderLeitura(plano){
 
   s.etapas.forEach(function(e, i){
     html += '<li' + (e.forte ? ' class="forte"' : '') + '>' +
-      '<span class="et-ord">' + (i + 1) + '</span>' +
-      '<div class="et-corpo">' +
-        '<span class="et-nome">' + e.n + '</span>' +
-        (e.det ? '<span class="et-det">' + e.det + '</span>' : '') +
+      '<div class="et-linha">' +
+        '<span class="et-ord">' + (i + 1) + '</span>' +
+        '<div class="et-corpo">' +
+          '<span class="et-nome">' + e.n + '</span>' +
+          (e.det ? '<span class="et-det">' + e.det + '</span>' : '') +
+        '</div>' +
+        '<span class="et-num">' + e.num + '<small>' + e.un + '</small></span>' +
       '</div>' +
-      '<span class="et-num">' + e.num + '<small>' + e.un + '</small></span>' +
+      tirosHtml(e, i) +
     '</li>';
   });
 
@@ -1692,6 +1770,34 @@ function renderLeitura(plano){
 
   document.getElementById('treinos').innerHTML = html;
   document.getElementById('totalMeta').textContent = s.meta;
+  s.etapas.forEach(function(e, i){ if (temTiros(e)) pintarTiros(i); });
+}
+
+function temTiros(e){ return e.reps >= MIN_TIROS; }
+
+function tirosHtml(e, i){
+  if (!temTiros(e)) return '';
+  var html = '<div class="tiros" data-etapa="' + i + '"><div class="sets">';
+  for (var t = 1; t <= e.reps; t++){
+    html += '<button class="tiro" type="button" aria-pressed="false" ' +
+            'aria-label="Tiro ' + t + ' de ' + e.reps + ' · ' + esc(e.n) + '" ' +
+            'data-etapa="' + i + '" data-tiro="' + t + '">' + t + '</button>';
+  }
+  return html + '</div><span class="tiros-meta">' +
+    '<span><b data-tiros-prog="' + i + '">0</b>/' + e.reps + '</span>' +
+    '<button class="tiros-zerar" type="button" data-tiros-zerar="' + i + '">Zerar</button>' +
+  '</span></div>';
+}
+
+function pintarTiros(i){
+  var feitos = tiros[i] || 0;
+  var caixa = document.querySelector('.tiros[data-etapa="' + i + '"]');
+  if (!caixa) return;
+  caixa.querySelectorAll('.tiro').forEach(function(b){
+    b.setAttribute('aria-pressed', String(+b.dataset.tiro <= feitos));
+  });
+  var prog = document.querySelector('[data-tiros-prog="' + i + '"]');
+  if (prog) prog.textContent = feitos;
 }
 
 /* ---------- Treinos ---------- */
@@ -1823,6 +1929,27 @@ document.addEventListener('click', function(ev){
   }
   if (ev.target.closest('.mb-close')){ mediaBox.close(); return; }
   if (ev.target === mediaBox){ mediaBox.close(); return; }   /* toque no backdrop */
+
+  /* Contador de tiros. Antes do ramo de `.set` só por proximidade de assunto —
+     as classes são distintas, então a ordem não decide nada. O que decide é o
+     que cada uma faz: esta não chama `store`, e é por isso que a aba continua
+     sem gravar nada. */
+  var tiro = ev.target.closest('.tiro');
+  if (tiro){
+    var i = tiro.dataset.etapa, n = +tiro.dataset.tiro;
+    /* Cumulativo, e não oito interruptores soltos: tiro é sequência, e a
+       pergunta é "em qual eu estou". Tocar no último marcado volta um, que é o
+       conserto de quem errou o dedo com a mão suada. */
+    tiros[i] = (tiros[i] === n) ? n - 1 : n;
+    pintarTiros(i);
+    return;
+  }
+  var zerar = ev.target.closest('[data-tiros-zerar]');
+  if (zerar){
+    tiros[zerar.dataset.tirosZerar] = 0;
+    pintarTiros(zerar.dataset.tirosZerar);
+    return;
+  }
 
   var set = ev.target.closest('.set');
   if (set){

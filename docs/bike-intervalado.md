@@ -27,6 +27,26 @@ ativação e volta à calma são os mesmos em todas.
 | Bloco principal | **muda por versão** — ver abaixo |
 | Volta à calma | 5 a 8 min |
 
+### Por que não há coluna de intensidade
+
+A intensidade é descrita **em palavras** — "resistência baixa", "forte", "fácil" — e é assim
+que ela aparece na aba, no `det` de cada etapa. Não há número, e a ausência é escolha.
+
+**Velocidade não serve.** No marcador de uma bike, km/h é função da rotação do volante e da
+calibração daquele aparelho: 25 km/h na resistência 3 e na resistência 12 são esforços
+completamente diferentes, e o número não transfere de uma bike para outra. Uma faixa de km/h
+escrita aqui seria precisão falsa, e precisão falsa é pior que campo nenhum para quem está
+seguindo a prescrição em cima do aparelho.
+
+**PSE (percepção de esforço, de 0 a 10) chegou a ser implementado e foi retirado**, porque
+resolvia o problema errado: quem tem marcador na bike quer um número para comparar com o
+marcador, não outra escala subjetiva.
+
+O que faria funcionar é calibração, não estimativa: medir na **sua** bike, uma vez, a que
+velocidade e resistência cada etapa acontece, e fixar esses números aqui. Aí eles são medidos,
+valem para aquele aparelho, e entram como um campo novo na etapa — trocar isso é deploy, como
+qualquer outra mudança de prescrição.
+
 ---
 
 ## V1 — semanas 1 a 3 · **em vigor**
@@ -74,12 +94,28 @@ Tudo num commit só, em `index.html`, no objeto `id:'bike'` de `planos[]`:
 
 1. `abaTag` — o rótulo da aba (`'V1'` → `'V2'`).
 2. `sessao.badge` e `sessao.meta` — o círculo do card e o texto ao lado de "Treinamento".
-3. A etapa com `forte:1` — `num` e `det` do bloco principal.
+3. A etapa com `forte:1` — `num`, `det` e **`reps`** do bloco principal. O `reps` é o que
+   desenha a fileira de bolinhas do contador, e ela precisa ter o número de tiros da versão
+   nova. Errar aqui não dá erro: dá contador com o número errado de bolinhas.
 4. `sessao.avanco` — o critério no pé do card cita a versão seguinte pelo nome.
 5. **`VERSAO` em `sw.js`.** Sem isso a correção não chega no celular, que é o único lugar onde
    esta página é lida.
 
 Depois, aqui: mover o `**em vigor**` para a versão nova.
 
-Nada de migração, nada de chave nova, nada para limpar no `localStorage` — a aba é somente
-leitura e não guarda estado nenhum.
+Nada de migração, nada de chave nova, nada para limpar no `localStorage` — a aba não grava
+nada. O contador de tiros vive em memória e zera ao recarregar, de propósito: ele é do treino
+de hoje, não um registro.
+
+## O contador de tiros
+
+Bloco com **4 repetições ou mais** ganha uma fileira de bolinhas, para não se perder a conta no
+meio. Quem decide é o `reps` da etapa contra a constante `MIN_TIROS` no script. A ativação, com
+3 tiros, fica sem — nesse tamanho dá para guardar de cabeça, e a fileira só ocuparia tela.
+
+Todas as versões seguintes passam do limite (V2 tem 10, V3 tem 12, V4 tem 5 a 6 e 4), então
+todas ganham contador sem precisar de nada além do `reps` certo.
+
+A marcação é **cumulativa**, e não oito interruptores soltos como nos cards de força: tocar no
+tiro 5 marca do 1 ao 5, e tocar de novo no último marcado volta um. Tiro é sequência, e a
+pergunta em cima da bike é "em qual eu estou" — não "quais eu fiz".
