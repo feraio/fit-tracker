@@ -43,9 +43,18 @@ só para consulta) e a **Bike** (intervalado, somente leitura). A aba escolhida 
 - **Cada plano tem o seu prefixo de persistência** (`key`): `fittracker.ab.v1.` e
   `fittracker.ppl.v1.`. Trocar de aba nunca mistura séries nem cargas. O prefixo do A/B não
   muda nunca — é onde já estão os dados salvos no navegador de quem usa a página.
-- A **fase** (retorno / prescrição completa) é global aos dois planos e continua em
+- A **fase** (retorno / prescrição completa) **só existe no Ciclo A/B**, e continua em
   `fittracker.ab.v1.modo`, no namespace antigo de propósito: trocar essa chave descartaria a
-  fase já salva.
+  fase já salva. Quem decide é `semFase` no objeto do plano: o PPL traz `semFase:1`, então
+  `seriesDe()` devolve a prescrição cheia seja qual for o `modo` salvo, e `render()` esconde a
+  faixa de fase — como já fazia na bike. O motivo é o mesmo das duas caixas de nota que saíram:
+  o PPL está na página só para consulta, e consultá-lo cortado em 3 séries mostraria uma
+  prescrição que nunca foi prescrita. A chave `modo` **não** é apagada nem migrada — ela segue
+  valendo para o A/B, que é o plano em vigor.
+- **`seriesDe()` recebe o plano, não lê uma global.** Assinatura `seriesDe(e, p)`. Os dois
+  pontos de chamada ficam dentro de `render()`, onde `plano` já está em escopo. Quem acrescentar
+  chamada nova passa o plano junto: sem ele, `p.semFase` seria `undefined` e o PPL voltaria a
+  ser cortado em silêncio.
 - As abas seguem o padrão `tablist`, com `aria-selected`, tabindex móvel e navegação por
   setas. O `keydown` é delegado no `document` pelo mesmo motivo do clique: `renderAbas()`
   reescreve os botões a cada troca.
@@ -108,6 +117,21 @@ espera rede**. O Supabase é uma cópia durável por cima disso.
 - **Um handler para todo campo que guarda valor.** Carga dos exercícios e macros da nutrição
   usam o mesmo `data-campo`, que carrega a própria chave — não existe tabela de correspondência
   para manter em sincronia. Campo esvaziado apaga a chave, e é isso que vira lápide.
+- **A carga é `type="text"` de propósito, com `data-dec="1"`.** `type="number"` só reconhece o
+  ponto como separador decimal, em qualquer idioma, e **rejeita a tecla da vírgula**: o
+  caractere não chega a ser inserido, então a tela não muda e nada indica que algo foi recusado.
+  O teclado decimal do iPhone mostra o separador da região — em pt-BR, a vírgula — então quem
+  digitava "10,5" acabava com **"105" salvo em silêncio**. O defeito não era perder a carga: era
+  gravar a carga errada, dez vezes maior, sem aviso. (Um valor com vírgula que chegasse pelo
+  `value=` do render viraria `""` de fato, e aí sim o handler apagaria a chave — mas pelo
+  `type="number"` esse valor nunca conseguia ser salvo, então o caminho não era alcançado.
+  Registrado aqui porque ele volta a existir se alguém trouxer `type="number"` de volta.)
+  Com `text` o que foi digitado chega inteiro ao handler e `normDec()` troca vírgula por ponto,
+  junta ponto repetido, descarta o que não é dígito (sem `type="number"` não há mais
+  `min`/`step` para segurar sinal e letra) e devolve o valor normalizado ao campo — ver o
+  número mudar de "10,5" para "10.5" é o retorno de que entrou. **Gravar sempre com ponto** é o
+  que mantém o número legível igual nos dois aparelhos e no Supabase. Os campos da nutrição
+  continuam `type="number"`: são inteiros, e sem casa decimal a vírgula não aparece no caminho.
 
 ## Bike intervalado
 

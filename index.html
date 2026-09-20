@@ -1285,6 +1285,11 @@ var planos = [
     id:'ppl',
     aba:'PPL',
     key:KEY_PPL,
+    /* A fase de retorno é do ciclo em vigor. O PPL está aqui só para consulta,
+       e consultar um plano cortado em 3 séries mostra uma prescrição que nunca
+       existiu. `semFase:1` faz este plano ignorar `modo` e esconder o botão —
+       à vista ele sugeriria um ajuste que não faz nada, como na bike. */
+    semFase:1,
     doc:'Central de Comando · Ciclo PPL',
     eyebrow:'Central de comando · Plano anterior',
     titulo:'Ciclo <span class="slash">PPL</span>',
@@ -1326,7 +1331,6 @@ var planos = [
       {
         id:'T3', cls:'c', nome:'Legs', sub:'Quadríceps, posteriores, panturrilhas e core',
         ex:[
-          {id:'bike', n:'Bike (aquecimento)', s:1, r:'10 min', semKg:1},
           {id:'agachamento-hack', n:'Agachamento Hack', s:4, r:'8-12'},
           {id:'cadeira-extensora', n:'Cadeira Extensora', s:3, r:'8-12'},
           {id:'stiff', n:'Stiff', s:4, r:'8-12'},
@@ -1719,7 +1723,9 @@ var modo = 'retorno';
    prescrição errada — 5 séries para quem está em retorno, ou o contrário. */
 function lerModo(){ modo = store.get(KEY_MODO) || 'retorno'; }
 lerModo();
-function seriesDe(e){ return modo === 'retorno' ? Math.min(RETORNO, e.s) : e.s; }
+/* `p` é o plano, e não uma global, porque a fase não vale para todos: plano com
+   `semFase` devolve sempre a prescrição cheia, seja qual for o `modo` salvo. */
+function seriesDe(e, p){ return (modo === 'retorno' && !p.semFase) ? Math.min(RETORNO, e.s) : e.s; }
 
 /* ---------- Prescrição somente leitura ----------
    A bike não tem estado: esta função não lê nem grava chave nenhuma, e por isso
@@ -1804,9 +1810,10 @@ function pintarTiros(i){
 function render(){
   lerModo();
   var plano = planoAtual();
-  /* A fase (retorno / prescrição completa) é prescrição de força: não existe
-     para a bike, e deixá-la à vista sugeriria um ajuste que não faz nada. */
-  document.querySelector('.phase').hidden = !!plano.leitura;
+  /* A fase (retorno / prescrição completa) é prescrição do ciclo em vigor: não
+     existe para a bike nem para o PPL, e deixá-la à vista nesses dois sugeriria
+     um ajuste que não faz nada. */
+  document.querySelector('.phase').hidden = !!(plano.leitura || plano.semFase);
   if (plano.leitura){ renderLeitura(plano); return; }
   var KEY = plano.key;
   var total = 0;
@@ -1815,7 +1822,7 @@ function render(){
     b.setAttribute('aria-pressed', String(b.dataset.mode === modo));
   });
   plano.treinos.forEach(function(t){
-    var soma = t.ex.reduce(function(a,e){ return a + seriesDe(e); }, 0);
+    var soma = t.ex.reduce(function(a,e){ return a + seriesDe(e, plano); }, 0);
     total += soma;
     html += '<article class="treino ' + t.cls + '" data-t="' + t.id + '">' +
       '<div class="t-head">' +
@@ -1827,7 +1834,7 @@ function render(){
       '<ol class="ex">';
 
     t.ex.forEach(function(e){
-      var ns = seriesDe(e);
+      var ns = seriesDe(e, plano);
       var chips = '';
       for (var s = 1; s <= ns; s++){
         var k = KEY + t.id + '.' + e.id + '.' + s;
@@ -1858,7 +1865,8 @@ function render(){
           '<div class="sets">' + chips + '</div>' +
           (e.semKg ? '' :
             '<div class="kgwrap"><label for="' + kgKey + '">KG</label>' +
-            '<input class="kg" id="' + kgKey + '" type="number" inputmode="decimal" step="0.5" ' +
+            '<input class="kg" id="' + kgKey + '" type="text" inputmode="decimal" ' +
+            'data-dec="1" autocomplete="off" ' +
             'value="' + kgVal + '" data-campo="' + kgKey + '" placeholder="—"></div>') +
         '</div>' +
       '</li>';
@@ -2020,9 +2028,33 @@ document.addEventListener('change', function(ev){
   var campo = ev.target.closest('[data-campo]');
   if (!campo) return;
   var v = campo.value.trim();
+  /* Campo decimal (a carga) chega com vírgula: o teclado do iPhone mostra o
+     separador da região, e em pt-BR é ela. Normalizar aqui e devolver o valor
+     ao campo — gravar "10,5" faria o número voltar diferente em quem lê com
+     ponto, e mostrar de volta o que foi gravado deixa claro que entrou. */
+  if (campo.dataset.dec){
+    v = normDec(v);
+    campo.value = v;
+  }
   if (v === '') store.del(campo.dataset.campo);
   else store.set(campo.dataset.campo, v);
 });
+
+/* A carga é `type="text"`, e não `type="number"`, justamente para chegar aqui:
+   `type="number"` só reconhece ponto como separador e descarta o resto, então
+   digitar "10,5" no celular fazia o campo valer "" — e vazio, nesta página,
+   apaga a chave. A carga não sumia por acaso: era o navegador jogando fora o
+   que foi digitado antes do handler ver. Sem `type="number"` também não há
+   `min`/`step` para segurar sinal e letra, e é o que esta função faz. */
+function normDec(v){
+  v = v.replace(/,/g, '.').replace(/[^0-9.]/g, '');
+  var p = v.split('.');
+  if (p.length > 2) v = p.shift() + '.' + p.join('');   /* "1.2.3" -> "1.23" */
+  /* Arredondar as pontas: ",5" e "100," são digitação legítima, mas ".5" e
+     "100." iriam gravados e mostrados assim nos dois aparelhos. */
+  v = v.replace(/\.$/, '').replace(/^\./, '0.');   /* "." sozinho zera, não vira 0 */
+  return v;
+}
 
 renderCabecalho();
 render();
