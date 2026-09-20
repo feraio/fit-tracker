@@ -1209,8 +1209,9 @@ function sincronizar(){
    é onde já estão as cargas e as séries salvas no navegador. */
 var KEY_AB = 'fittracker.ab.v1.';
 var KEY_PPL = 'fittracker.ppl.v1.';
-/* A fase (retorno / completa) vale para os dois planos. Fica de propósito no
-   namespace antigo — trocar a chave descartaria a fase já salva. */
+/* A fase (retorno / completa) vale só para o Ciclo A/B — ver `semFase` no PPL.
+   Fica de propósito no namespace antigo: trocar a chave descartaria a fase já
+   salva, e ela continua valendo para o plano em vigor. */
 var KEY_MODO = KEY_AB + 'modo';
 var KEY_PLANO = 'fittracker.plano.v1';
 
@@ -2031,7 +2032,7 @@ document.addEventListener('change', function(ev){
   /* Campo decimal (a carga) chega com vírgula: o teclado do iPhone mostra o
      separador da região, e em pt-BR é ela. Normalizar aqui e devolver o valor
      ao campo — gravar "10,5" faria o número voltar diferente em quem lê com
-     ponto, e mostrar de volta o que foi gravado deixa claro que entrou. */
+     ponto, e ver "10,5" virar "10.5" é o retorno de que entrou. */
   if (campo.dataset.dec){
     v = normDec(v);
     campo.value = v;
@@ -2040,12 +2041,18 @@ document.addEventListener('change', function(ev){
   else store.set(campo.dataset.campo, v);
 });
 
-/* A carga é `type="text"`, e não `type="number"`, justamente para chegar aqui:
-   `type="number"` só reconhece ponto como separador e descarta o resto, então
-   digitar "10,5" no celular fazia o campo valer "" — e vazio, nesta página,
-   apaga a chave. A carga não sumia por acaso: era o navegador jogando fora o
-   que foi digitado antes do handler ver. Sem `type="number"` também não há
-   `min`/`step` para segurar sinal e letra, e é o que esta função faz. */
+/* A carga é `type="text"`, e não `type="number"`, justamente para chegar aqui.
+   `type="number"` só reconhece o ponto como separador, em qualquer idioma, e
+   REJEITA A TECLA da vírgula: o caractere não chega a ser inserido, a tela não
+   muda, e nada indica que algo foi recusado. Quem digitava "10,5" no celular
+   ficava com "105" salvo em silêncio — o defeito não era perder a carga, era
+   gravar carga errada, dez vezes maior, sem aviso.
+   (Valor com vírgula que chegasse pelo `value=` do render viraria "" de fato, e
+   aí sim o handler apagaria a chave. Pelo `type="number"` esse valor nunca
+   conseguia ser salvo, então o caminho não era alcançado — anotado porque ele
+   volta a existir se alguém trouxer `type="number"` de volta.)
+   Sem `type="number"` também não há `min`/`step` para segurar sinal e letra, e
+   é o que esta função faz. */
 function normDec(v){
   v = v.replace(/,/g, '.').replace(/[^0-9.]/g, '');
   var p = v.split('.');
