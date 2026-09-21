@@ -344,27 +344,6 @@
     color:var(--ink3);
   }
 
-  .phase{
-    display:flex;align-items:center;gap:6px;
-    /* 20px, e não 12: a caixa de nota que separava a fase do primeiro card saiu,
-       e com 12 os botões ficavam encostados no card. */
-    margin:0 0 20px;flex-wrap:wrap;
-  }
-  /* O display:flex acima ganha do [hidden] do navegador, e a fase precisa
-     sumir inteira nos planos somente leitura. */
-  .phase[hidden]{display:none}
-  .phase-label{
-    font-family:var(--mono);font-size:10px;letter-spacing:.14em;
-    text-transform:uppercase;color:var(--ink3);margin-right:4px;
-  }
-  .ph{
-    font-family:var(--mono);font-size:11px;letter-spacing:.06em;
-    background:transparent;border:1px solid var(--line);
-    border-radius:var(--r);padding:7px 11px;cursor:pointer;color:var(--ink2);
-  }
-  .ph[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
-  .goal{color:var(--ink3);font-size:11px;margin-left:6px}
-
   /* ---------- Cartão de treino ---------- */
   .treino{
     background:var(--card);
@@ -859,11 +838,6 @@
     <h2>Treinamento</h2>
     <span class="meta" id="totalMeta"></span>
   </div>
-  <div class="phase">
-    <span class="phase-label">Fase</span>
-    <button class="ph" type="button" data-mode="retorno">Retorno · 3 séries</button>
-    <button class="ph" type="button" data-mode="completo">Prescrição completa</button>
-  </div>
   <div id="treinos" role="tabpanel" tabindex="-1"></div>
 </section>
 
@@ -1206,13 +1180,17 @@ function sincronizar(){
   });
 }
 /* Cada plano tem o seu prefixo de persistência. O do Ciclo A/B não muda nunca:
-   é onde já estão as cargas e as séries salvas no navegador. */
+   é onde já estão as cargas e as séries salvas no navegador.
+
+   NÃO EXISTE MAIS FASE. A prescrição desenhada é sempre a cheia, nos dois
+   planos, e por isso não há mais `KEY_MODO`, `seriesDe()` nem a faixa de
+   botões. A chave `fittracker.ab.v1.modo` continua gravada em quem já usava a
+   página, órfã: nenhum código a lê. Deixar é de propósito — apagar seria
+   escrever lápide (e propagá-la a todos os aparelhos) para limpar um dado
+   inerte de alguns bytes, e o valor antigo é o que a fase retomaria se um dia
+   ela voltar. Só não confundir com `fittracker.plano.v1`, que é a aba. */
 var KEY_AB = 'fittracker.ab.v1.';
 var KEY_PPL = 'fittracker.ppl.v1.';
-/* A fase (retorno / completa) vale só para o Ciclo A/B — ver `semFase` no PPL.
-   Fica de propósito no namespace antigo: trocar a chave descartaria a fase já
-   salva, e ela continua valendo para o plano em vigor. */
-var KEY_MODO = KEY_AB + 'modo';
 var KEY_PLANO = 'fittracker.plano.v1';
 
 /* ---------- Dados ----------
@@ -1286,11 +1264,6 @@ var planos = [
     id:'ppl',
     aba:'PPL',
     key:KEY_PPL,
-    /* A fase de retorno é do ciclo em vigor. O PPL está aqui só para consulta,
-       e consultar um plano cortado em 3 séries mostra uma prescrição que nunca
-       existiu. `semFase:1` faz este plano ignorar `modo` e esconder o botão —
-       à vista ele sugeriria um ajuste que não faz nada, como na bike. */
-    semFase:1,
     doc:'Central de Comando · Ciclo PPL',
     eyebrow:'Central de comando · Plano anterior',
     titulo:'Ciclo <span class="slash">PPL</span>',
@@ -1715,19 +1688,6 @@ function trocarPlano(id){
   if (aba) aba.focus();
 }
 
-/* ---------- Fase ---------- */
-var RETORNO = 3;
-var modo = 'retorno';
-/* Reler em vez de confiar na cópia em memória: a fase muda por baixo quando o
-   pull traz a de outro aparelho, e quando a troca de conta apaga a chave. Nos
-   dois casos a variável ficaria com o valor de antes e a página desenharia a
-   prescrição errada — 5 séries para quem está em retorno, ou o contrário. */
-function lerModo(){ modo = store.get(KEY_MODO) || 'retorno'; }
-lerModo();
-/* `p` é o plano, e não uma global, porque a fase não vale para todos: plano com
-   `semFase` devolve sempre a prescrição cheia, seja qual for o `modo` salvo. */
-function seriesDe(e, p){ return (modo === 'retorno' && !p.semFase) ? Math.min(RETORNO, e.s) : e.s; }
-
 /* ---------- Prescrição somente leitura ----------
    A bike não tem estado: esta função não lê nem grava chave nenhuma, e por isso
    nada daqui entra na fila de sincronização. Desenha a sessão inteira em ordem,
@@ -1809,21 +1769,15 @@ function pintarTiros(i){
 
 /* ---------- Treinos ---------- */
 function render(){
-  lerModo();
   var plano = planoAtual();
-  /* A fase (retorno / prescrição completa) é prescrição do ciclo em vigor: não
-     existe para a bike nem para o PPL, e deixá-la à vista nesses dois sugeriria
-     um ajuste que não faz nada. */
-  document.querySelector('.phase').hidden = !!(plano.leitura || plano.semFase);
   if (plano.leitura){ renderLeitura(plano); return; }
   var KEY = plano.key;
   var total = 0;
   var html = '';
-  document.querySelectorAll('.ph').forEach(function(b){
-    b.setAttribute('aria-pressed', String(b.dataset.mode === modo));
-  });
   plano.treinos.forEach(function(t){
-    var soma = t.ex.reduce(function(a,e){ return a + seriesDe(e, plano); }, 0);
+    /* `e.s` direto: a prescrição desenhada é sempre a cheia. Não existe mais
+       fase para cortar série nenhuma — ver o comentário em KEY_AB. */
+    var soma = t.ex.reduce(function(a,e){ return a + e.s; }, 0);
     total += soma;
     html += '<article class="treino ' + t.cls + '" data-t="' + t.id + '">' +
       '<div class="t-head">' +
@@ -1835,7 +1789,7 @@ function render(){
       '<ol class="ex">';
 
     t.ex.forEach(function(e){
-      var ns = seriesDe(e, plano);
+      var ns = e.s;
       var chips = '';
       for (var s = 1; s <= ns; s++){
         var k = KEY + t.id + '.' + e.id + '.' + s;
@@ -1857,9 +1811,7 @@ function render(){
               'data-nome="' + esc(e.n) + '" aria-label="Ver ilustração de ' + esc(e.n) + '">' +
               ICON_MIDIA + '</button>' : '') +
           '</span>' +
-          '<span class="ex-presc">' + ns + ' × ' + e.r +
-            (ns !== e.s ? '<span class="goal">alvo ' + e.s + '</span>' : '') +
-          '</span>' +
+          '<span class="ex-presc">' + ns + ' × ' + e.r + '</span>' +
         '</div>' +
         (e.nota ? '<p class="ex-note' + (e.notaOk ? ' ok' : '') + '">' + e.nota + '</p>' : '') +
         '<div class="ex-bottom">' +
@@ -1966,13 +1918,6 @@ document.addEventListener('click', function(ev){
     set.setAttribute('aria-pressed', String(!on));
     if (on) store.del(set.dataset.k); else store.set(set.dataset.k, '1');
     updateProg(set.dataset.t);
-    return;
-  }
-  var ph = ev.target.closest('.ph');
-  if (ph){
-    modo = ph.dataset.mode;
-    store.set(KEY_MODO, modo);
-    render();
     return;
   }
   /* Único zerar que existe: por treino, no rodapé do card. Varre o DOM, então

@@ -36,25 +36,25 @@ só para consulta) e a **Bike** (intervalado, somente leitura). A aba escolhida 
   objeto: sem ela, `renderCabecalho()` esconde a faixa e a legenda. O calendário é do ciclo de
   força; na bike ele gastava a primeira tela sem dizer nada que o card já não diga.
 - **Não existe mais caixa de nota por plano.** As duas que havia saíram na revisão da aba da
-  bike: a de retorno lombar repetia o que o botão de fase já diz, e a de rotação do PPL
-  descrevia um plano que não está em vigor. Com isso `#planoNota` e o CSS de `.note` também
+  bike: a de retorno lombar repetia o que o botão de fase dizia na época (a fase também já
+  saiu, ver acima), e a de rotação do PPL descrevia um plano que não está em vigor. Com isso `#planoNota` e o CSS de `.note` também
   saíram — não sobrou caminho de render sem conteúdo. As notas **por exercício** (`ex[].nota`,
   classe `.ex-note`) e as tarjas AJUSTE/LOMBAR são outra coisa e continuam.
 - **Cada plano tem o seu prefixo de persistência** (`key`): `fittracker.ab.v1.` e
   `fittracker.ppl.v1.`. Trocar de aba nunca mistura séries nem cargas. O prefixo do A/B não
   muda nunca — é onde já estão os dados salvos no navegador de quem usa a página.
-- A **fase** (retorno / prescrição completa) **só existe no Ciclo A/B**, e continua em
-  `fittracker.ab.v1.modo`, no namespace antigo de propósito: trocar essa chave descartaria a
-  fase já salva. Quem decide é `semFase` no objeto do plano: o PPL traz `semFase:1`, então
-  `seriesDe()` devolve a prescrição cheia seja qual for o `modo` salvo, e `render()` esconde a
-  faixa de fase — como já fazia na bike. O motivo é o mesmo das duas caixas de nota que saíram:
-  o PPL está na página só para consulta, e consultá-lo cortado em 3 séries mostraria uma
-  prescrição que nunca foi prescrita. A chave `modo` **não** é apagada nem migrada — ela segue
-  valendo para o A/B, que é o plano em vigor.
-- **`seriesDe()` recebe o plano, não lê uma global.** Assinatura `seriesDe(e, p)`. Os dois
-  pontos de chamada ficam dentro de `render()`, onde `plano` já está em escopo. Quem acrescentar
-  chamada nova passa o plano junto: sem ele, `p.semFase` seria `undefined` e o PPL voltaria a
-  ser cortado em silêncio.
+- **Não existe mais fase.** A prescrição desenhada é sempre a cheia, o número de séries vem
+  direto de `ex[].s`, e não há mais `KEY_MODO`, `seriesDe()`, `RETORNO`, `semFase`, a faixa de
+  botões `.phase` nem a tarja `.goal` ("alvo N"). A fase de retorno saiu primeiro do PPL (plano
+  de consulta, cortá-lo mostrava prescrição que nunca foi prescrita) e depois do A/B, a pedido
+  do Felipe: o retorno lombar acabou, e um seletor cuja única posição útil é "completa" é
+  escolha falsa ocupando a primeira tela. Não reintroduzir sem prescrição nova da personal.
+  Quem precisar de uma redução temporária mexe em `ex[].s`, que é um deploy e fica registrado —
+  a fase era estado de aparelho fazendo o papel de prescrição.
+- **A chave `fittracker.ab.v1.modo` continua gravada, órfã, e fica assim de propósito.** Nenhum
+  código a lê. Apagá-la seria escrever lápide e propagá-la a todos os aparelhos para limpar
+  alguns bytes inertes; e se a fase voltar, o valor antigo é de onde ela retomaria. Não
+  confundir com `fittracker.plano.v1`, que é a aba escolhida e continua em uso.
 - As abas seguem o padrão `tablist`, com `aria-selected`, tabindex móvel e navegação por
   setas. O `keydown` é delegado no `document` pelo mesmo motivo do clique: `renderAbas()`
   reescreve os botões a cada troca.
@@ -162,9 +162,6 @@ vigente para conferir em cima do aparelho, e não recebe input nenhum.
   divide é o comportamento, e por isso são classes distintas com ramos distintos no handler de
   clique. A marcação é **cumulativa** (tocar no 5 marca do 1 ao 5, tocar de novo volta um): tiro
   é sequência, e a pergunta em cima da bike é "em qual eu estou".
-- A **fase** (retorno / prescrição completa) é prescrição de força e some na aba da bike.
-  `.phase` tem `display:flex`, que ganha do `[hidden]` do navegador: por isso existe
-  `.phase[hidden]{display:none}`. Tirar essa regra faz a fase reaparecer, funcionando à toa.
 - **Só a versão vigente é renderizada.** A V2, a V3, a V4 e o critério de avanço estão em
   `docs/bike-intervalado.md`, que também traz o passo a passo de trocar de versão. Prescrição
   que ainda não vale não pode ficar a um descuido de distância de ser desenhada.
