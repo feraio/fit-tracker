@@ -862,7 +862,6 @@
 <section>
   <div class="sec-head">
     <h2>Treinamento</h2>
-    <span class="meta" id="totalMeta"></span>
   </div>
   <!-- Fora de #treinos: render() reescreve #treinos inteiro. -->
   <div class="semanas" id="semanas" hidden></div>
@@ -1456,7 +1455,6 @@ var planos = [
       cls:'bk', badge:'V1',
       nome:'Intervalado', sub:'Dia leve · sozinho',
       dur:'35–40', durUn:'min',
-      meta:'V1 · sessão de 35 a 40 min',
       avanco:'<strong>Avançar para a V2</strong> quando os tiros saírem todos completos e o último no mesmo ritmo do primeiro, em duas sessões seguidas, e a qualidade da força na sequência da semana se mantiver. Se a força cair, reduzir o número de tiros antes de trocar de versão.',
       rodape:'Prescrição fixa · o contador não é salvo e zera ao recarregar',
       /* `reps` é quantas repetições a etapa tem, e é ele que decide se a fileira
@@ -1872,7 +1870,6 @@ function renderLeitura(plano){
     '<div class="t-foot"><span>' + s.rodape + '</span></div></article>';
 
   document.getElementById('treinos').innerHTML = html;
-  document.getElementById('totalMeta').textContent = s.meta;
   s.etapas.forEach(function(e, i){ if (temTiros(e)) pintarTiros(i); });
 }
 
@@ -1979,11 +1976,9 @@ function render(){
   renderSemanas(plano);
   if (plano.leitura){ renderLeitura(plano); return; }
   var bloco = blocoAtual(plano);
-  var total = 0;
   var html = '';
   bloco.treinos.forEach(function(t){
     var soma = t.ex.reduce(function(a,e){ return a + e.s; }, 0);
-    total += soma;
     html += '<article class="treino ' + t.cls + '" data-t="' + t.id + '">' +
       '<div class="t-head">' +
         '<div class="badge' + (t.id.length > 1 ? ' sm' : '') + '">' + t.id + '</div>' +
@@ -2082,7 +2077,6 @@ function render(){
   });
 
   document.getElementById('treinos').innerHTML = html;
-  document.getElementById('totalMeta').textContent = total + ' séries no ciclo A-B';
   bloco.treinos.forEach(function(t){ updateProg(t.id); });
 }
 

@@ -105,6 +105,11 @@ abaixo).
   reescreve os botões a cada troca.
 - Os macros do bloco Nutricional são iguais nos dois planos, então ficam fora da alternância.
 - `semKg:1` no exercício esconde o campo de carga (aquecimento, trabalho por tempo).
+- **O cabeçalho "Treinamento" não tem mais contador de séries à direita** (`#totalMeta`, que lia
+  "57 séries no ciclo A-B" e, na bike, "V1 · sessão de 35 a 40 min"). Saiu a pedido do Felipe:
+  o número que importa entre séries é o do card que está na mão, e esse continua no `t-prog` e
+  no rodapé de cada treino. Um total de ciclo no topo é contabilidade, não prescrição. O `.meta`
+  do bloco Nutricional é outro e continua.
 
 ## O contrato do `id`
 
