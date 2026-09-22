@@ -25,13 +25,19 @@ coisa nesta página.
 
 ## Três planos, uma página
 
-`planos[]` guarda um objeto por plano: o **Treino Adaptativo** (em vigor), o **PPL** (anterior,
-mantido só para consulta) e a **Bike** (intervalado, somente leitura). A aba escolhida fica em
+`planos[]` guarda um objeto por plano: o **Ciclo A/B** (em vigor), o **PPL** (anterior, mantido
+só para consulta) e a **Bike** (intervalado, somente leitura). A aba escolhida fica em
 `fittracker.plano.v1`.
 
-O **Ciclo A/B** saiu quando o Adaptativo entrou, em setembro de 2026. Não foi arquivado numa aba
-de consulta como o PPL porque os dados dele já tinham sido zerados pelo Felipe; as chaves
-`fittracker.ab.v1.*` que sobraram estão órfãs e ficam assim (ver abaixo).
+**O plano é o Ciclo A/B; a FASE é que muda a cada quatro semanas.** Hoje a fase é Adaptação, e
+ela aparece só no `eyebrow` ("Central de comando · Fase de adaptação"). Quando virar Iniciante,
+o que muda são os exercícios dos blocos e essa string — não o nome do plano, não a aba, não o
+prefixo de persistência. Foi decisão explícita do Felipe, para não renomear tudo de quatro em
+quatro semanas.
+
+A chave é `fittracker.ab.v2.`. O `v1` era outro conjunto de exercícios, de antes desta
+prescrição; as chaves `fittracker.ab.v1.*` continuam gravadas, órfãs, e ficam assim (ver
+abaixo).
 
 - Cada plano traz o próprio cabeçalho (`eyebrow`, `titulo`, `lede`, `legenda`), a própria faixa
   de semana e os próprios treinos. `renderCabecalho()` reescreve tudo isso, que vive **fora** de
@@ -54,13 +60,13 @@ de consulta como o PPL porque os dados dele já tinham sido zerados pelo Felipe;
 - **Cada plano tem o seu prefixo de persistência** (`key`): `fittracker.ab.v1.` e
   `fittracker.ppl.v1.`. Trocar de aba nunca mistura séries nem cargas. O prefixo do A/B não
   muda nunca — é onde já estão os dados salvos no navegador de quem usa a página.
-- **O Adaptativo tem `semanas[]` no lugar de `treinos[]`.** É o primeiro plano assim. Cada bloco
+- **O Ciclo A/B tem `semanas[]` no lugar de `treinos[]`.** É o primeiro plano assim. Cada bloco
   (`Semana 1`, `Semana 2`, `Semanas 3-4`) traz os próprios `treinos[]`, com os próprios
   exercícios e o próprio número de séries: a semana 1 e a 2 têm 3, as semanas 3 e 4 têm 4 e
   ganham exercícios novos. `blocoAtual()` resolve qual vale, e `render()` desenha o bloco.
   Plano sem `semanas[]` (PPL, Bike) segue lendo `plano.treinos` direto, e `renderSemanas()`
   esconde a faixa neles.
-- **A semana escolhida (`fittracker.adapt.v1.semana`) SINCRONIZA.** Não é preferência de
+- **A semana escolhida (`fittracker.ab.v2.semana`) SINCRONIZA.** Não é preferência de
   aparelho: é em que ponto do ciclo a pessoa está, e isso é o mesmo no celular e no tablet. A
   única chave `fittracker.` que não sincroniza continua sendo `fittracker.plano.v1`, a aba.
 - **A variação por semana é prescrição escrita, não regra aplicada por cima.** Cada bloco lista
@@ -72,9 +78,14 @@ de consulta como o PPL porque os dados dele já tinham sido zerados pelo Felipe;
   lista quando ela cai no fim (semana 2 e semanas 3-4 do Treino A). `prescDe()` resume em
   `4 × 12-15 → 10-12` em vez de listar as quatro, e a repetição exata de cada série vai no
   `aria-label` da bolinha, que é onde ela é perguntada.
-- **`aquece:1`** marca o primeiro exercício de cada treino, que ganha a nota do aquecimento
-  localizado (2 séries de 15 a 20 com carga moderada). É nota e não bolinha de propósito: como
+- **O aquecimento é regra do treino, não propriedade de um exercício.** Ele vive numa `.t-nota`
+  acima da lista, com texto fixo, e não num campo dos dados. Já esteve pendurado no primeiro
+  exercício e o Felipe apontou o erro: a regra vale para qualquer treino, e lida dentro do
+  "Crucifixo" ela parecia uma instrução daquele exercício. É nota e não bolinha porque, como
   série, inflaria a contagem do treino com trabalho que não é o prescrito.
+- **`eq` é a lista de equipamentos aceitos, e fica fora do `n`.** "Crucifixo" é o que se varre na
+  lista; "halter · cabo · máquina" é o que se lê uma vez e depois vira ruído. Separado, o nome
+  fica com a primeira linha inteira e o ícone de vídeo para de cair numa linha sozinha.
 - **O cardio é uma entrada do treino, com `semKg:1`.** 30 minutos, marcável como qualquer série.
   **30 é o número do Felipe, não o do PDF**, que para ganho de massa pede 25-30 e reserva 30-45
   para recomposição corporal. Está escrito no código para ninguém "corrigir" depois.
@@ -87,9 +98,8 @@ de consulta como o PPL porque os dados dele já tinham sido zerados pelo Felipe;
   Quem precisar de uma redução temporária mexe em `ex[].s`, que é um deploy e fica registrado —
   a fase era estado de aparelho fazendo o papel de prescrição.
 - **As chaves `fittracker.ab.v1.*` continuam gravadas, órfãs, e ficam assim de propósito.**
-  Nenhum código as lê desde que o Ciclo A/B saiu. Apagá-las seria escrever lápide e propagá-la a
-  todos os aparelhos para limpar bytes inertes. `KEY_AB` sobrevive no código só como âncora
-  desse comentário.
+  Nenhum código as lê desde que a prescrição mudou e o prefixo virou `ab.v2.`. Apagá-las seria
+  escrever lápide e propagá-la a todos os aparelhos para limpar bytes inertes.
 - As abas seguem o padrão `tablist`, com `aria-selected`, tabindex móvel e navegação por
   setas. O `keydown` é delegado no `document` pelo mesmo motivo do clique: `renderAbas()`
   reescreve os botões a cada troca.
@@ -237,9 +247,14 @@ Supabase é chave/valor genérica, então o histórico é só um conjunto de cha
 na fila, na lápide e no RLS que existiam. Quem for mexer nisso não precisa tocar em SQL.
 
 - **`atual.` é a sessão em andamento; `log.<id>.` é a sessão fechada.** Tudo sob
-  `fittracker.adapt.v1.atual.<treino>.` é o que está sendo preenchido agora. `finalizar()` move
-  para `fittracker.adapt.v1.log.<id>.` e apaga a origem, e a lápide faz a sessão sumir do card
+  `fittracker.ab.v2.atual.<treino>.` é o que está sendo preenchido agora. `finalizar()` move
+  para `fittracker.ab.v2.log.<id>.` e apaga a origem, e a lápide faz a sessão sumir do card
   nos outros aparelhos também.
+- **A CARGA NÃO MORA NA SESSÃO.** Ela fica em `fittracker.ab.v2.kg.<treino>.<exercício>`, fora
+  de `atual.`, porque é o valor corrente daquele exercício e não um dado de uma sessão só. O
+  Finalizar **copia** para o log e **deixa o campo preenchido**: voltar na quinta e reencontrar
+  a barra vazia seria perder exatamente o número que o personal mandou anotar. Zerar é apagar o
+  campo à mão. O retrato copiado para o log é dos exercícios do bloco desenhado.
 - **O `<id>` da sessão é `Date.now()`.** Não colide entre aparelhos sem contador combinado e
   ordena o histórico sozinho. Relógio de cliente erra, e é exatamente por isso que ele **não**
   decide conflito em lugar nenhum desta página; aqui é só ordenação de leitura, o único uso em
@@ -313,7 +328,9 @@ Estas ausências foram escolhidas. Reintroduzi-las é regressão, não melhoria.
   `QuotaExceededError` em silêncio — o usuário perderia mídia sem aviso. A fonte de verdade
   são arquivos commitados no repo.
 - **Sem vídeo, GIF ou embed de YouTube.** Iframe de terceiros é pesado, depende de rede e
-  destoa do tom da página.
+  destoa do tom da página. **Link comum para o YouTube é outra coisa e existe** (ver
+  "Demonstração em vídeo" abaixo): um `<a target="_blank">` não baixa nada, não roda nada e não
+  atrasa a primeira pintura. A proibição é de embed, não de link.
 - **Sem biblioteca de lightbox, carrossel, swipe ou zoom customizado.** O `<dialog>` nativo já
   entrega ESC, backdrop e trap de foco.
 - **A aba da bike não é escondida de quem não entrou.** A especificação pedia "visível apenas
@@ -386,6 +403,28 @@ painel. Treinar já mantém vivo; o risco é férias ou lesão.
   requisição externa.
 - A página não depende disso para funcionar. Banco pausado significa sync parado, não treino
   perdido — o `localStorage` continua sendo a fonte de verdade.
+
+## Demonstração em vídeo
+
+`VIDEOS` mapeia `id` do exercício para um endereço do YouTube, e faz aparecer um ícone discreto
+de play ao lado do nome. Chaveado pelo `id`, como `assets/ex/<id>.webp`: **uma entrada por
+exercício**, e não uma cópia em cada bloco de semana. Exercício sem entrada não ganha ícone.
+
+- É um `<a href target="_blank" rel="noopener noreferrer">`, não um botão: abre fora e nem passa
+  pelo handler de clique delegado. Nada é embutido na página.
+- **Procedência, e por que ela importa aqui.** Os endereços vieram das anotações de link do PDF
+  da personal, extraídos por posição na página. **A coluna de links do PDF está deslocada**: na
+  primeira tabela de cada treino ela bate, e nas demais o link da linha N está na linha N-1. O
+  mapa foi montado cruzando as cinco tabelas e ficando com o que a maioria diz; o Felipe
+  conferiu três títulos (crucifixo, puxada e supino reto) e os três caem onde o modelo prevê.
+- **`triceps-corda` fica de fora de propósito.** O PDF repete nele o link da rosca direta, que
+  duas tabelas confirmam ser da rosca. Link errado numa fase que é sobre técnica é pior que link
+  nenhum.
+- Cinco entradas vêm de uma tabela só (`remada-unilateral`, `elevacao-lateral`,
+  `triceps-frances`, `agachamento`, `abdominal-crunch`). Estão marcadas no código. Se alguma
+  abrir o vídeo errado, é uma delas.
+- Ao receber uma prescrição nova, **não confiar na ordem dos links do PDF**. Extrair, cruzar as
+  tabelas e conferir pelo menos um título antes de publicar.
 
 ## Ilustrações: origem e licença
 

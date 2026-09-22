@@ -330,6 +330,17 @@
   .bar{height:3px;background:var(--line2)}
   .bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s ease}
 
+  /* Regra que vale para o treino inteiro, lida antes do primeiro exercício. */
+  .t-nota{
+    margin:0;
+    padding:10px 14px 12px;
+    font-size:12px;
+    line-height:1.35;
+    color:var(--ink2);
+    background:#F3F5F6;
+    border-bottom:1px solid var(--line2);
+  }
+
   /* ---------- Exercícios ---------- */
   ol.ex{list-style:none;margin:0;padding:0}
   ol.ex li{
@@ -338,9 +349,18 @@
   }
   ol.ex li.done{background:#F2F6F3}
   .ex-top{display:flex;align-items:baseline;gap:8px}
+  .ex-id{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 0}
   .ex-name{font-weight:600;font-size:15px;line-height:1.25}
+  .ex-eq{
+    font-family:var(--mono);
+    font-size:10.5px;
+    letter-spacing:.04em;
+    color:var(--ink3);
+    line-height:1.3;
+  }
   .ex-presc{
     margin-left:auto;
+    flex:0 0 auto;
     font-family:var(--mono);
     font-size:12px;
     color:var(--ink2);
@@ -748,6 +768,7 @@
     transform:translate(-50%,-50%);
   }
   .ex-media:hover{color:var(--ink)}
+  a.ex-media{text-decoration:none}
 
   #mediaBox{
     border:0;
@@ -1195,8 +1216,16 @@ function sincronizar(){
 
    NÃO EXISTE MAIS FASE, e não vai voltar: o corte global de séries virou
    prescrição por semana, escrita exercício a exercício no Adaptativo. */
-var KEY_ADAPT = 'fittracker.adapt.v1.';
-var KEY_AB = 'fittracker.ab.v1.';
+/* O plano é o Ciclo A/B e o nome dele não muda a cada bloco de quatro semanas:
+   "Adaptação" é a FASE em que o Felipe está, não um plano novo. Por isso a
+   chave é `ab.v2.` e não `adapt.`: quando a fase virar Iniciante, o que muda
+   são os exercícios e o `fase` do cabeçalho, não o lugar onde a carga mora.
+
+   `v2` porque o `v1` é outro conjunto de exercícios, de antes desta prescrição.
+   As chaves `fittracker.ab.v1.*` continuam gravadas, órfãs, e ficam assim:
+   nenhum código as lê, e apagá-las seria escrever lápide e propagá-la a todos
+   os aparelhos para limpar bytes inertes. */
+var KEY_AB = 'fittracker.ab.v2.';
 var KEY_PPL = 'fittracker.ppl.v1.';
 var KEY_PLANO = 'fittracker.plano.v1';
 
@@ -1208,14 +1237,14 @@ var KEY_PLANO = 'fittracker.plano.v1';
    do arquivo em assets/ex/. Renomear `n` é livre; renomear `id` zera a carga salva
    e quebra o caminho da ilustração.
    `img:1` marca que existe assets/ex/<id>.webp e faz aparecer o ícone de mídia.
-   `semKg:1` esconde o campo de carga (aquecimento, prancha, cardio).
-   `aquece:1` marca o primeiro exercício do treino, que leva 2 séries de 15 a 20
-   de aquecimento localizado antes das séries valendo.
+   `semKg:1` esconde o campo de carga (prancha, cardio).
+   `eq` é a lista de equipamentos aceitos, e fica fora do `n` de propósito: o
+   nome é o que se varre na lista, o equipamento é o que se lê uma vez.
    `r` é a prescrição de repetição quando ela é igual em todas as séries; `rs` é
    a lista quando ela cai no fim do exercício. Um ou outro, nunca os dois. */
 var planos = [
   {
-    /* ---------- Treino Adaptativo · plano em vigor ----------
+    /* ---------- Ciclo A/B · plano em vigor, fase de adaptação ----------
        Prescrição da personal (PDF "HIPERTRON · Treino 01 Adaptação"), quatro
        semanas. O que muda por semana não é carga, é VOLUME: a semana 1 e a 2
        têm 3 séries, as semanas 3 e 4 têm 4 e ganham exercícios novos. Por isso
@@ -1225,12 +1254,12 @@ var planos = [
        deste plano existir e não volta: aqui a variação por semana É a
        prescrição, escrita exercício a exercício, e não uma regra aplicada por
        cima. Trocar de bloco é ler outro bloco, não recalcular nada. */
-    id:'adapt',
-    aba:'Adaptação',
-    key:KEY_ADAPT,
-    doc:'Central de Comando · Adaptação',
-    eyebrow:'Central de comando · Ganho de massa',
-    titulo:'Treino <span class="slash">Adaptativo</span>',
+    id:'ab',
+    aba:'A/B',
+    key:KEY_AB,
+    doc:'Central de Comando · Ciclo A/B',
+    eyebrow:'Central de comando · Fase de adaptação',
+    titulo:'Ciclo <span class="slash">A</span>/<span class="slash">B</span>',
     lede:'Quatro semanas de adaptação, três sessões por semana em rotação A-B-A-B. Técnica e cadência acima de carga: 2 segundos subindo, 3 descendo, sem bloquear a articulação. A carga é para sentir o músculo, não para superar.',
     semanas:[
       {
@@ -1240,11 +1269,11 @@ var planos = [
           {
             id:'A', cls:'a', nome:'Superiores', sub:'Peito, costas, ombros e braços',
             ex:[
-              {id:'crucifixo', n:'Crucifixo (halter/cabo/máquina)', s:3, r:'12-15', aquece:1},
+              {id:'crucifixo', n:'Crucifixo', eq:'halter · cabo · máquina', s:3, r:'12-15'},
               {id:'puxada-frontal', n:'Puxada Frontal Aberta Pronada', s:3, r:'12-15'},
-              {id:'desenvolvimento-sentado', n:'Desenvolvimento Sentado (halter/cabo/máquina)', s:3, r:'12-15'},
+              {id:'desenvolvimento-sentado', n:'Desenvolvimento Sentado', eq:'halter · cabo · máquina', s:3, r:'12-15'},
               {id:'triceps-corda', n:'Tríceps Corda', s:3, r:'12-15'},
-              {id:'rosca-direta', n:'Rosca Direta (barra W ou corda)', s:3, r:'12-15'},
+              {id:'rosca-direta', n:'Rosca Direta', eq:'barra W ou corda', s:3, r:'12-15'},
               {id:'prancha', n:'Abdominal Prancha', s:3, r:'30s-1min', semKg:1},
               {id:'cardio', n:'Cardio pós-treino', s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
@@ -1255,8 +1284,8 @@ var planos = [
           {
             id:'B', cls:'b', nome:'Inferiores e abdômen', sub:'Glúteos, quadríceps, femorais e panturrilhas',
             ex:[
-              {id:'cadeira-adutora', n:'Cadeira Adutora', s:3, r:'12-15', aquece:1},
-              {id:'mesa-flexora', n:'Mesa ou Cadeira Flexora', s:3, r:'12-15'},
+              {id:'cadeira-adutora', n:'Cadeira Adutora', s:3, r:'12-15'},
+              {id:'mesa-flexora', n:'Flexora', eq:'mesa ou cadeira', s:3, r:'12-15'},
               {id:'cadeira-extensora', n:'Cadeira Extensora', s:3, r:'12-15'},
               {id:'leg-press', n:'Leg Press', s:3, r:'12-15'},
               {id:'panturrilha-em-pe', n:'Panturrilha em Pé', s:3, r:'12-15'},
@@ -1280,11 +1309,11 @@ var planos = [
           {
             id:'A', cls:'a', nome:'Superiores', sub:'Peito, costas, ombros e braços',
             ex:[
-              {id:'crucifixo', n:'Crucifixo (halter/cabo/máquina)', s:3, rs:['12-15','12-15','10-12'], aquece:1},
+              {id:'crucifixo', n:'Crucifixo', eq:'halter · cabo · máquina', s:3, rs:['12-15','12-15','10-12']},
               {id:'puxada-frontal', n:'Puxada Frontal Aberta Pronada', s:3, rs:['12-15','12-15','10-12']},
-              {id:'desenvolvimento-sentado', n:'Desenvolvimento Sentado (halter/cabo/máquina)', s:3, rs:['12-15','12-15','10-12']},
+              {id:'desenvolvimento-sentado', n:'Desenvolvimento Sentado', eq:'halter · cabo · máquina', s:3, rs:['12-15','12-15','10-12']},
               {id:'triceps-polia', n:'Tríceps na Polia', s:3, rs:['12-15','12-15','10-12']},
-              {id:'rosca-direta', n:'Rosca Direta (barra W ou corda)', s:3, rs:['12-15','12-15','10-12']},
+              {id:'rosca-direta', n:'Rosca Direta', eq:'barra W ou corda', s:3, rs:['12-15','12-15','10-12']},
               {id:'prancha', n:'Abdominal Prancha', s:3, r:'30s-1min', semKg:1},
               {id:'cardio', n:'Cardio pós-treino', s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
@@ -1295,8 +1324,8 @@ var planos = [
           {
             id:'B', cls:'b', nome:'Inferiores e abdômen', sub:'Glúteos, quadríceps, femorais e panturrilhas',
             ex:[
-              {id:'cadeira-adutora', n:'Cadeira Adutora', s:3, r:'12-15', aquece:1},
-              {id:'mesa-flexora', n:'Mesa ou Cadeira Flexora', s:3, r:'12-15'},
+              {id:'cadeira-adutora', n:'Cadeira Adutora', s:3, r:'12-15'},
+              {id:'mesa-flexora', n:'Flexora', eq:'mesa ou cadeira', s:3, r:'12-15'},
               {id:'cadeira-extensora', n:'Cadeira Extensora', s:3, r:'12-15'},
               {id:'leg-press', n:'Leg Press', s:3, r:'12-15'},
               {id:'panturrilha-em-pe', n:'Panturrilha em Pé', s:3, r:'12-15'},
@@ -1318,15 +1347,15 @@ var planos = [
           {
             id:'A', cls:'a', nome:'Superiores', sub:'Peito, costas, ombros e braços',
             ex:[
-              {id:'crucifixo', n:'Crucifixo (halter/cabo/máquina)', s:4, rs:['12-15','12-15','10-12','10-12'], aquece:1},
-              {id:'supino-reto', n:'Supino Reto (halter/barra/máquina)', s:4, rs:['12-15','12-15','10-12','10-12']},
+              {id:'crucifixo', n:'Crucifixo', eq:'halter · cabo · máquina', s:4, rs:['12-15','12-15','10-12','10-12']},
+              {id:'supino-reto', n:'Supino Reto', eq:'halter · barra · máquina', s:4, rs:['12-15','12-15','10-12','10-12']},
               {id:'puxada-frontal', n:'Puxada Frontal Aberta Pronada', s:4, rs:['12-15','12-15','10-12','10-12']},
-              {id:'remada-unilateral', n:'Remada Unilateral (halter ou máquina)', s:4, rs:['12-15','12-15','10-12','10-12']},
-              {id:'desenvolvimento-sentado', n:'Desenvolvimento Sentado (halter/cabo/máquina)', s:4, rs:['12-15','12-15','10-12','10-12']},
-              {id:'elevacao-lateral', n:'Elevação Lateral com Halter', s:4, rs:['12-15','12-15','10-12','10-12']},
+              {id:'remada-unilateral', n:'Remada Unilateral', eq:'halter ou máquina', s:4, rs:['12-15','12-15','10-12','10-12']},
+              {id:'desenvolvimento-sentado', n:'Desenvolvimento Sentado', eq:'halter · cabo · máquina', s:4, rs:['12-15','12-15','10-12','10-12']},
+              {id:'elevacao-lateral', n:'Elevação Lateral', eq:'halter', s:4, rs:['12-15','12-15','10-12','10-12']},
               {id:'triceps-polia', n:'Tríceps na Polia', s:4, rs:['12-15','12-15','10-12','10-12']},
-              {id:'triceps-frances', n:'Tríceps Francês (halter ou corda)', s:4, rs:['12-15','12-15','10-12','10-12']},
-              {id:'rosca-direta', n:'Rosca Direta (barra W ou corda)', s:4, rs:['12-15','12-15','10-12','10-12']},
+              {id:'triceps-frances', n:'Tríceps Francês', eq:'halter ou corda', s:4, rs:['12-15','12-15','10-12','10-12']},
+              {id:'rosca-direta', n:'Rosca Direta', eq:'barra W ou corda', s:4, rs:['12-15','12-15','10-12','10-12']},
               /* O PDF traz "10 a 12 reps" na quarta série da prancha, o que não
                  existe: prancha é medida em tempo. Lido como arrasto da linha de
                  cima e corrigido para as quatro em tempo. */
@@ -1340,10 +1369,10 @@ var planos = [
           {
             id:'B', cls:'b', nome:'Inferiores e abdômen', sub:'Glúteos, quadríceps, femorais e panturrilhas',
             ex:[
-              {id:'cadeira-adutora', n:'Cadeira Adutora', s:4, r:'12-15', aquece:1},
-              {id:'mesa-flexora', n:'Mesa ou Cadeira Flexora', s:4, r:'12-15'},
+              {id:'cadeira-adutora', n:'Cadeira Adutora', s:4, r:'12-15'},
+              {id:'mesa-flexora', n:'Flexora', eq:'mesa ou cadeira', s:4, r:'12-15'},
               {id:'cadeira-extensora', n:'Cadeira Extensora', s:4, r:'12-15'},
-              {id:'agachamento', n:'Agachamento (halter/barra/hack)', s:4, r:'12-15'},
+              {id:'agachamento', n:'Agachamento', eq:'halter · barra · hack squat', s:4, r:'12-15'},
               {id:'leg-press', n:'Leg Press', s:4, r:'12-15'},
               {id:'panturrilha-em-pe', n:'Panturrilha em Pé', s:4, r:'12-15'},
               {id:'abdominal-crunch', n:'Abdominal Crunch', s:4, r:'12-15', semKg:1},
@@ -1367,7 +1396,7 @@ var planos = [
     doc:'Central de Comando · Ciclo PPL',
     eyebrow:'Central de comando · Plano anterior',
     titulo:'Ciclo <span class="slash">PPL</span>',
-    lede:'Push, Pull e Legs em rotação de três treinos. Guardado aqui para consulta — o plano em vigor é o Treino Adaptativo.',
+    lede:'Push, Pull e Legs em rotação de três treinos. Guardado aqui para consulta — o plano em vigor é o Ciclo A/B.',
     treinos:[
       {
         id:'T1', cls:'a', nome:'Push', sub:'Peitoral, ombros e tríceps',
@@ -1690,6 +1719,53 @@ var ICON_MIDIA =
   '</svg>';
 
 function midiaDe(e){ return (MIDIA_ATIVA && e.img) ? MEDIA_DIR + e.id + '.webp' : ''; }
+
+/* ---------- Demonstração em vídeo ----------
+   Chaveado pelo `id` do exercício, como a ilustração em assets/ex/: uma entrada
+   por exercício, e não uma cópia em cada bloco de semana. Exercício sem entrada
+   aqui simplesmente não ganha ícone.
+
+   PROCEDÊNCIA: os endereços vieram das anotações de link do PDF da personal,
+   extraídos por posição na página. A coluna de links do PDF está deslocada: na
+   primeira tabela de cada treino ela bate, e nas demais o link da linha N está
+   na linha N-1. O mapa abaixo é o resultado de cruzar as cinco tabelas e ficar
+   com o que a maioria diz. O Felipe conferiu três títulos (crucifixo, puxada e
+   supino reto), e os três caem onde este modelo prevê.
+
+   Link comum que abre fora, nunca embed: iframe de terceiros continua fora da
+   página, pelo motivo registrado no CLAUDE.md.
+
+   `triceps-corda` fica de fora: o PDF repete nele o link da rosca direta, que
+   duas tabelas confirmam ser da rosca. Link errado numa fase que é sobre
+   técnica é pior que link nenhum. */
+var VIDEOS = {
+  /* Confirmados pelo Felipe */
+  'crucifixo':               'https://www.youtube.com/watch?v=uQIPgsELvgs',
+  'puxada-frontal':          'https://www.youtube.com/shorts/ftcql3-AMRs',
+  'supino-reto':             'https://www.youtube.com/watch?v=_4KDAZ59jkw',
+  /* Concordam em duas ou três tabelas */
+  'desenvolvimento-sentado': 'https://www.youtube.com/watch?v=bFuat5b4QFA',
+  'triceps-polia':           'https://www.youtube.com/watch?v=vzItkqTEq20',
+  'rosca-direta':            'https://www.youtube.com/watch?v=rc_7r56M3So',
+  'prancha':                 'https://www.youtube.com/shorts/8GFqPC0I0sA',
+  'mesa-flexora':            'https://www.youtube.com/watch?v=cuWo-F7HDhY',
+  'cadeira-extensora':       'https://www.youtube.com/watch?v=BHxNa16VQ7A',
+  'leg-press':               'https://www.youtube.com/watch?v=B0swveEoTnU',
+  'panturrilha-em-pe':       'https://www.youtube.com/watch?v=xU9KCMZkoxo',
+  'cadeira-adutora':         'https://www.youtube.com/watch?v=C7eVG0crT6c',
+  /* Uma tabela só: conferir ao abrir pela primeira vez */
+  'remada-unilateral':       'https://www.youtube.com/watch?v=X7F-Yf-j0ec',
+  'elevacao-lateral':        'https://www.youtube.com/watch?v=nxCKW-unul0',
+  'triceps-frances':         'https://www.youtube.com/watch?v=4piO_WPmCCE',
+  'agachamento':             'https://www.youtube.com/watch?v=bkDka7InYsY',
+  'abdominal-crunch':        'https://www.youtube.com/watch?v=27hLFDTivBg'
+};
+
+var ICON_VIDEO =
+  '<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" focusable="false">' +
+    '<rect x="1.5" y="3" width="13" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.4"/>' +
+    '<path d="M6.8 6.2l3.6 1.8-3.6 1.8z" fill="currentColor"/>' +
+  '</svg>';
 function esc(s){
   return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 }
@@ -1881,7 +1957,12 @@ function metaDe(e, i){
    `fittracker.`, então já entram na fila, na lápide e no RLS que existem. Não
    houve mudança nenhuma no schema do Supabase para o histórico existir. */
 function chaveSerie(plano, t, e, i){ return plano.key + 'atual.' + t.id + '.' + e.id + '.' + i; }
-function chaveKg(plano, t, e){ return plano.key + 'atual.' + t.id + '.kg.' + e.id; }
+/* A CARGA NÃO MORA NA SESSÃO, e por isso não está sob `atual.`. Ela é o valor
+   corrente daquele exercício naquele treino: o Finalizar copia para o log e
+   deixa o campo preenchido, porque voltar na quinta e reencontrar a barra vazia
+   seria perder justamente o número que o personal mandou anotar. Zerar é apagar
+   o campo à mão, como em qualquer outro campo da página. */
+function chaveKg(plano, t, e){ return plano.key + 'kg.' + t.id + '.' + e.id; }
 function chaveSensacao(plano, t){ return plano.key + 'atual.' + t.id + '.sensacao'; }
 function chaveObs(plano, t){ return plano.key + 'atual.' + t.id + '.obs'; }
 
@@ -1910,6 +1991,10 @@ function render(){
         '<div class="t-prog"><b data-prog="' + t.id + '">0/' + soma + '</b><small>séries</small></div>' +
       '</div>' +
       '<div class="bar"><i data-bar="' + t.id + '"></i></div>' +
+      /* Regra do treino inteiro, e não do primeiro exercício: fica acima da
+         lista, que é onde ela é lida, em vez de pendurada num exercício que
+         não tem nada de especial. */
+      '<p class="t-nota">Aquecimento localizado no primeiro exercício: 2 séries de 15 a 20 com carga moderada, antes das séries valendo.</p>' +
       '<ol class="ex">';
 
     t.ex.forEach(function(e){
@@ -1937,6 +2022,7 @@ function render(){
       var mid = midiaDe(e);
       html += '<li data-ex="' + e.id + '">' +
         '<div class="ex-top">' +
+          '<div class="ex-id">' +
           '<span class="ex-name">' + e.n +
             (e.flag ? '<span class="flag' + (e.flagOk ? ' ok' : '') + '" title="' +
               (e.flagOk ? 'Ajuste já definido pela personal' : 'Ponto a confirmar com a personal') +
@@ -1944,10 +2030,21 @@ function render(){
             (mid ? '<button class="ex-media" type="button" data-media="' + esc(mid) + '" ' +
               'data-nome="' + esc(e.n) + '" aria-label="Ver ilustração de ' + esc(e.n) + '">' +
               ICON_MIDIA + '</button>' : '') +
+            /* <a> de verdade, com target e rel: abre o vídeo fora da página e
+               não passa pelo handler de clique delegado. */
+            (VIDEOS[e.id] ? '<a class="ex-media" href="' + esc(VIDEOS[e.id]) + '" ' +
+              'target="_blank" rel="noopener noreferrer" ' +
+              'aria-label="Ver demonstração de ' + esc(e.n) + ' (abre o YouTube)">' +
+              ICON_VIDEO + '</a>' : '') +
           '</span>' +
+          /* Equipamento fora do nome: "Crucifixo" é o que se procura na lista,
+             "halter · cabo · máquina" é o que se lê uma vez e depois vira ruído.
+             Separado, o nome ganha a primeira linha inteira e o ícone de vídeo
+             para de cair sozinho embaixo. */
+          (e.eq ? '<span class="ex-eq">' + e.eq + '</span>' : '') +
+          '</div>' +
           '<span class="ex-presc">' + prescDe(e) + '</span>' +
         '</div>' +
-        (e.aquece ? '<p class="ex-note ok">Aquecimento localizado antes das séries valendo: 2 séries de 15 a 20 com carga moderada.</p>' : '') +
         (e.nota ? '<p class="ex-note' + (e.notaOk ? ' ok' : '') + '">' + e.nota + '</p>' : '') +
         '<div class="ex-bottom">' +
           '<div class="sets">' + chips + '</div>' +
@@ -2014,7 +2111,6 @@ function finalizar(plano, t){
        tela, e nesse modo a página mal guarda a sessão atual. */
     achadas = [pre + 'sensacao', pre + 'obs'];
     t.ex.forEach(function(e){
-      achadas.push(pre + 'kg.' + e.id);
       for (var i = 1; i <= e.s; i++) achadas.push(pre + e.id + '.' + i);
     });
     achadas = achadas.filter(function(k){ return store.get(k) !== null; });
@@ -2027,6 +2123,13 @@ function finalizar(plano, t){
   achadas.forEach(function(k){
     store.set(destino + k.slice(pre.length), store.get(k));
     store.del(k);                                  /* lápide: some nos outros aparelhos também */
+  });
+  /* A carga é COPIADA, não movida: fica registrada na sessão e continua no
+     campo para a próxima. Lida do bloco desenhado, então o retrato é dos
+     exercícios que estavam na tela. */
+  t.ex.forEach(function(e){
+    var kg = store.get(chaveKg(plano, t, e));
+    if (kg !== null && kg !== '') store.set(destino + 'kg.' + e.id, kg);
   });
   store.set(destino + 'meta', JSON.stringify({semana: bloco.id, treino: t.id, quando: id}));
   return true;
