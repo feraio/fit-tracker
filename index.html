@@ -185,37 +185,6 @@
     color:var(--ink2);
   }
   .login-erro[hidden]{display:none}
-  .login-prefs{
-    margin-top:16px;
-    padding-top:12px;
-    border-top:1px solid var(--line2);
-  }
-  /* Escopadas em #loginBox de propósito: as regras genéricas `#loginBox label` e
-     `#loginBox input` acima têm ID na frente e ganhariam de seletor de classe,
-     deixando a label em display:block e a caixa com width:100%. */
-  #loginBox .login-prefs label{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    margin:0;
-    font-family:var(--sans);
-    font-size:13px;
-    letter-spacing:0;
-    text-transform:none;
-    color:var(--ink2);
-    cursor:pointer;
-  }
-  #loginBox .login-prefs input{
-    width:18px;
-    height:18px;
-    flex:none;
-    margin:0;
-    padding:0;
-    border:0;
-    border-radius:0;
-    background:transparent;
-    accent-color:var(--ink);
-  }
   .login-quem{
     font-family:var(--mono);
     font-size:12px;
@@ -252,73 +221,6 @@
     max-width:44ch;
   }
 
-  /* ---------- Faixa da semana ---------- */
-  .week{
-    display:grid;
-    grid-template-columns:repeat(7,1fr);
-    gap:4px;
-    margin:24px 0 8px;
-  }
-  .day{
-    /* Sem isto, a trilha 1fr do grid não encolhe abaixo do conteúdo: uma
-       palavra sem espaço mais larga que a coluna alarga a faixa e faz a página
-       inteira rolar para o lado. */
-    min-width:0;
-    background:var(--card);
-    border:1px solid var(--line2);
-    border-radius:var(--r);
-    padding:8px 2px 9px;
-    text-align:center;
-    min-height:74px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:flex-start;
-    gap:5px;
-  }
-  .day .dow{
-    font-family:var(--mono);
-    font-size:10px;
-    letter-spacing:.1em;
-    color:var(--ink3);
-    text-transform:uppercase;
-  }
-  .day .mark{
-    font-family:var(--cond);
-    font-weight:700;
-    font-size:19px;
-    line-height:1;
-    width:26px;height:26px;
-    border-radius:50%;
-    display:flex;align-items:center;justify-content:center;
-    border:2px solid var(--line);
-    color:var(--ink3);
-  }
-  .day .mark.a{background:var(--red25);border-color:var(--red25);color:#fff}
-  .day .mark.b{background:var(--blue20);border-color:var(--blue20);color:#fff}
-  .day .mark.pt{border-color:var(--ink);color:var(--ink);font-size:11px;letter-spacing:.02em}
-  .day .what{
-    font-size:9.5px;
-    line-height:1.15;
-    color:var(--ink2);
-    letter-spacing:.01em;
-    padding:0 1px;
-  }
-  .day.today{
-    background:var(--ink);
-    border-color:var(--ink);
-  }
-  .day.today .dow{color:#fff}
-  .day.today .what{color:#C9CFD3}
-  .day.today .mark{border-color:#5A626B;color:#fff}
-  .legend{
-    font-family:var(--mono);
-    font-size:10.5px;
-    color:var(--ink3);
-    letter-spacing:.04em;
-    margin:0 0 4px;
-  }
-
   /* ---------- Seções ---------- */
   section{margin-top:36px}
   .sec-head{
@@ -343,6 +245,27 @@
     font-size:11px;
     color:var(--ink3);
   }
+
+  /* ---------- Faixa de semana do ciclo ----------
+     Mesma linguagem visual que a faixa de fase tinha: a fase morreu porque a
+     escolha era falsa, e esta não é. Aqui cada posição desenha exercícios e
+     séries diferentes. `display:flex` ganha do `[hidden]` do navegador, e a
+     faixa precisa sumir inteira nos planos de uma prescrição só. */
+  .semanas{
+    display:flex;align-items:center;gap:6px;
+    margin:0 0 20px;flex-wrap:wrap;
+  }
+  .semanas[hidden]{display:none}
+  .sem-label{
+    font-family:var(--mono);font-size:10px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ink3);margin-right:4px;
+  }
+  .sem{
+    font-family:var(--mono);font-size:11px;letter-spacing:.06em;
+    background:transparent;border:1px solid var(--line);
+    border-radius:var(--r);padding:7px 11px;cursor:pointer;color:var(--ink2);
+  }
+  .sem[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
 
   /* ---------- Cartão de treino ---------- */
   .treino{
@@ -376,7 +299,12 @@
     flex:0 0 auto;
   }
   .badge.sm{font-size:17px;letter-spacing:.02em}
-  .t-title{display:flex;flex-direction:column;gap:1px;min-width:0}
+  /* `flex:1 1 0` e não o padrão: com base automática, o nome longo do treino B
+     ("Inferiores e abdômen" mais o subtítulo) estoura a linha e joga o contador
+     de séries para baixo, em vez de deixar o título quebrar. Base zero faz o
+     título ocupar o que sobra e quebrar sozinho, e o contador fica sempre na
+     mesma coluna à direita. */
+  .t-title{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1 1 0}
   .t-title h3{
     font-family:var(--cond);
     text-transform:uppercase;
@@ -490,6 +418,85 @@
     text-align:right;
     color:var(--ink);
   }
+  /* ---------- Repetições feitas ----------
+     Só existe depois que a série é marcada, e nasce com a meta dentro. Exercício
+     intocado não mostra esta linha, então o card de um treino que ainda não
+     começou tem exatamente a densidade de antes. */
+  .feitas{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    flex-wrap:wrap;
+    margin-top:10px;
+    padding-top:10px;
+    border-top:1px dashed var(--line2);
+  }
+  .feitas-rot{
+    font-family:var(--mono);font-size:10px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--ink3);margin-right:2px;
+  }
+  .feita{display:flex;align-items:center;gap:4px}
+  .feita span{
+    font-family:var(--mono);font-size:10px;color:var(--ink3);
+  }
+  .feita input{
+    width:44px;
+    padding:5px 6px;
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    background:#fff;
+    font-family:var(--mono);
+    font-size:14px;
+    text-align:center;
+    color:var(--ink);
+  }
+
+  /* ---------- Fecho da sessão ---------- */
+  .fechar{
+    padding:14px;
+    border-top:1px solid var(--line2);
+  }
+  .fechar-rot{
+    display:block;
+    font-family:var(--mono);font-size:10px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ink3);margin-bottom:8px;
+  }
+  .senss{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .sens{
+    font-family:var(--mono);font-size:11px;letter-spacing:.04em;
+    background:transparent;border:1px solid var(--line);
+    border-radius:var(--r);padding:7px 10px;cursor:pointer;color:var(--ink2);
+  }
+  .sens[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .obs{
+    display:block;
+    width:100%;
+    padding:9px 10px;
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    background:#fff;
+    font-family:var(--sans);
+    font-size:16px;          /* 16px evita o zoom automático do iOS no foco */
+    line-height:1.35;
+    color:var(--ink);
+    resize:vertical;
+    margin-bottom:12px;
+  }
+  .obs::placeholder{color:var(--ink3)}
+  /* Largura cheia e alvo alto: é o último toque da sessão, dado em pé e com a
+     mão trêmula. Herda o --accent do card, então o A é vermelho e o B é azul. */
+  .btn.bloco{
+    display:block;
+    width:100%;
+    padding:14px;
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+    font-size:12px;
+    letter-spacing:.1em;
+  }
+  .btn.bloco:hover{color:#fff;opacity:.9}
+
   .t-foot{
     display:flex;
     align-items:center;
@@ -498,7 +505,7 @@
     border-top:1px solid var(--line2);
     background:#F3F5F6;
   }
-  .t-foot span{font-family:var(--mono);font-size:11px;color:var(--ink3)}
+  .t-foot span{font-family:var(--mono);font-size:11px;color:var(--ink3);line-height:1.4}
   /* ---------- Etapas · prescrição somente leitura ----------
      Este componente é lido em cima da bike, com o corpo em movimento: uma
      etapa por linha, número grande encostado à direita sempre na mesma
@@ -829,8 +836,6 @@
   <h1 id="titulo"></h1>
   <p class="lede" id="lede"></p>
 
-  <p class="legend" id="legenda" style="margin-top:26px"></p>
-  <div class="week" id="week"></div>
 </header>
 
 <section>
@@ -838,6 +843,8 @@
     <h2>Treinamento</h2>
     <span class="meta" id="totalMeta"></span>
   </div>
+  <!-- Fora de #treinos: render() reescreve #treinos inteiro. -->
+  <div class="semanas" id="semanas" hidden></div>
   <div id="treinos" role="tabpanel" tabindex="-1"></div>
 </section>
 
@@ -869,9 +876,6 @@
       <input id="loginSenha" name="senha" type="password" autocomplete="current-password" required>
     </div>
     <p class="login-erro" id="loginErro" hidden></p>
-    <div class="login-prefs">
-      <label for="prefSemana"><input type="checkbox" id="prefSemana" data-pref="semana"> Mostrar a faixa da semana</label>
-    </div>
     <div class="login-acoes">
       <button class="btn" type="button" data-fechar-login>Fechar</button>
       <button class="btn primario" type="submit" id="loginEnviar">Entrar</button>
@@ -1182,13 +1186,16 @@ function sincronizar(){
 /* Cada plano tem o seu prefixo de persistência. O do Ciclo A/B não muda nunca:
    é onde já estão as cargas e as séries salvas no navegador.
 
-   NÃO EXISTE MAIS FASE. A prescrição desenhada é sempre a cheia, nos dois
-   planos, e por isso não há mais `KEY_MODO`, `seriesDe()` nem a faixa de
-   botões. A chave `fittracker.ab.v1.modo` continua gravada em quem já usava a
-   página, órfã: nenhum código a lê. Deixar é de propósito — apagar seria
-   escrever lápide (e propagá-la a todos os aparelhos) para limpar um dado
-   inerte de alguns bytes, e o valor antigo é o que a fase retomaria se um dia
-   ela voltar. Só não confundir com `fittracker.plano.v1`, que é a aba. */
+   `KEY_AB` continua aqui só porque `KEY_MODO` morava nele e a chave órfã
+   `fittracker.ab.v1.modo` ainda existe no navegador de quem usava a página.
+   Nenhum código lê nenhum dos dois. O Ciclo A/B saiu quando o Adaptativo
+   entrou, e as chaves dele ficaram para trás por escolha: apagar seria
+   escrever lápide e propagá-la a todos os aparelhos para limpar alguns bytes
+   inertes. Não confundir com `fittracker.plano.v1`, que é a aba escolhida.
+
+   NÃO EXISTE MAIS FASE, e não vai voltar: o corte global de séries virou
+   prescrição por semana, escrita exercício a exercício no Adaptativo. */
+var KEY_ADAPT = 'fittracker.adapt.v1.';
 var KEY_AB = 'fittracker.ab.v1.';
 var KEY_PPL = 'fittracker.ppl.v1.';
 var KEY_PLANO = 'fittracker.plano.v1';
@@ -1201,58 +1208,151 @@ var KEY_PLANO = 'fittracker.plano.v1';
    do arquivo em assets/ex/. Renomear `n` é livre; renomear `id` zera a carga salva
    e quebra o caminho da ilustração.
    `img:1` marca que existe assets/ex/<id>.webp e faz aparecer o ícone de mídia.
-   `semKg:1` esconde o campo de carga (aquecimento, tempo). */
+   `semKg:1` esconde o campo de carga (aquecimento, prancha, cardio).
+   `aquece:1` marca o primeiro exercício do treino, que leva 2 séries de 15 a 20
+   de aquecimento localizado antes das séries valendo.
+   `r` é a prescrição de repetição quando ela é igual em todas as séries; `rs` é
+   a lista quando ela cai no fim do exercício. Um ou outro, nunca os dois. */
 var planos = [
   {
-    id:'ab',
-    aba:'A/B',
-    key:KEY_AB,
-    doc:'Central de Comando · Ciclo A/B',
+    /* ---------- Treino Adaptativo · plano em vigor ----------
+       Prescrição da personal (PDF "HIPERTRON · Treino 01 Adaptação"), quatro
+       semanas. O que muda por semana não é carga, é VOLUME: a semana 1 e a 2
+       têm 3 séries, as semanas 3 e 4 têm 4 e ganham exercícios novos. Por isso
+       este é o primeiro plano com `semanas[]` em vez de `treinos[]` direto.
+
+       A fase de retorno, que era um corte global de séries, foi removida antes
+       deste plano existir e não volta: aqui a variação por semana É a
+       prescrição, escrita exercício a exercício, e não uma regra aplicada por
+       cima. Trocar de bloco é ler outro bloco, não recalcular nada. */
+    id:'adapt',
+    aba:'Adaptação',
+    key:KEY_ADAPT,
+    doc:'Central de Comando · Adaptação',
     eyebrow:'Central de comando · Ganho de massa',
-    titulo:'Ciclo <span class="slash">A</span>/<span class="slash">B</span>',
-    lede:'Duas sessões próprias por semana, sozinho, somadas aos treinos com a personal na terça e na sexta. Cada grupo muscular uma vez, sem rotação móvel.',
-    legenda:'SEMANA FIXA · hoje em destaque',
-    semana:[
-      {dow:'Seg', mark:'·', what:'Leve: bike ou natação'},
-      {dow:'Ter', mark:'PT', cls:'pt', what:'Personal + futebol'},
-      {dow:'Qua', mark:'·', what:'Repouso'},
-      {dow:'Qui', mark:'B', cls:'b', what:'Superiores, solo'},
-      {dow:'Sex', mark:'PT', cls:'pt', what:'Personal'},
-      {dow:'Sáb', mark:'·', what:'Leve + pesagem'},
-      {dow:'Dom', mark:'A', cls:'a', what:'Pernas, solo'}
-    ],
-    treinos:[
+    titulo:'Treino <span class="slash">Adaptativo</span>',
+    lede:'Quatro semanas de adaptação, três sessões por semana em rotação A-B-A-B. Técnica e cadência acima de carga: 2 segundos subindo, 3 descendo, sem bloquear a articulação. A carga é para sentir o músculo, não para superar.',
+    semanas:[
       {
-        id:'B', cls:'b', nome:'Superiores', sub:'Quinta · sozinho',
-        ex:[
-          {id:'puxada-frontal', n:'Puxada Frontal', s:4, r:'10'},
-          {id:'remada-articulada', n:'Remada Articulada', s:4, r:'10'},
-          {id:'remada-baixa', n:'Remada Baixa', s:4, r:'12'},
-          {id:'pullover', n:'Pullover Máquina', s:3, r:'15'},
-          {id:'supino-inclinado', n:'Supino Inclinado Máquina', s:4, r:'10'},
-          {id:'supino-reto', n:'Supino Reto Máquina', s:4, r:'10'},
-          {id:'desenvolvimento-ombros', n:'Desenv. Ombros Máquina', s:4, r:'10'},
-          {id:'elevacao-lateral', n:'Elevação Lateral Máquina', s:4, r:'12'},
-          {id:'rosca-scott', n:'Rosca Scott Máquina', s:4, r:'10-12'},
-          {id:'triceps', n:'Tríceps Máquina', s:4, r:'10-12'},
-          {id:'abdominal-pulley', n:'Abdominal no Pulley', s:4, r:'20', flag:'Lombar',
-           nota:'Trocado pela personal. Segue sendo flexão de coluna sob carga, então vale controlar a amplitude e revisar as 80 repetições por sessão.'}
+        id:'1', rot:'Semana 1',
+        descanso:'descanso 1 a 2 min',
+        treinos:[
+          {
+            id:'A', cls:'a', nome:'Superiores', sub:'Peito, costas, ombros e braços',
+            ex:[
+              {id:'crucifixo', n:'Crucifixo (halter/cabo/máquina)', s:3, r:'12-15', aquece:1},
+              {id:'puxada-frontal', n:'Puxada Frontal Aberta Pronada', s:3, r:'12-15'},
+              {id:'desenvolvimento-sentado', n:'Desenvolvimento Sentado (halter/cabo/máquina)', s:3, r:'12-15'},
+              {id:'triceps-corda', n:'Tríceps Corda', s:3, r:'12-15'},
+              {id:'rosca-direta', n:'Rosca Direta (barra W ou corda)', s:3, r:'12-15'},
+              {id:'prancha', n:'Abdominal Prancha', s:3, r:'30s-1min', semKg:1},
+              {id:'cardio', n:'Cardio pós-treino', s:1, r:'30 min', semKg:1, notaOk:1,
+               /* 30 min é o número do Felipe, não o do PDF: para ganho de
+                  massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
+               nota:'Esteira (inclinação 0 a 5%), bike em ritmo moderado ou elíptico em baixa resistência. Intensidade de conversa fácil: dá para falar frases completas.'}
+            ]
+          },
+          {
+            id:'B', cls:'b', nome:'Inferiores e abdômen', sub:'Glúteos, quadríceps, femorais e panturrilhas',
+            ex:[
+              {id:'cadeira-adutora', n:'Cadeira Adutora', s:3, r:'12-15', aquece:1},
+              {id:'mesa-flexora', n:'Mesa ou Cadeira Flexora', s:3, r:'12-15'},
+              {id:'cadeira-extensora', n:'Cadeira Extensora', s:3, r:'12-15'},
+              {id:'leg-press', n:'Leg Press', s:3, r:'12-15'},
+              {id:'panturrilha-em-pe', n:'Panturrilha em Pé', s:3, r:'12-15'},
+              {id:'abdominal-crunch', n:'Abdominal Crunch', s:3, r:'12-15', semKg:1},
+              {id:'cardio', n:'Cardio pós-treino', s:1, r:'30 min', semKg:1, notaOk:1,
+               /* 30 min é o número do Felipe, não o do PDF: para ganho de
+                  massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
+               nota:'Esteira (inclinação 0 a 5%), bike em ritmo moderado ou elíptico em baixa resistência. Intensidade de conversa fácil: dá para falar frases completas.'}
+            ]
+          }
         ]
       },
       {
-        id:'A', cls:'a', nome:'Pernas', sub:'Domingo · sozinho',
-        ex:[
-          {id:'agachamento-hack', n:'Agachamento Hack', s:5, r:'10', img:1},
-          {id:'leg-press-reto', n:'Leg Press Reto', s:5, r:'12', flag:'Ajuste', flagOk:true,
-           nota:'Trocado pela personal, no lugar do 45°. Mesmo assim, parar a descida antes do quadril começar a sair do encosto.', notaOk:true},
-          {id:'afundo-smith', n:'Afundo Smith', s:4, r:'10 cada'},
-          {id:'extensora', n:'Extensora', s:4, r:'15 + drop'},
-          {id:'mesa-flexora', n:'Mesa Flexora', s:4, r:'12'},
-          {id:'flexora-sentada', n:'Flexora Sentada', s:4, r:'12'},
-          {id:'stiff-parede', n:'Stiff apoiado na parede', s:4, r:'10', flag:'Ajuste', flagOk:true,
-           nota:'Trocado pela personal, no lugar do Smith. A parede serve de referência para o recuo do quadril, mantendo a lombar neutra.', notaOk:true},
-          {id:'panturrilha-sentado', n:'Panturrilha Sentado', s:5, r:'20'},
-          {id:'panturrilha-leg-press', n:'Panturrilha Leg Press', s:4, r:'20'}
+        /* A semana 2 muda duas coisas e só: a terceira série cai para 10-12, e
+           o Tríceps Corda vira Tríceps na Polia. Escrito por extenso em vez de
+           derivado da semana 1 porque prescrição que se lê é prescrição que se
+           confere, e derivar esconderia a troca do tríceps. */
+        id:'2', rot:'Semana 2',
+        descanso:'descanso 1 a 2 min',
+        treinos:[
+          {
+            id:'A', cls:'a', nome:'Superiores', sub:'Peito, costas, ombros e braços',
+            ex:[
+              {id:'crucifixo', n:'Crucifixo (halter/cabo/máquina)', s:3, rs:['12-15','12-15','10-12'], aquece:1},
+              {id:'puxada-frontal', n:'Puxada Frontal Aberta Pronada', s:3, rs:['12-15','12-15','10-12']},
+              {id:'desenvolvimento-sentado', n:'Desenvolvimento Sentado (halter/cabo/máquina)', s:3, rs:['12-15','12-15','10-12']},
+              {id:'triceps-polia', n:'Tríceps na Polia', s:3, rs:['12-15','12-15','10-12']},
+              {id:'rosca-direta', n:'Rosca Direta (barra W ou corda)', s:3, rs:['12-15','12-15','10-12']},
+              {id:'prancha', n:'Abdominal Prancha', s:3, r:'30s-1min', semKg:1},
+              {id:'cardio', n:'Cardio pós-treino', s:1, r:'30 min', semKg:1, notaOk:1,
+               /* 30 min é o número do Felipe, não o do PDF: para ganho de
+                  massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
+               nota:'Esteira (inclinação 0 a 5%), bike em ritmo moderado ou elíptico em baixa resistência. Intensidade de conversa fácil: dá para falar frases completas.'}
+            ]
+          },
+          {
+            id:'B', cls:'b', nome:'Inferiores e abdômen', sub:'Glúteos, quadríceps, femorais e panturrilhas',
+            ex:[
+              {id:'cadeira-adutora', n:'Cadeira Adutora', s:3, r:'12-15', aquece:1},
+              {id:'mesa-flexora', n:'Mesa ou Cadeira Flexora', s:3, r:'12-15'},
+              {id:'cadeira-extensora', n:'Cadeira Extensora', s:3, r:'12-15'},
+              {id:'leg-press', n:'Leg Press', s:3, r:'12-15'},
+              {id:'panturrilha-em-pe', n:'Panturrilha em Pé', s:3, r:'12-15'},
+              {id:'abdominal-crunch', n:'Abdominal Crunch', s:3, r:'12-15', semKg:1},
+              {id:'cardio', n:'Cardio pós-treino', s:1, r:'30 min', semKg:1, notaOk:1,
+               /* 30 min é o número do Felipe, não o do PDF: para ganho de
+                  massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
+               nota:'Esteira (inclinação 0 a 5%), bike em ritmo moderado ou elíptico em baixa resistência. Intensidade de conversa fácil: dá para falar frases completas.'}
+            ]
+          }
+        ]
+      },
+      {
+        /* Semanas 3 e 4 são o mesmo bloco: a prescrição não muda entre elas.
+           Uma aba só em vez de duas iguais. */
+        id:'34', rot:'Semanas 3-4',
+        descanso:'descanso 1 min entre séries, 2 min entre exercícios',
+        treinos:[
+          {
+            id:'A', cls:'a', nome:'Superiores', sub:'Peito, costas, ombros e braços',
+            ex:[
+              {id:'crucifixo', n:'Crucifixo (halter/cabo/máquina)', s:4, rs:['12-15','12-15','10-12','10-12'], aquece:1},
+              {id:'supino-reto', n:'Supino Reto (halter/barra/máquina)', s:4, rs:['12-15','12-15','10-12','10-12']},
+              {id:'puxada-frontal', n:'Puxada Frontal Aberta Pronada', s:4, rs:['12-15','12-15','10-12','10-12']},
+              {id:'remada-unilateral', n:'Remada Unilateral (halter ou máquina)', s:4, rs:['12-15','12-15','10-12','10-12']},
+              {id:'desenvolvimento-sentado', n:'Desenvolvimento Sentado (halter/cabo/máquina)', s:4, rs:['12-15','12-15','10-12','10-12']},
+              {id:'elevacao-lateral', n:'Elevação Lateral com Halter', s:4, rs:['12-15','12-15','10-12','10-12']},
+              {id:'triceps-polia', n:'Tríceps na Polia', s:4, rs:['12-15','12-15','10-12','10-12']},
+              {id:'triceps-frances', n:'Tríceps Francês (halter ou corda)', s:4, rs:['12-15','12-15','10-12','10-12']},
+              {id:'rosca-direta', n:'Rosca Direta (barra W ou corda)', s:4, rs:['12-15','12-15','10-12','10-12']},
+              /* O PDF traz "10 a 12 reps" na quarta série da prancha, o que não
+                 existe: prancha é medida em tempo. Lido como arrasto da linha de
+                 cima e corrigido para as quatro em tempo. */
+              {id:'prancha', n:'Abdominal Prancha', s:4, r:'45s-1min', semKg:1},
+              {id:'cardio', n:'Cardio pós-treino', s:1, r:'30 min', semKg:1, notaOk:1,
+               /* 30 min é o número do Felipe, não o do PDF: para ganho de
+                  massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
+               nota:'Esteira (inclinação 0 a 5%), bike em ritmo moderado ou elíptico em baixa resistência. Intensidade de conversa fácil: dá para falar frases completas.'}
+            ]
+          },
+          {
+            id:'B', cls:'b', nome:'Inferiores e abdômen', sub:'Glúteos, quadríceps, femorais e panturrilhas',
+            ex:[
+              {id:'cadeira-adutora', n:'Cadeira Adutora', s:4, r:'12-15', aquece:1},
+              {id:'mesa-flexora', n:'Mesa ou Cadeira Flexora', s:4, r:'12-15'},
+              {id:'cadeira-extensora', n:'Cadeira Extensora', s:4, r:'12-15'},
+              {id:'agachamento', n:'Agachamento (halter/barra/hack)', s:4, r:'12-15'},
+              {id:'leg-press', n:'Leg Press', s:4, r:'12-15'},
+              {id:'panturrilha-em-pe', n:'Panturrilha em Pé', s:4, r:'12-15'},
+              {id:'abdominal-crunch', n:'Abdominal Crunch', s:4, r:'12-15', semKg:1},
+              {id:'cardio', n:'Cardio pós-treino', s:1, r:'30 min', semKg:1, notaOk:1,
+               /* 30 min é o número do Felipe, não o do PDF: para ganho de
+                  massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
+               nota:'Esteira (inclinação 0 a 5%), bike em ritmo moderado ou elíptico em baixa resistência. Intensidade de conversa fácil: dá para falar frases completas.'}
+            ]
+          }
         ]
       }
     ]
@@ -1267,17 +1367,7 @@ var planos = [
     doc:'Central de Comando · Ciclo PPL',
     eyebrow:'Central de comando · Plano anterior',
     titulo:'Ciclo <span class="slash">PPL</span>',
-    lede:'Push, Pull e Legs em rotação de três treinos: dois solo e dois com a personal por semana. Guardado aqui para consulta — o plano em vigor é o Ciclo A/B.',
-    legenda:'SEMANA BASE · treinos solo em rotação',
-    semana:[
-      {dow:'Seg', mark:'·', what:'Descanso'},
-      {dow:'Ter', mark:'PT', cls:'pt', what:'Personal + futebol'},
-      {dow:'Qua', mark:'·', what:'Descanso'},
-      {dow:'Qui', mark:'T', cls:'pt', what:'Solo · rotação'},
-      {dow:'Sex', mark:'PT', cls:'pt', what:'Personal'},
-      {dow:'Sáb', mark:'·', what:'Livre + pesagem'},
-      {dow:'Dom', mark:'T', cls:'pt', what:'Solo · rotação'}
-    ],
+    lede:'Push, Pull e Legs em rotação de três treinos. Guardado aqui para consulta — o plano em vigor é o Treino Adaptativo.',
     treinos:[
       {
         id:'T1', cls:'a', nome:'Push', sub:'Peitoral, ombros e tríceps',
@@ -1376,11 +1466,6 @@ function planoAtual(){
    Quem entra sem nenhum valor vê o mesmo componente com os campos vazios, para
    preencher. Não existe semente automática: os números de uma pessoa não podem
    aparecer como se fossem os da outra. */
-/* Preferência de conta, não de aparelho: sincroniza, então quem desliga a faixa
-   da semana a vê desligada em qualquer celular. Padrão é ligada. */
-var KEY_SEMANA = 'fittracker.prefs.v1.semana';
-function mostrarSemana(){ return store.get(KEY_SEMANA) !== '0'; }
-
 var KEY_NUTRI = 'fittracker.nutri.v1.';
 var NUTRI = [
   {
@@ -1512,7 +1597,6 @@ function abrirLogin(){
     var email = document.getElementById('loginEmail');
     if (email && u && !email.value) email.value = u;
   }
-  document.getElementById('prefSemana').checked = mostrarSemana();
   box.showModal();
 }
 
@@ -1610,24 +1694,10 @@ function esc(s){
   return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 }
 
-/* ---------- Semana e cabeçalho ----------
+/* ---------- Cabeçalho ----------
    Tudo isto vive fora de #treinos, então é reescrito por renderCabecalho() na
    troca de aba, e não por render(). Nenhum listener é religado: a delegação no
    document cobre os dois. */
-function renderSemana(p){
-  var hoje = new Date().getDay();          // 0 domingo
-  var idx = hoje === 0 ? 6 : hoje - 1;     // 0 segunda
-  var html = '';
-  p.semana.forEach(function(d,i){
-    html += '<div class="day' + (i===idx ? ' today' : '') + '">' +
-              '<span class="dow">' + d.dow + '</span>' +
-              '<span class="mark ' + (d.cls || '') + '">' + d.mark + '</span>' +
-              '<span class="what">' + d.what + '</span>' +
-            '</div>';
-  });
-  document.getElementById('week').innerHTML = html;
-}
-
 function renderAbas(){
   var html = '';
   planos.forEach(function(p){
@@ -1663,19 +1733,9 @@ function renderCabecalho(){
   document.getElementById('eyebrow').textContent = p.eyebrow;
   document.getElementById('titulo').innerHTML = p.titulo;
   document.getElementById('lede').textContent = p.lede;
-  document.getElementById('legenda').textContent = p.legenda || '';
   document.getElementById('treinos').setAttribute('aria-labelledby', 'aba-' + p.id);
   document.title = p.doc;
   renderAbas();
-
-  /* Plano sem `semana` (a bike) não desenha faixa nenhuma — o calendário é do
-     ciclo de força, e na bike ele só ocupava a primeira tela. A preferência
-     continua valendo para quem tem faixa. */
-  var ver = !!p.semana && mostrarSemana();
-  document.getElementById('week').hidden = !ver;
-  document.getElementById('legenda').hidden = !ver;
-  if (ver) renderSemana(p);
-  else document.getElementById('week').innerHTML = '';
 }
 
 function trocarPlano(id){
@@ -1767,16 +1827,80 @@ function pintarTiros(i){
   if (prog) prog.textContent = feitos;
 }
 
+/* ---------- Bloco de semana ----------
+   Plano com `semanas[]` tem mais de uma prescrição, e é o bloco escolhido que
+   manda. Fica numa chave própria do plano, e SINCRONIZA: a semana do ciclo é a
+   mesma pessoa em qualquer aparelho, ao contrário da aba escolhida. */
+function blocoAtual(plano){
+  if (!plano.semanas) return plano;
+  var id = store.get(plano.key + 'semana');
+  for (var i = 0; i < plano.semanas.length; i++){
+    if (plano.semanas[i].id === id) return plano.semanas[i];
+  }
+  return plano.semanas[0];
+}
+
+function renderSemanas(plano){
+  var faixa = document.getElementById('semanas');
+  if (!plano.semanas){ faixa.hidden = true; faixa.innerHTML = ''; return; }
+  var atual = blocoAtual(plano);
+  var html = '<span class="sem-label">Semana</span>';
+  plano.semanas.forEach(function(b){
+    html += '<button class="sem" type="button" aria-pressed="' + (b.id === atual.id) + '" ' +
+            'data-semana="' + b.id + '">' + b.rot + '</button>';
+  });
+  faixa.innerHTML = html;
+  faixa.hidden = false;
+}
+
+/* ---------- Prescrição de repetição ----------
+   `rs` é a lista por série, e existe porque na semana 2 e nas 3-4 a repetição
+   cai nas últimas séries. O rótulo não lista as quatro: "4 × 12-15 → 10-12" diz
+   a mesma coisa num terço do espaço, e a repetição exata de cada série vai no
+   aria-label da bolinha, que é onde ela é perguntada. */
+function repDe(e, i){ return e.rs ? e.rs[i - 1] : e.r; }
+
+function prescDe(e){
+  if (!e.rs) return e.s + ' × ' + e.r;
+  var pri = e.rs[0], ult = e.rs[e.rs.length - 1];
+  return e.s + ' × ' + pri + (pri === ult ? '' : ' → ' + ult);
+}
+
+/* Só o primeiro número da prescrição, para pré-preencher o campo de repetições
+   feitas. "12-15" vira "12", "30s-1min" não vira nada (prancha e cardio não
+   contam repetição). */
+function metaDe(e, i){
+  var r = repDe(e, i);
+  var m = /^(\d+)\s*[-–]/.exec(r) || /^(\d+)$/.exec(r);
+  return m ? m[1] : '';
+}
+
+/* ---------- Sessão em andamento ----------
+   Tudo que está sendo preenchido agora mora sob `<prefixo>atual.`, e o
+   Finalizar move para `<prefixo>log.<id>.`. São chaves normais: começam com
+   `fittracker.`, então já entram na fila, na lápide e no RLS que existem. Não
+   houve mudança nenhuma no schema do Supabase para o histórico existir. */
+function chaveSerie(plano, t, e, i){ return plano.key + 'atual.' + t.id + '.' + e.id + '.' + i; }
+function chaveKg(plano, t, e){ return plano.key + 'atual.' + t.id + '.kg.' + e.id; }
+function chaveSensacao(plano, t){ return plano.key + 'atual.' + t.id + '.sensacao'; }
+function chaveObs(plano, t){ return plano.key + 'atual.' + t.id + '.obs'; }
+
+var SENSACOES = [
+  {id:'facil',  rot:'Fácil'},
+  {id:'ponto',  rot:'No ponto'},
+  {id:'pesado', rot:'Pesado'},
+  {id:'muito',  rot:'Muito pesado'}
+];
+
 /* ---------- Treinos ---------- */
 function render(){
   var plano = planoAtual();
+  renderSemanas(plano);
   if (plano.leitura){ renderLeitura(plano); return; }
-  var KEY = plano.key;
+  var bloco = blocoAtual(plano);
   var total = 0;
   var html = '';
-  plano.treinos.forEach(function(t){
-    /* `e.s` direto: a prescrição desenhada é sempre a cheia. Não existe mais
-       fase para cortar série nenhuma — ver o comentário em KEY_AB. */
+  bloco.treinos.forEach(function(t){
     var soma = t.ex.reduce(function(a,e){ return a + e.s; }, 0);
     total += soma;
     html += '<article class="treino ' + t.cls + '" data-t="' + t.id + '">' +
@@ -1789,16 +1913,26 @@ function render(){
       '<ol class="ex">';
 
     t.ex.forEach(function(e){
-      var ns = e.s;
-      var chips = '';
-      for (var s = 1; s <= ns; s++){
-        var k = KEY + t.id + '.' + e.id + '.' + s;
-        var on = store.get(k) === '1';
+      var chips = '', feitas = '';
+      for (var i = 1; i <= e.s; i++){
+        var k = chaveSerie(plano, t, e, i);
+        var v = store.get(k);
+        var on = v !== null;
         chips += '<button class="set" type="button" aria-pressed="' + on + '" ' +
-                 'aria-label="Série ' + s + ' de ' + e.n + '" ' +
-                 'data-k="' + k + '" data-t="' + t.id + '">' + s + '</button>';
+                 'aria-label="Série ' + i + ' de ' + e.n + ', meta ' + repDe(e, i) + '" ' +
+                 'data-k="' + esc(k) + '" data-t="' + t.id + '" ' +
+                 'data-meta="' + (metaDe(e, i) || '1') + '">' + i + '</button>';
+        /* O campo de repetições feitas só existe depois que a série é marcada, e
+           já nasce com a meta dentro. Card intocado fica idêntico ao de antes:
+           nenhuma linha extra, nenhum campo pedindo atenção. */
+        if (on && metaDe(e, i) !== ''){
+          feitas += '<label class="feita"><span>' + i + '</span>' +
+            '<input type="text" inputmode="numeric" autocomplete="off" data-dec="1" ' +
+            'value="' + esc(v) + '" data-campo="' + esc(k) + '" data-t="' + t.id + '" ' +
+            'aria-label="Repetições feitas na série ' + i + ' de ' + e.n + '"></label>';
+        }
       }
-      var kgKey = KEY + 'kg.' + t.id + '.' + e.id;
+      var kgKey = chaveKg(plano, t, e);
       var kgVal = store.get(kgKey) || '';
       var mid = midiaDe(e);
       html += '<li data-ex="' + e.id + '">' +
@@ -1811,31 +1945,91 @@ function render(){
               'data-nome="' + esc(e.n) + '" aria-label="Ver ilustração de ' + esc(e.n) + '">' +
               ICON_MIDIA + '</button>' : '') +
           '</span>' +
-          '<span class="ex-presc">' + ns + ' × ' + e.r + '</span>' +
+          '<span class="ex-presc">' + prescDe(e) + '</span>' +
         '</div>' +
+        (e.aquece ? '<p class="ex-note ok">Aquecimento localizado antes das séries valendo: 2 séries de 15 a 20 com carga moderada.</p>' : '') +
         (e.nota ? '<p class="ex-note' + (e.notaOk ? ' ok' : '') + '">' + e.nota + '</p>' : '') +
         '<div class="ex-bottom">' +
           '<div class="sets">' + chips + '</div>' +
           (e.semKg ? '' :
-            '<div class="kgwrap"><label for="' + kgKey + '">KG</label>' +
-            '<input class="kg" id="' + kgKey + '" type="text" inputmode="decimal" ' +
+            '<div class="kgwrap"><label for="' + esc(kgKey) + '">KG</label>' +
+            '<input class="kg" id="' + esc(kgKey) + '" type="text" inputmode="decimal" ' +
             'data-dec="1" autocomplete="off" ' +
-            'value="' + kgVal + '" data-campo="' + kgKey + '" placeholder="—"></div>') +
+            'value="' + esc(kgVal) + '" data-campo="' + esc(kgKey) + '" placeholder="—"></div>') +
         '</div>' +
+        (feitas ? '<div class="feitas"><span class="feitas-rot">Reps feitas</span>' + feitas + '</div>' : '') +
       '</li>';
+    });
+
+    var sens = store.get(chaveSensacao(plano, t)) || '';
+    var botoes = '';
+    SENSACOES.forEach(function(x){
+      botoes += '<button class="sens" type="button" aria-pressed="' + (x.id === sens) + '" ' +
+                'data-sens="' + x.id + '" data-t="' + t.id + '">' + x.rot + '</button>';
     });
 
     html += '</ol>' +
       '<div class="t-foot">' +
-        '<span>' + soma + ' séries · ' + t.ex.length + ' exercícios</span>' +
-        '<button class="btn ghost" data-reset="' + t.id + '">Zerar treino ' + t.id + '</button>' +
+        '<span>' + soma + ' séries · ' + t.ex.length + ' itens · ' + bloco.descanso + '</span>' +
+      '</div>' +
+      '<div class="fechar">' +
+        '<span class="fechar-rot">Como foi o treino</span>' +
+        '<div class="senss">' + botoes + '</div>' +
+        '<textarea class="obs" rows="2" placeholder="Observações da sessão" ' +
+          'data-campo="' + esc(chaveObs(plano, t)) + '" ' +
+          'aria-label="Observações da sessão do treino ' + t.id + '">' +
+          esc(store.get(chaveObs(plano, t)) || '') + '</textarea>' +
+        '<button class="btn bloco" type="button" data-finalizar="' + t.id + '">Finalizar treino ' + t.id + '</button>' +
       '</div>' +
     '</article>';
   });
 
   document.getElementById('treinos').innerHTML = html;
-  document.getElementById('totalMeta').textContent = total + ' séries por semana';
-  plano.treinos.forEach(function(t){ updateProg(t.id); });
+  document.getElementById('totalMeta').textContent = total + ' séries no ciclo A-B';
+  bloco.treinos.forEach(function(t){ updateProg(t.id); });
+}
+
+/* ---------- Finalizar ----------
+   Move a sessão de `atual.` para `log.<id>.` e limpa o card. O `<id>` é o
+   horário em milissegundos: não colide entre aparelhos sem precisar de contador
+   combinado, e ordena o histórico sozinho. Relógio de cliente erra, e por isso
+   ele NÃO decide conflito em lugar nenhum desta página — aqui é só ordenação de
+   leitura, que é o único uso em que errar não corrompe nada.
+
+   Varre por prefixo em vez de reconstruir as chaves a partir do plano: assim
+   uma sessão começada numa semana e finalizada depois de trocar de bloco leva
+   tudo junto, em vez de deixar para trás o que o bloco novo não desenha. */
+function finalizar(plano, t){
+  var pre = plano.key + 'atual.' + t.id + '.';
+  var todas = chavesSincronizaveis();
+  var achadas;
+  if (todas){
+    achadas = todas.filter(function(k){ return k.indexOf(pre) === 0; });
+  } else {
+    /* Navegador que recusa enumerar o localStorage (aba privada do Safari, por
+       exemplo). Sem esta volta, o Finalizar virava um botão morto e a sessão
+       inteira se perdia em silêncio — que é pior que qualquer coisa que a
+       varredura resolve. Reconstruir a partir do bloco desenhado cobre a sessão
+       de hoje; o que ficaria de fora é chave de um bloco que já não está na
+       tela, e nesse modo a página mal guarda a sessão atual. */
+    achadas = [pre + 'sensacao', pre + 'obs'];
+    t.ex.forEach(function(e){
+      achadas.push(pre + 'kg.' + e.id);
+      for (var i = 1; i <= e.s; i++) achadas.push(pre + e.id + '.' + i);
+    });
+    achadas = achadas.filter(function(k){ return store.get(k) !== null; });
+  }
+  if (!achadas.length) return false;
+
+  var bloco = blocoAtual(plano);
+  var id = String(Date.now());
+  var destino = plano.key + 'log.' + id + '.';
+  achadas.forEach(function(k){
+    store.set(destino + k.slice(pre.length), store.get(k));
+    store.del(k);                                  /* lápide: some nos outros aparelhos também */
+  });
+  store.set(destino + 'meta', JSON.stringify({semana: bloco.id, treino: t.id, quando: id}));
+  return true;
 }
 
 function updateProg(id){
@@ -1912,24 +2106,51 @@ document.addEventListener('click', function(ev){
     return;
   }
 
+  /* Marcar a série grava as repetições feitas já com a meta dentro, e é a
+     presença da chave que marca a bolinha. Um campo guarda as duas coisas, em
+     vez de um '1' e um número que poderiam divergir.
+
+     Exercício sem repetição contável (prancha, cardio) grava '1': ele continua
+     sendo uma série marcável, só não tem número para pedir. */
   var set = ev.target.closest('.set');
   if (set){
     var on = set.getAttribute('aria-pressed') === 'true';
-    set.setAttribute('aria-pressed', String(!on));
-    if (on) store.del(set.dataset.k); else store.set(set.dataset.k, '1');
-    updateProg(set.dataset.t);
+    if (on) store.del(set.dataset.k);
+    else store.set(set.dataset.k, set.dataset.meta || '1');
+    /* Re-render do card inteiro porque a linha de reps feitas aparece e some
+       com a marcação. É barato: a delegação no document não precisa religar
+       nada, e o campo de carga não está em foco quando se toca numa bolinha. */
+    render();
     return;
   }
-  /* Único zerar que existe: por treino, no rodapé do card. Varre o DOM, então
-     nunca alcança o outro plano nem o treino vizinho. */
-  var rst = ev.target.closest('[data-reset]');
-  if (rst){
-    var id = rst.dataset.reset;
-    document.querySelectorAll('[data-t="' + id + '"] .set').forEach(function(b){
-      b.setAttribute('aria-pressed','false');
-      store.del(b.dataset.k);
-    });
-    updateProg(id);
+
+  var sem = ev.target.closest('[data-semana]');
+  if (sem){
+    store.set(planoAtual().key + 'semana', sem.dataset.semana);
+    render();
+    return;
+  }
+
+  /* Tocar na sensação já marcada desmarca: sem isso, um toque errado não teria
+     volta e a sessão iria para o log com a impressão errada. */
+  var sn = ev.target.closest('[data-sens]');
+  if (sn){
+    var kSens = planoAtual().key + 'atual.' + sn.dataset.t + '.sensacao';
+    if (sn.getAttribute('aria-pressed') === 'true') store.del(kSens);
+    else store.set(kSens, sn.dataset.sens);
+    render();
+    return;
+  }
+
+  /* Não existe mais "zerar treino": a sessão é fechada pelo Finalizar, que
+     guarda em vez de descartar. Desmarcar uma série continua sendo tocar nela
+     de novo. */
+  var fin = ev.target.closest('[data-finalizar]');
+  if (fin){
+    var pl = planoAtual(), idT = fin.dataset.finalizar;
+    var alvo = null;
+    blocoAtual(pl).treinos.forEach(function(t){ if (t.id === idT) alvo = t; });
+    if (alvo && finalizar(pl, alvo)) render();
     return;
   }
 });
@@ -1963,14 +2184,6 @@ document.addEventListener('submit', function(ev){
    correspondência para manter em sincronia. Campo vazio apaga a chave, que é o
    que vira lápide e apaga também no servidor. */
 document.addEventListener('change', function(ev){
-  var pref = ev.target.closest('[data-pref]');
-  if (pref){
-    if (pref.checked) store.del(KEY_SEMANA);      /* ligada é o padrão: sem chave */
-    else store.set(KEY_SEMANA, '0');
-    renderCabecalho();
-    return;
-  }
-
   var campo = ev.target.closest('[data-campo]');
   if (!campo) return;
   var v = campo.value.trim();

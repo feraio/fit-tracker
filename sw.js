@@ -5,7 +5,7 @@
 
    IMPORTANTE: subir VERSAO a cada deploy. É o que faz o aparelho largar a cópia
    velha — sem isso a correção que você acabou de publicar não chega no celular. */
-var VERSAO = 'fit-v12';
+var VERSAO = 'fit-v13';
 
 /* Só o casco da página. As ilustrações ficam de fora de propósito: elas são
    pedidas sob demanda e não podem inflar o cache. */

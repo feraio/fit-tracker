@@ -1,8 +1,8 @@
 # fit-tracker
 
-Página estática de acompanhamento de treino (ciclo A/B), usada principalmente **no celular,
-dentro da academia, entre séries**. Densidade e velocidade de leitura importam mais do que
-qualquer outra coisa nesta página.
+Página estática de acompanhamento de treino, usada principalmente **no celular, dentro da
+academia, entre séries**. Densidade e velocidade de leitura importam mais do que qualquer outra
+coisa nesta página.
 
 ## Arquitetura e restrições
 
@@ -25,16 +25,27 @@ qualquer outra coisa nesta página.
 
 ## Três planos, uma página
 
-`planos[]` guarda um objeto por plano: o **Ciclo A/B** (em vigor), o **PPL** (anterior, mantido
-só para consulta) e a **Bike** (intervalado, somente leitura). A aba escolhida fica em
+`planos[]` guarda um objeto por plano: o **Treino Adaptativo** (em vigor), o **PPL** (anterior,
+mantido só para consulta) e a **Bike** (intervalado, somente leitura). A aba escolhida fica em
 `fittracker.plano.v1`.
+
+O **Ciclo A/B** saiu quando o Adaptativo entrou, em setembro de 2026. Não foi arquivado numa aba
+de consulta como o PPL porque os dados dele já tinham sido zerados pelo Felipe; as chaves
+`fittracker.ab.v1.*` que sobraram estão órfãs e ficam assim (ver abaixo).
 
 - Cada plano traz o próprio cabeçalho (`eyebrow`, `titulo`, `lede`, `legenda`), a própria faixa
   de semana e os próprios treinos. `renderCabecalho()` reescreve tudo isso, que vive **fora** de
   `#treinos`; `render()` cuida só dos cards.
-- **A faixa da semana é por plano, e a bike não tem.** Quem manda é a presença de `semana` no
-  objeto: sem ela, `renderCabecalho()` esconde a faixa e a legenda. O calendário é do ciclo de
-  força; na bike ele gastava a primeira tela sem dizer nada que o card já não diga.
+- **Não existe mais faixa da semana (o calendário Seg a Dom).** Ela saiu de todos os planos, a
+  pedido do Felipe, junto com `renderSemana()`, o CSS de `.week`/`.day`/`.legend` e o campo
+  `semana[]` dos dados. O treino virou três sessões por semana em rotação A-B-A-B, sem dia fixo,
+  então um calendário desenhado mentiria sobre qual treino é o de hoje. Não confundir com a
+  faixa de **semana do ciclo** (`.semanas`), que é outra coisa e está viva.
+- **A preferência `fittracker.prefs.v1.semana` morreu junto**, porque existia só para ligar e
+  desligar esse calendário. Com ela saíram `mostrarSemana()`, o `[data-pref]` do handler de
+  `change` e o bloco `.login-prefs` do diálogo de conta, que agora só tem e-mail e senha. O
+  namespace `fittracker.prefs.v1.` continua reservado para preferência **de conta** (sincroniza,
+  ao contrário de `fittracker.plano.v1`), mas hoje não tem nenhum membro.
 - **Não existe mais caixa de nota por plano.** As duas que havia saíram na revisão da aba da
   bike: a de retorno lombar repetia o que o botão de fase dizia na época (a fase também já
   saiu, ver acima), e a de rotação do PPL descrevia um plano que não está em vigor. Com isso `#planoNota` e o CSS de `.note` também
@@ -43,6 +54,30 @@ só para consulta) e a **Bike** (intervalado, somente leitura). A aba escolhida 
 - **Cada plano tem o seu prefixo de persistência** (`key`): `fittracker.ab.v1.` e
   `fittracker.ppl.v1.`. Trocar de aba nunca mistura séries nem cargas. O prefixo do A/B não
   muda nunca — é onde já estão os dados salvos no navegador de quem usa a página.
+- **O Adaptativo tem `semanas[]` no lugar de `treinos[]`.** É o primeiro plano assim. Cada bloco
+  (`Semana 1`, `Semana 2`, `Semanas 3-4`) traz os próprios `treinos[]`, com os próprios
+  exercícios e o próprio número de séries: a semana 1 e a 2 têm 3, as semanas 3 e 4 têm 4 e
+  ganham exercícios novos. `blocoAtual()` resolve qual vale, e `render()` desenha o bloco.
+  Plano sem `semanas[]` (PPL, Bike) segue lendo `plano.treinos` direto, e `renderSemanas()`
+  esconde a faixa neles.
+- **A semana escolhida (`fittracker.adapt.v1.semana`) SINCRONIZA.** Não é preferência de
+  aparelho: é em que ponto do ciclo a pessoa está, e isso é o mesmo no celular e no tablet. A
+  única chave `fittracker.` que não sincroniza continua sendo `fittracker.plano.v1`, a aba.
+- **A variação por semana é prescrição escrita, não regra aplicada por cima.** Cada bloco lista
+  os exercícios por extenso, inclusive os repetidos. Derivar a semana 2 da semana 1 pouparia
+  linhas e esconderia a troca do Tríceps Corda pelo Tríceps na Polia, que é justamente o tipo de
+  detalhe que se confere em cima do aparelho. É por isso também que a fase antiga não volta: ela
+  era um corte global de séries, e isto aqui é a prescrição real.
+- **`r` e `rs` são exclusivos.** `r` é a repetição quando é igual em todas as séries; `rs` é a
+  lista quando ela cai no fim (semana 2 e semanas 3-4 do Treino A). `prescDe()` resume em
+  `4 × 12-15 → 10-12` em vez de listar as quatro, e a repetição exata de cada série vai no
+  `aria-label` da bolinha, que é onde ela é perguntada.
+- **`aquece:1`** marca o primeiro exercício de cada treino, que ganha a nota do aquecimento
+  localizado (2 séries de 15 a 20 com carga moderada). É nota e não bolinha de propósito: como
+  série, inflaria a contagem do treino com trabalho que não é o prescrito.
+- **O cardio é uma entrada do treino, com `semKg:1`.** 30 minutos, marcável como qualquer série.
+  **30 é o número do Felipe, não o do PDF**, que para ganho de massa pede 25-30 e reserva 30-45
+  para recomposição corporal. Está escrito no código para ninguém "corrigir" depois.
 - **Não existe mais fase.** A prescrição desenhada é sempre a cheia, o número de séries vem
   direto de `ex[].s`, e não há mais `KEY_MODO`, `seriesDe()`, `RETORNO`, `semFase`, a faixa de
   botões `.phase` nem a tarja `.goal` ("alvo N"). A fase de retorno saiu primeiro do PPL (plano
@@ -51,10 +86,10 @@ só para consulta) e a **Bike** (intervalado, somente leitura). A aba escolhida 
   escolha falsa ocupando a primeira tela. Não reintroduzir sem prescrição nova da personal.
   Quem precisar de uma redução temporária mexe em `ex[].s`, que é um deploy e fica registrado —
   a fase era estado de aparelho fazendo o papel de prescrição.
-- **A chave `fittracker.ab.v1.modo` continua gravada, órfã, e fica assim de propósito.** Nenhum
-  código a lê. Apagá-la seria escrever lápide e propagá-la a todos os aparelhos para limpar
-  alguns bytes inertes; e se a fase voltar, o valor antigo é de onde ela retomaria. Não
-  confundir com `fittracker.plano.v1`, que é a aba escolhida e continua em uso.
+- **As chaves `fittracker.ab.v1.*` continuam gravadas, órfãs, e ficam assim de propósito.**
+  Nenhum código as lê desde que o Ciclo A/B saiu. Apagá-las seria escrever lápide e propagá-la a
+  todos os aparelhos para limpar bytes inertes. `KEY_AB` sobrevive no código só como âncora
+  desse comentário.
 - As abas seguem o padrão `tablist`, com `aria-selected`, tabindex móvel e navegação por
   setas. O `keydown` é delegado no `document` pelo mesmo motivo do clique: `renderAbas()`
   reescreve os botões a cada troca.
@@ -169,7 +204,7 @@ vigente para conferir em cima do aparelho, e não recebe input nenhum.
 - **O componente é desenhado para ser lido de longe**, com o corpo em movimento: número grande
   sempre na mesma coluna à direita, uma etapa por linha, e o bloco principal destacado com o
   `--accent` do card. O critério de avanço fica no **pé** do card, que é quando ele é lido: no
-  fim da sessão. Sem faixa da semana e sem nota, a sessão inteira cabe numa tela de 390×844 com
+  fim da sessão. Sem calendário e sem nota, a sessão inteira cabe numa tela de 390×844 com
   folga. Ao mexer no cabeçalho desta aba, conferir isso de novo — a folga é o que se gasta sem
   perceber.
 - O amarelo (`--yellow15`) já era a cor do que não é musculação — "15 kg · futebol / recarga".
@@ -194,17 +229,50 @@ vivem no `localStorage` e sobem para o Supabase como qualquer outra chave:
 - O número grande de kcal é o próprio campo. Não há valor derivado para redesenhar, então
   digitar nunca dispara re-render — que é o que faria o foco pular no meio da edição.
 
-## Preferências de conta
+## Sessão e registro
 
-`fittracker.prefs.v1.*` são preferências **de conta**, não de aparelho: sincronizam, e quem
-desliga a faixa da semana a vê desligada em qualquer celular. Ficam no diálogo de conta, que já
-existia — não abrir uma tela de configurações para isso.
+O personal pediu para registrar peso, repetições feitas, como a sessão foi e observações. Isso
+virou um **log por sessão**, e **nenhuma migração de banco foi preciso**: a tabela `estado` do
+Supabase é chave/valor genérica, então o histórico é só um conjunto de chaves novas que já entra
+na fila, na lápide e no RLS que existiam. Quem for mexer nisso não precisa tocar em SQL.
 
-A preferência decide se a faixa aparece **onde existe faixa**. Ela não dá calendário à bike:
-quem decide isso é o plano ter ou não `semana`, e as duas condições valem juntas.
+- **`atual.` é a sessão em andamento; `log.<id>.` é a sessão fechada.** Tudo sob
+  `fittracker.adapt.v1.atual.<treino>.` é o que está sendo preenchido agora. `finalizar()` move
+  para `fittracker.adapt.v1.log.<id>.` e apaga a origem, e a lápide faz a sessão sumir do card
+  nos outros aparelhos também.
+- **O `<id>` da sessão é `Date.now()`.** Não colide entre aparelhos sem contador combinado e
+  ordena o histórico sozinho. Relógio de cliente erra, e é exatamente por isso que ele **não**
+  decide conflito em lugar nenhum desta página; aqui é só ordenação de leitura, o único uso em
+  que errar não corrompe nada. Data não é pedida nem mostrada: o Felipe não quer preencher data.
+- **A presença da chave da série é o que marca a bolinha, e o valor dela são as repetições
+  feitas.** Um campo guarda as duas coisas em vez de um `'1'` e um número que poderiam divergir.
+  Exercício sem repetição contável (prancha, cardio) grava `'1'`: continua marcável, só não tem
+  número a pedir. Quem decide é `metaDe()`, que extrai o primeiro número da prescrição e devolve
+  vazio em `30s-1min`.
+- **O campo de repetições só aparece depois que a série é marcada, já com a meta dentro.** Card
+  de treino que ainda não começou tem exatamente a densidade de antes: nenhuma linha extra,
+  nenhum campo pedindo atenção. Bateu a meta, não se digita nada.
+- **`finalizar()` varre por prefixo, não reconstrói as chaves a partir do bloco.** Assim uma
+  sessão começada numa semana e finalizada depois de trocar de bloco leva tudo junto. Há uma
+  volta para o navegador que recusa enumerar o `localStorage` (aba privada do Safari), em que as
+  chaves são reconstruídas a partir do bloco desenhado: sem ela o Finalizar virava botão morto e
+  a sessão se perdia em silêncio, que é pior que a lacuna que a varredura cobre.
+- **Não existe mais "Zerar treino".** A sessão é fechada pelo Finalizar, que guarda em vez de
+  descartar, e desmarcar uma série é tocar nela de novo. O Finalizar é um botão de largura cheia
+  porque é o último toque da sessão, dado em pé; ele herda o `--accent` do card, então o A é
+  vermelho e o B é azul.
+- **Tocar numa bolinha chama `render()` inteiro**, e não só `updateProg()`, porque a linha de
+  repetições aparece e some com a marcação. É barato: a delegação no `document` não religa nada,
+  e não há campo em foco quando se toca numa bolinha (o `change` do campo dispara antes, no
+  blur).
 
-Não confundir com `fittracker.plano.v1` (aba escolhida), que é de aparelho e por isso é a única
-chave `fittracker.` que `sincronizavel()` exclui.
+### Preferências de conta
+
+`fittracker.prefs.v1.*` é o namespace reservado para preferência **de conta**, não de aparelho:
+sincroniza, ao contrário de `fittracker.plano.v1` (a aba escolhida), que é a única chave
+`fittracker.` que `sincronizavel()` exclui. **Hoje não tem nenhum membro**: a única preferência
+que existiu ligava a faixa da semana, e saiu com ela. Se voltar a haver uma, ela vai no diálogo
+de conta, que já existe — não abrir uma tela de configurações para isso.
 
 ## Service worker
 
