@@ -2007,7 +2007,8 @@ function render(){
            nenhuma linha extra, nenhum campo pedindo atenção. */
         if (on && metaDe(e, i) !== ''){
           feitas += '<label class="feita"><span>' + i + '</span>' +
-            '<input type="text" inputmode="numeric" autocomplete="off" data-dec="1" ' +
+            '<input type="text" inputmode="numeric" autocomplete="off" data-int="1" ' +
+            'data-meta="' + metaDe(e, i) + '" ' +
             'value="' + esc(v) + '" data-campo="' + esc(k) + '" data-t="' + t.id + '" ' +
             'aria-label="Repetições feitas na série ' + i + ' de ' + e.n + '"></label>';
         }
@@ -2292,6 +2293,23 @@ document.addEventListener('change', function(ev){
     v = normDec(v);
     campo.value = v;
   }
+  /* Repetição é contagem: não tem casa decimal. Fica só o que vem ANTES do
+     primeiro caractere que não é dígito, em vez de juntar os dígitos soltos:
+     descartando, "12,5" vira 125 — uma contagem dez vezes maior, gravada em
+     silêncio, que é o mesmo formato do defeito que o campo de carga tinha.
+     Truncando, vira 12, que é o que a pessoa quis dizer. */
+  if (campo.dataset.int) v = (/^\d*/.exec(v) || [''])[0];
+
+  /* ESVAZIAR O CAMPO DE REPETIÇÕES NÃO DESMARCA A SÉRIE. A presença da chave é
+     o que marca a bolinha, então "campo vazio apaga a chave" — a regra de todo
+     outro campo da página — desmarcaria a série só porque a pessoa limpou o
+     número para redigitar. E pior em silêncio: a bolinha continuava pintada até
+     o próximo render, e aí a série sumia sem ninguém encostar nela. Selecionar
+     tudo e apagar antes de digitar é o gesto normal num teclado de celular, e
+     ele não pode custar a série. Vazio volta para a meta. */
+  if (v === '' && campo.dataset.meta) v = campo.dataset.meta;
+  if (campo.dataset.int) campo.value = v;
+
   if (v === '') store.del(campo.dataset.campo);
   else store.set(campo.dataset.campo, v);
 });

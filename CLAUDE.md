@@ -272,6 +272,17 @@ na fila, na lápide e no RLS que existiam. Quem for mexer nisso não precisa toc
 - **O campo de repetições só aparece depois que a série é marcada, já com a meta dentro.** Card
   de treino que ainda não começou tem exatamente a densidade de antes: nenhuma linha extra,
   nenhum campo pedindo atenção. Bateu a meta, não se digita nada.
+- **Esvaziar o campo de repetições NÃO desmarca a série** (`data-meta` no input, tratado no
+  handler de `change`). A regra geral da página é "campo vazio apaga a chave", e aqui a chave é
+  o que marca a bolinha: seguir a regra desmarcaria a série só porque a pessoa limpou o número
+  para redigitar. Pior, em silêncio — a bolinha continuava pintada até o próximo render, e aí a
+  série sumia sem ninguém encostar nela. Selecionar tudo e apagar antes de digitar é o gesto
+  normal num teclado de celular. Vazio volta para a meta. O campo de **carga** segue a regra
+  geral e apaga, porque ali vazio significa mesmo "não tem carga".
+- **O campo de repetições é inteiro, e trunca no primeiro caractere que não é dígito**
+  (`data-int="1"`). Descartar os não-dígitos em vez de truncar faria "12,5" virar 125: uma
+  contagem dez vezes maior, gravada em silêncio, exatamente o formato do defeito que o campo de
+  carga tinha com `type="number"`. Truncando vira 12.
 - **`finalizar()` varre por prefixo, não reconstrói as chaves a partir do bloco.** Assim uma
   sessão começada numa semana e finalizada depois de trocar de bloco leva tudo junto. Há uma
   volta para o navegador que recusa enumerar o `localStorage` (aba privada do Safari), em que as
