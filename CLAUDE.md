@@ -292,14 +292,16 @@ na fila, na lápide e no RLS que existiam. Quem for mexer nisso não precisa toc
   descartar, e desmarcar uma série é tocar nela de novo. O Finalizar é um botão de largura cheia
   porque é o último toque da sessão, dado em pé; ele herda o `--accent` do card, então o A é
   vermelho e o B é azul.
-- **O Finalizar pergunta antes** (`#fimBox`, um `<dialog>` fora de `#treinos` como manda a
-  arquitetura). É a única ação da página que fecha uma sessão, e um botão de largura cheia no
-  fim de um card longo é fácil de esbarrar com o polegar. **ESC e toque no backdrop caem no lado
-  do "não"**: quem esbarrou não pode perder a sessão por não achar o cancelar.
-- **`fimPendente` guarda qual treino espera resposta, em memória e não no DOM.** `render()`
-  reescreve `#treinos` e o diálogo vive fora dele, então um `data-` no card não sobreviveria.
-  O handler de `cancel` (o ESC do `<dialog>`) zera a variável: sem isso o treino ficaria
-  pendurado e o próximo "sim" fecharia a sessão errada.
+- **Existe UMA caixa de confirmação para toda a página** (`#confirmaBox`, um `<dialog>` fora de
+  `#treinos` como manda a arquitetura). `pedirConfirmacao(titulo, texto, rotulo, acao)` preenche
+  o texto e guarda o que fazer no "sim". Usam ela o Finalizar e o apagar do histórico; duas
+  caixas quase iguais seriam uma para manter em sincronia com a outra.
+- **`confirmaAcao` guarda a ação em memória, não no DOM.** `render()` reescreve `#treinos` e o
+  diálogo vive fora dele, então um `data-` no card não sobreviveria. O handler de `cancel` (o
+  ESC do `<dialog>`) zera a variável: sem isso a ação ficaria pendurada e o próximo "sim"
+  executaria a anterior.
+- **ESC e toque no backdrop caem no lado do "não".** Quem esbarrou no botão não pode perder a
+  sessão por não achar o cancelar.
 - **Tocar numa bolinha chama `render()` inteiro**, e não só `updateProg()`, porque a linha de
   repetições aparece e some com a marcação. É barato: a delegação no `document` não religa nada,
   e não há campo em foco quando se toca numa bolinha (o `change` do campo dispara antes, no
@@ -312,6 +314,46 @@ sincroniza, ao contrário de `fittracker.plano.v1` (a aba escolhida), que é a �
 `fittracker.` que `sincronizavel()` exclui. **Hoje não tem nenhum membro**: a única preferência
 que existiu ligava a faixa da semana, e saiu com ela. Se voltar a haver uma, ela vai no diálogo
 de conta, que já existe — não abrir uma tela de configurações para isso.
+
+## Histórico
+
+É uma **vista**, não um arquivo: mora no hash (`#historico` para a lista, `#historico/<id>` para
+a sessão), e `vistaAtual()` é o roteador. O `hashchange` chama `renderCabecalho()` e `render()`,
+porque o título, o eyebrow e o link mudam com a vista e os três vivem fora de `#treinos`.
+
+- **Por que hash e não arquivo separado, já que o Felipe pediu uma página.** O hash entrega o
+  que ele queria: endereço de verdade (o botão voltar do celular funciona, dá para favoritar),
+  a vista já sai filtrada pelo plano de onde se entrou, e não é aba. Um `.html` separado
+  custaria as 862 linhas de CSS e, pior, as ~278 linhas da camada de sincronização, cujas
+  sutilezas esta documentação inteira descreve: duas cópias significam uma correção que chega só
+  numa metade, e o sintoma disso é dado errado, não erro. Se um dia valer o arquivo separado,
+  ele pode ler o `localStorage` direto (mesma origem) e enfileirar a lápide sem duplicar o push
+  e o pull — mas aí uma página passa a gravar numa fila que outra esvazia, e esse acoplamento é
+  o que se está comprando.
+- **NÃO HÁ GATE DE LOGIN, e não é esquecimento.** O histórico é o `localStorage` do próprio
+  aparelho: quem abre o endereço público vê o `localStorage` dele, vazio, e quem chega nos dados
+  é quem está com o celular destravado — e essa pessoa já podia marcar série e apagar carga sem
+  login nenhum. Quem protege o dado no servidor é o RLS, no Postgres. Esconder tela não
+  protegeria nada e criaria um jeito novo de ficar sem o próprio treino (sessão expirada =
+  histórico vazio com os dados intactos no aparelho), que é a mesma armadilha que a decisão da
+  aba da bike já recusou. Sem login, uma linha diz que está mostrando só as sessões daquele
+  aparelho: entrar muda o que **vem** dos outros, não o que já está ali.
+- **A data sai de graça do `id` da sessão.** Ela nunca foi pedida ao Felipe, mas o `Date.now()`
+  do Finalizar estava guardado desde sempre para ordenar. "hoje" e "ontem" por extenso, porque é
+  assim que se pensa numa lista curta.
+- **`lerLog()` devolve `null` quando não dá para enumerar o `localStorage`**, e a tela avisa.
+  Uma lista vazia ali mentiria dizendo que não há sessão nenhuma.
+- **O detalhe lê o histórico, não a prescrição de hoje.** Os exercícios saem na ordem do bloco
+  daquela sessão, e o que já saiu do plano entra no fim pelo id cru em vez de sumir: o registro
+  precisa continuar legível depois que a fase mudar.
+- **Apagar escreve lápide em cada chave da sessão**, nunca `DELETE`, que é o que faz a sessão
+  sumir também nos outros aparelhos. Vai atrás da confirmação, como o Finalizar.
+- **`pintarLinkHistorico()` é chamado por `render()` e por `renderCabecalho()`.** A contagem
+  muda a cada sessão finalizada e apagada, e esses caminhos redesenham os cards sem passar pelo
+  cabeçalho; só no cabeçalho, o número ficava um passo atrás do que a pessoa acabou de fazer.
+- **Trocar de aba sai do histórico.** O histórico é de um plano, e continuar nele depois de
+  trocar mostraria a lista de um com o cabeçalho do outro. Plano sem `key` (a bike) não registra
+  sessão, então o link não aparece e um `#historico` forçado na URL cai de volta no treino.
 
 ## Service worker
 

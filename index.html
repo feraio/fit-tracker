@@ -246,6 +246,134 @@
     color:var(--ink3);
   }
 
+  /* ---------- Histórico ----------
+     Lista lida sentado, não entre séries: pode ser mais arejada que o card de
+     treino. O que manda aqui é distinguir uma sessão da outra de relance, então
+     a data vem primeiro e grande, e o resto embaixo, pequeno. */
+  .sec-link{
+    margin-left:auto;
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.06em;
+    color:var(--ink3);
+    text-decoration:none;
+    white-space:nowrap;
+  }
+  .sec-link:hover{color:var(--ink)}
+  .sec-link[hidden]{display:none}
+
+  .hist-voltar{margin:0 0 16px}
+  .hist-voltar a{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.06em;
+    color:var(--ink3);
+    text-decoration:none;
+  }
+  .hist-voltar a:hover{color:var(--ink)}
+
+  .hist-resumo{
+    display:flex;
+    align-items:baseline;
+    gap:8px;
+    flex-wrap:wrap;
+    background:var(--card);
+    border:1px solid var(--line2);
+    border-top:4px solid var(--ink);
+    border-radius:var(--r);
+    padding:14px;
+    margin-bottom:16px;
+  }
+  .hist-resumo b{
+    font-family:var(--cond);
+    font-size:34px;
+    font-weight:700;
+    line-height:1;
+    font-variant-numeric:tabular-nums;
+  }
+  .hist-resumo small{font-family:var(--mono);font-size:11px;color:var(--ink3)}
+  .hist-resumo .hist-split{
+    margin-left:auto;
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--ink2);
+    font-variant-numeric:tabular-nums;
+  }
+  .hist-nota,.hist-vazio{
+    margin:0 0 16px;
+    padding:10px 12px;
+    background:var(--card);
+    border:1px solid var(--line2);
+    border-left:3px solid var(--line);
+    border-radius:var(--r);
+    font-size:12.5px;
+    line-height:1.4;
+    color:var(--ink2);
+  }
+
+  ol.hist{list-style:none;margin:0;padding:0}
+  ol.hist li{
+    background:var(--card);
+    border:1px solid var(--line2);
+    border-left:4px solid var(--accent);
+    border-radius:var(--r);
+    margin-bottom:8px;
+  }
+  ol.hist li.a{--accent:var(--red25)}
+  ol.hist li.b{--accent:var(--blue20)}
+  ol.hist li a{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px 14px;
+    text-decoration:none;
+    color:inherit;
+  }
+  .hist-corpo{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 0}
+  .hist-data{
+    font-family:var(--cond);
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    font-size:17px;
+    line-height:1.1;
+  }
+  .hist-det{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--ink3);
+    font-variant-numeric:tabular-nums;
+  }
+  .hist-seta{font-size:20px;color:var(--line);flex:0 0 auto;line-height:1}
+  ol.hist li a:hover .hist-seta{color:var(--ink3)}
+
+  /* Repetições de cada série na sessão salva. Mesma leitura da fileira de
+     bolinhas, sem ser botão: aqui não há nada para tocar. */
+  .hist-reps{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .hist-rep{
+    display:flex;
+    align-items:baseline;
+    gap:3px;
+    min-width:36px;
+    justify-content:center;
+    padding:5px 8px;
+    border:1px solid var(--line2);
+    border-radius:var(--r);
+    background:#fff;
+    font-family:var(--mono);
+    font-size:13px;
+    font-variant-numeric:tabular-nums;
+    color:var(--ink);
+  }
+  .hist-rep small{font-size:9.5px;color:var(--ink3)}
+  .hist-sens,.hist-obs{
+    margin:0 0 12px;
+    font-size:13px;
+    line-height:1.4;
+    color:var(--ink);
+  }
+  .hist-obs{color:var(--ink2);white-space:pre-wrap}
+
   /* ---------- Faixa de semana do ciclo ----------
      Mesma linguagem visual que a faixa de fase tinha: a fase morreu porque a
      escolha era falsa, e esta não é. Aqui cada posição desenha exercícios e
@@ -772,7 +900,7 @@
 
   /* Divide a caixa do diálogo de conta: mesma largura, mesmo fundo, mesmo
      backdrop. Só o corpo é próprio, porque aqui não há <form>. */
-  #fimBox{
+  #confirmaBox{
     border:0;
     padding:0;
     margin:auto;
@@ -782,7 +910,7 @@
     color:var(--ink);
     padding-bottom:env(safe-area-inset-bottom);
   }
-  #fimBox::backdrop{background:rgba(22,24,27,.72)}
+  #confirmaBox::backdrop{background:rgba(22,24,27,.72)}
   .fim-corpo{padding:16px 14px 14px}
   .fim-corpo h4{
     margin:0 0 4px;
@@ -888,16 +1016,17 @@
 
 </header>
 
-<section>
+<section id="secTreino">
   <div class="sec-head">
-    <h2>Treinamento</h2>
+    <h2 id="secTitulo">Treinamento</h2>
+    <a class="sec-link" id="linkHistorico" href="#historico" hidden>Histórico</a>
   </div>
   <!-- Fora de #treinos: render() reescreve #treinos inteiro. -->
   <div class="semanas" id="semanas" hidden></div>
   <div id="treinos" role="tabpanel" tabindex="-1"></div>
 </section>
 
-<section>
+<section id="secNutri">
   <div class="sec-head">
     <h2>Nutricional</h2>
     <span class="meta">Proteína e gordura fixas</span>
@@ -933,16 +1062,17 @@
 </dialog>
 
 <!-- Fora de .wrap e de #treinos: render() reescreve #treinos inteiro.
-     Finalizar é a única ação da página que fecha uma sessão, e sem a tela de
-     histórico ainda não há de onde desfazer. Um botão de largura cheia no fim
-     de um card longo é fácil de esbarrar com o polegar, então ele pergunta. -->
-<dialog id="fimBox" aria-labelledby="fimTitulo">
+     Uma caixa de confirmação só, usada por todo mundo que precisa perguntar
+     antes: finalizar a sessão e apagar uma sessão do histórico. `pedirConfirmacao()`
+     preenche o texto e guarda o que fazer no "sim". Duas caixas quase iguais
+     seria uma para manter em sincronia com a outra. -->
+<dialog id="confirmaBox" aria-labelledby="confirmaTitulo">
   <div class="fim-corpo">
-    <h4 id="fimTitulo">Finalizar treino?</h4>
-    <p class="ajuda">As séries, as repetições, a sensação e as observações vão para o registro, e o card fica limpo para a próxima sessão. A carga continua preenchida.</p>
+    <h4 id="confirmaTitulo"></h4>
+    <p class="ajuda" id="confirmaTexto"></p>
     <div class="login-acoes">
-      <button class="btn" type="button" data-fim-nao>Não</button>
-      <button class="btn primario" type="button" data-fim-sim>Sim, finalizar</button>
+      <button class="btn" type="button" data-conf-nao>Não</button>
+      <button class="btn primario" type="button" id="confirmaSim" data-conf-sim></button>
     </div>
   </div>
 </dialog>
@@ -1848,18 +1978,46 @@ function mostrarAbaAtiva(){
 
 function renderCabecalho(){
   var p = planoAtual();
-  document.getElementById('eyebrow').textContent = p.eyebrow;
-  document.getElementById('titulo').innerHTML = p.titulo;
-  document.getElementById('lede').textContent = p.lede;
+  var vista = vistaAtual();
+  var hist = vista.nome !== 'treinos' && !!p.key;
+  var nomePlano = p.titulo.replace(/<[^>]+>/g, '');
+
+  document.getElementById('eyebrow').textContent = hist ? nomePlano + ' · registro' : p.eyebrow;
+  document.getElementById('titulo').innerHTML = hist ? 'Histórico' : p.titulo;
+  document.getElementById('lede').textContent = hist
+    ? 'Cada sessão finalizada, da mais recente para a mais antiga.'
+    : p.lede;
+  document.getElementById('secTitulo').textContent = hist ? 'Sessões' : 'Treinamento';
   document.getElementById('treinos').setAttribute('aria-labelledby', 'aba-' + p.id);
-  document.title = p.doc;
+  document.title = hist ? 'Histórico · ' + nomePlano : p.doc;
+
+  pintarLinkHistorico();
   renderAbas();
+}
+
+/* O link só existe onde há o que registrar, e leva ao histórico DESTE plano: o
+   hash é lido junto com a aba escolhida, então nunca mistura os dois.
+
+   Função própria, e chamada também por `render()`, porque a contagem muda a
+   cada sessão finalizada e a cada sessão apagada — e esses caminhos redesenham
+   os cards sem passar pelo cabeçalho. Deixada só em `renderCabecalho()`, ela
+   ficava um passo atrás do que a pessoa acabou de fazer. */
+function pintarLinkHistorico(){
+  var p = planoAtual(), hist = vistaAtual().nome !== 'treinos' && !!p.key;
+  var link = document.getElementById('linkHistorico');
+  var lista = p.key ? (lerLog(p) || []) : [];
+  link.hidden = hist || !p.key;
+  link.textContent = lista.length ? 'Histórico (' + lista.length + ')' : 'Histórico';
 }
 
 function trocarPlano(id){
   if (id === planoId) return;
   planoId = id;
   store.set(KEY_PLANO, id);
+  /* Trocar de aba sai do histórico: o histórico é de um plano, e continuar nele
+     depois de trocar mostraria a lista de um plano com o cabeçalho de outro.
+     Mexer no hash dispara o hashchange, que já redesenha tudo. */
+  if (vistaAtual().nome !== 'treinos'){ location.hash = ''; return; }
   renderCabecalho();
   render();
   var aba = document.getElementById('aba-' + id);
@@ -1959,7 +2117,7 @@ function blocoAtual(plano){
 
 function renderSemanas(plano){
   var faixa = document.getElementById('semanas');
-  if (!plano.semanas){ faixa.hidden = true; faixa.innerHTML = ''; return; }
+  if (!plano.semanas){ faixa.innerHTML = ''; return; }
   var atual = blocoAtual(plano);
   var html = '<span class="sem-label">Semana</span>';
   plano.semanas.forEach(function(b){
@@ -1967,7 +2125,6 @@ function renderSemanas(plano){
             'data-semana="' + b.id + '">' + b.rot + '</button>';
   });
   faixa.innerHTML = html;
-  faixa.hidden = false;
 }
 
 /* ---------- Prescrição de repetição ----------
@@ -2014,9 +2171,254 @@ var SENSACOES = [
   {id:'muito',  rot:'Muito pesado'}
 ];
 
+/* ---------- Histórico ----------
+   É uma VISTA, não um arquivo. Mora no hash (`#historico` e `#historico/<id>`),
+   e não numa aba, por três motivos: o endereço é de verdade, então o botão
+   voltar do celular funciona e dá para favoritar; a vista já sai filtrada pelo
+   plano de onde se entrou, que era o pedido; e nada disso custa um arquivo novo.
+
+   Arquivo separado custaria caro aqui: as 862 linhas de CSS e, pior, as ~278
+   linhas da camada de sincronização, cujas sutilezas este CLAUDE.md inteiro
+   documenta. Duas cópias dela significam uma correção que chega só numa metade,
+   e o sintoma disso é dado errado, não erro.
+
+   NÃO HÁ GATE DE LOGIN, e não é esquecimento. O histórico é o localStorage do
+   próprio aparelho: quem abre o endereço público vê o localStorage dele, vazio,
+   e quem chega nos dados é quem está com o celular destravado — e essa pessoa
+   já podia marcar série e apagar carga sem login nenhum. Quem protege o dado no
+   servidor é o RLS, no banco. Esconder tela não protegeria nada e criaria um
+   jeito novo de ficar sem o próprio treino, que é justamente o que a decisão da
+   aba da bike já recusou. */
+function vistaAtual(){
+  var h = location.hash.replace(/^#/, '');
+  if (h.indexOf('historico') !== 0) return {nome:'treinos'};
+  var barra = h.indexOf('/');
+  return barra < 0 ? {nome:'lista'} : {nome:'sessao', id:h.slice(barra + 1)};
+}
+
+var DIAS  = ['dom','seg','ter','qua','qui','sex','sáb'];
+var MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+
+/* O `id` da sessão é o `Date.now()` do Finalizar. A data nunca foi pedida, mas
+   estava guardada desde sempre para ordenar — e é ela que a lista mostra agora,
+   de graça. "hoje" e "ontem" porque é assim que se pensa numa lista curta. */
+function dataDe(ms){
+  var d = new Date(+ms), agora = new Date();
+  var dia = function(x){ return new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime(); };
+  var delta = Math.round((dia(agora) - dia(d)) / 86400000);
+  if (delta === 0) return 'hoje';
+  if (delta === 1) return 'ontem';
+  return DIAS[d.getDay()] + ', ' + d.getDate() + ' ' + MESES[d.getMonth()] +
+         (d.getFullYear() !== agora.getFullYear() ? ' de ' + d.getFullYear() : '');
+}
+
+function horaDe(ms){
+  var d = new Date(+ms), dois = function(n){ return (n < 10 ? '0' : '') + n; };
+  return dois(d.getHours()) + ':' + dois(d.getMinutes());
+}
+
+/* Agrupa `<prefixo>log.<id>.<campo>` por sessão. Os campos são `meta` (JSON com
+   semana e treino), `sensacao`, `obs`, `kg.<exercício>` e `<exercício>.<série>`.
+   Nenhum id de exercício tem ponto, então o primeiro ponto sempre separa certo.
+
+   Devolve null quando não deu para enumerar o localStorage: a tela avisa em vez
+   de mostrar uma lista vazia que mentiria dizendo que não há sessão nenhuma. */
+function lerLog(plano){
+  var pre = plano.key + 'log.';
+  var chaves = chavesSincronizaveis();
+  if (!chaves) return null;
+  var por = {}, lista = [], id;
+  chaves.forEach(function(k){
+    if (k.indexOf(pre) !== 0) return;
+    var resto = k.slice(pre.length), ponto = resto.indexOf('.');
+    if (ponto < 0) return;
+    var sid = resto.slice(0, ponto);
+    if (!por[sid]) por[sid] = {id:sid, campos:{}};
+    por[sid].campos[resto.slice(ponto + 1)] = store.get(k);
+  });
+  for (id in por){
+    var ses = por[id];
+    try { ses.meta = JSON.parse(ses.campos.meta || '{}'); } catch(e){ ses.meta = {}; }
+    lista.push(ses);
+  }
+  lista.sort(function(a, b){ return (+b.id) - (+a.id); });   /* mais recente primeiro */
+  return lista;
+}
+
+/* Quantas séries a sessão registrou. Conta os campos `<exercício>.<série>`, que
+   são as bolinhas marcadas, e ignora `kg.`, `meta`, `sensacao` e `obs`. */
+function seriesDaSessao(ses){
+  var n = 0;
+  for (var c in ses.campos){
+    if (c.indexOf('kg.') === 0) continue;
+    if (c === 'meta' || c === 'sensacao' || c === 'obs') continue;
+    if (c.indexOf('.') > 0) n++;
+  }
+  return n;
+}
+
+/* Todo exercício de todos os blocos do plano, por id. O histórico precisa
+   continuar legível depois que a prescrição mudar de fase, então exercício que
+   já saiu do plano cai no id cru em vez de sumir da sessão antiga. */
+function exercicosDoPlano(plano){
+  var m = {};
+  (plano.semanas || [plano]).forEach(function(b){
+    (b.treinos || []).forEach(function(t){
+      t.ex.forEach(function(e){ m[e.id] = e; });
+    });
+  });
+  return m;
+}
+
+function plural(n, um, varios){ return n + ' ' + (n === 1 ? um : varios); }
+
+function rotuloSensacao(id){
+  for (var i = 0; i < SENSACOES.length; i++){ if (SENSACOES[i].id === id) return SENSACOES[i].rot; }
+  return '';
+}
+
+function renderHistorico(plano){
+  var lista = lerLog(plano);
+  var html = '<p class="hist-voltar"><a href="#">‹ Voltar ao treino</a></p>';
+
+  if (lista === null){
+    html += '<p class="hist-vazio">Este navegador não deixa ler o armazenamento local, então o histórico não pode ser montado aqui.</p>';
+  } else if (!lista.length){
+    html += '<p class="hist-vazio">Nenhuma sessão registrada ainda. Toque em Finalizar treino no fim de uma sessão e ela aparece aqui.</p>';
+  } else {
+    var porTreino = {};
+    lista.forEach(function(x){ porTreino[x.meta.treino] = (porTreino[x.meta.treino] || 0) + 1; });
+    var resumo = [];
+    Object.keys(porTreino).sort().forEach(function(t){ resumo.push(porTreino[t] + '× ' + t); });
+
+    html += '<div class="hist-resumo">' +
+      '<b>' + lista.length + '</b><small>' + (lista.length === 1 ? 'sessão registrada' : 'sessões registradas') + '</small>' +
+      (resumo.length ? '<span class="hist-split">' + resumo.join(' · ') + '</span>' : '') +
+    '</div>';
+
+    /* Entrar não muda o que já está aqui, muda o que VEM dos outros aparelhos.
+       Dizer isso é honesto; esconder a tela não seria. */
+    if (!logado() && syncLigado()){
+      html += '<p class="hist-nota">Mostrando só as sessões deste aparelho. Entre na conta para ver as dos outros.</p>';
+    }
+
+    html += '<ol class="hist">';
+    lista.forEach(function(ses){
+      var cls = ses.meta.treino === 'B' ? 'b' : 'a';
+      html += '<li class="' + cls + '">' +
+        '<a href="#historico/' + esc(ses.id) + '">' +
+          '<span class="badge sm">' + esc(ses.meta.treino || '?') + '</span>' +
+          '<span class="hist-corpo">' +
+            '<span class="hist-data">' + dataDe(ses.id) + '</span>' +
+            '<span class="hist-det">' + horaDe(ses.id) +
+              (ses.meta.semana ? ' · semana ' + esc(ses.meta.semana === '34' ? '3-4' : ses.meta.semana) : '') +
+              ' · ' + plural(seriesDaSessao(ses), 'série', 'séries') +
+            '</span>' +
+          '</span>' +
+          '<span class="hist-seta">›</span>' +
+        '</a>' +
+      '</li>';
+    });
+    html += '</ol>';
+  }
+  document.getElementById('treinos').innerHTML = html;
+}
+
+function renderSessao(plano, id){
+  var lista = lerLog(plano) || [];
+  var ses = null;
+  lista.forEach(function(x){ if (x.id === id) ses = x; });
+  if (!ses){ location.hash = '#historico'; return; }
+
+  var exs = exercicosDoPlano(plano);
+  var cls = ses.meta.treino === 'B' ? 'b' : 'a';
+
+  /* Os exercícios saem na ordem do bloco daquela sessão, e não na ordem em que
+     as chaves foram varridas: a sessão é lida como o treino foi feito. O que
+     não estiver mais no plano entra depois, para não sumir do registro. */
+  var ordem = [], vistos = {};
+  (plano.semanas || [plano]).forEach(function(b){
+    if (b.id && ses.meta.semana && b.id !== ses.meta.semana) return;
+    (b.treinos || []).forEach(function(t){
+      if (t.id !== ses.meta.treino) return;
+      t.ex.forEach(function(e){ if (!vistos[e.id]){ vistos[e.id] = 1; ordem.push(e.id); } });
+    });
+  });
+  for (var c in ses.campos){
+    var ponto = c.indexOf('.');
+    if (ponto < 0 || c.indexOf('kg.') === 0) continue;
+    var eid = c.slice(0, ponto);
+    if (!vistos[eid]){ vistos[eid] = 1; ordem.push(eid); }
+  }
+
+  var html = '<p class="hist-voltar"><a href="#historico">‹ Voltar ao histórico</a></p>' +
+    '<article class="treino ' + cls + ' leitura">' +
+      '<div class="t-head">' +
+        '<div class="badge' + ((ses.meta.treino || '').length > 1 ? ' sm' : '') + '">' + esc(ses.meta.treino || '?') + '</div>' +
+        '<div class="t-title"><h3>' + dataDe(ses.id) + '</h3><span>' + horaDe(ses.id) +
+          (ses.meta.semana ? ' · semana ' + esc(ses.meta.semana === '34' ? '3-4' : ses.meta.semana) : '') + '</span></div>' +
+        '<div class="t-prog"><b>' + seriesDaSessao(ses) + '</b><small>' +
+          (seriesDaSessao(ses) === 1 ? 'série' : 'séries') + '</small></div>' +
+      '</div>' +
+      '<ol class="ex">';
+
+  ordem.forEach(function(eid){
+    var e = exs[eid], nome = e ? e.n : eid;
+    var kg = ses.campos['kg.' + eid];
+    var reps = [], i = 1;
+    while (ses.campos[eid + '.' + i] !== undefined){ reps.push(ses.campos[eid + '.' + i]); i++; }
+    if (!reps.length && kg === undefined) return;
+    html += '<li>' +
+      '<div class="ex-top">' +
+        '<div class="ex-id"><span class="ex-name">' + esc(nome) + '</span>' +
+          (e && e.eq ? '<span class="ex-eq">' + e.eq + '</span>' : '') +
+        '</div>' +
+        '<span class="ex-presc">' + (kg !== undefined && kg !== '' ? esc(kg) + ' kg' : '—') + '</span>' +
+      '</div>' +
+      (reps.length ? '<div class="hist-reps">' + reps.map(function(r, k){
+          return '<span class="hist-rep"><small>' + (k + 1) + '</small>' + esc(r) + '</span>';
+        }).join('') + '</div>' : '') +
+    '</li>';
+  });
+
+  html += '</ol>';
+  var sens = rotuloSensacao(ses.campos.sensacao);
+  if (sens || ses.campos.obs){
+    html += '<div class="fechar">' +
+      (sens ? '<span class="fechar-rot">Como foi</span><p class="hist-sens">' + esc(sens) + '</p>' : '') +
+      (ses.campos.obs ? '<span class="fechar-rot">Observações</span><p class="hist-obs">' + esc(ses.campos.obs) + '</p>' : '') +
+    '</div>';
+  }
+  html += '<div class="t-foot"><button class="btn ghost" type="button" data-apagar="' + esc(ses.id) + '">Apagar sessão</button></div>' +
+  '</article>';
+
+  document.getElementById('treinos').innerHTML = html;
+}
+
+/* Apaga a sessão inteira. Lápide em cada chave, que é o que faz ela sumir
+   também nos outros aparelhos — `DELETE` não propagaria. */
+function apagarSessao(plano, id){
+  var pre = plano.key + 'log.' + id + '.';
+  (chavesSincronizaveis() || []).forEach(function(k){
+    if (k.indexOf(pre) === 0) store.del(k);
+  });
+}
+
 /* ---------- Treinos ---------- */
 function render(){
   var plano = planoAtual();
+  var vista = vistaAtual();
+  /* Plano somente leitura (a bike) não registra sessão, então não tem histórico
+     para mostrar: o hash cai de volta no treino em vez de abrir uma tela vazia. */
+  if (vista.nome !== 'treinos' && !plano.key) vista = {nome:'treinos'};
+
+  document.getElementById('semanas').hidden = vista.nome !== 'treinos' || !plano.semanas;
+  document.getElementById('secNutri').hidden = vista.nome !== 'treinos';
+
+  pintarLinkHistorico();
+  if (vista.nome === 'lista'){ renderHistorico(plano); return; }
+  if (vista.nome === 'sessao'){ renderSessao(plano, vista.id); return; }
+
   renderSemanas(plano);
   if (plano.leitura){ renderLeitura(plano); return; }
   var bloco = blocoAtual(plano);
@@ -2289,42 +2691,67 @@ document.addEventListener('click', function(ev){
      de novo. */
   var fin = ev.target.closest('[data-finalizar]');
   if (fin){
-    fimPendente = fin.dataset.finalizar;
-    document.getElementById('fimTitulo').textContent = 'Finalizar treino ' + fimPendente + '?';
-    document.getElementById('fimBox').showModal();
+    var pl = planoAtual(), idT = fin.dataset.finalizar, alvo = null;
+    blocoAtual(pl).treinos.forEach(function(t){ if (t.id === idT) alvo = t; });
+    if (!alvo) return;
+    pedirConfirmacao(
+      'Finalizar treino ' + idT + '?',
+      'As séries, as repetições, a sensação e as observações vão para o registro, e o card fica limpo para a próxima sessão. A carga continua preenchida.',
+      'Sim, finalizar',
+      function(){ if (finalizar(pl, alvo)) render(); }
+    );
+    return;
+  }
+
+  var apg = ev.target.closest('[data-apagar]');
+  if (apg){
+    var plA = planoAtual(), idS = apg.dataset.apagar;
+    pedirConfirmacao(
+      'Apagar esta sessão?',
+      'O registro some deste aparelho e dos outros. Não tem como desfazer.',
+      'Sim, apagar',
+      function(){ apagarSessao(plA, idS); location.hash = '#historico'; }
+    );
     return;
   }
 });
 
-/* ---------- Confirmação do Finalizar ----------
-   Qual treino está esperando resposta. Guardado aqui e não no DOM porque
-   render() reescreve #treinos, e o diálogo vive fora dele. */
-var fimPendente = null;
+/* ---------- Confirmação ----------
+   Uma caixa para todo mundo que precisa perguntar antes. O que fazer no "sim"
+   vem como função, e fica guardado aqui e não no DOM porque render() reescreve
+   #treinos e o diálogo vive fora dele. */
+var confirmaAcao = null;
 
-function fecharFim(){
-  fimPendente = null;
-  document.getElementById('fimBox').close();
+function pedirConfirmacao(titulo, texto, rotulo, acao){
+  document.getElementById('confirmaTitulo').textContent = titulo;
+  document.getElementById('confirmaTexto').textContent = texto;
+  document.getElementById('confirmaSim').textContent = rotulo;
+  confirmaAcao = acao;
+  document.getElementById('confirmaBox').showModal();
+}
+
+function fecharConfirma(){
+  confirmaAcao = null;
+  document.getElementById('confirmaBox').close();
 }
 
 /* Delegado no mesmo listener de clique do resto da página. ESC e toque no
    backdrop caem no ramo do "não", que é o lado seguro: quem esbarrou no botão
    não perde a sessão por não achar o cancelar. */
 document.addEventListener('click', function(ev){
-  var box = document.getElementById('fimBox');
-  if (ev.target === box){ fecharFim(); return; }
-  if (ev.target.closest('[data-fim-nao]')){ fecharFim(); return; }
-  if (!ev.target.closest('[data-fim-sim]')) return;
+  var box = document.getElementById('confirmaBox');
+  if (ev.target === box){ fecharConfirma(); return; }
+  if (ev.target.closest('[data-conf-nao]')){ fecharConfirma(); return; }
+  if (!ev.target.closest('[data-conf-sim]')) return;
 
-  var pl = planoAtual(), idT = fimPendente, alvo = null;
-  fecharFim();
-  if (!idT) return;
-  blocoAtual(pl).treinos.forEach(function(t){ if (t.id === idT) alvo = t; });
-  if (alvo && finalizar(pl, alvo)) render();
+  var acao = confirmaAcao;
+  fecharConfirma();
+  if (acao) acao();
 });
 
-/* O `cancel` do <dialog> é o ESC. Sem soltar o pendente aqui, o treino ficaria
-   guardado e o próximo "sim" fecharia a sessão errada. */
-document.getElementById('fimBox').addEventListener('cancel', function(){ fimPendente = null; });
+/* O `cancel` do <dialog> é o ESC. Sem soltar a ação aqui, ela ficaria pendurada
+   e o próximo "sim" executaria a anterior. */
+document.getElementById('confirmaBox').addEventListener('cancel', function(){ confirmaAcao = null; });
 
 /* Navegação por setas entre as abas, como manda o padrão de tablist.
    Delegado no document pelo mesmo motivo do clique: renderAbas() reescreve os
@@ -2408,6 +2835,14 @@ function normDec(v){
   v = v.replace(/\.$/, '').replace(/^\./, '0.');   /* "." sozinho zera, não vira 0 */
   return v;
 }
+
+/* O hash é o roteador. `renderCabecalho()` junto porque o título, o eyebrow e o
+   link mudam com a vista, e os três vivem fora de #treinos. */
+window.addEventListener('hashchange', function(){
+  renderCabecalho();
+  render();
+  window.scrollTo(0, 0);
+});
 
 renderCabecalho();
 render();
