@@ -292,6 +292,14 @@ na fila, na lápide e no RLS que existiam. Quem for mexer nisso não precisa toc
   descartar, e desmarcar uma série é tocar nela de novo. O Finalizar é um botão de largura cheia
   porque é o último toque da sessão, dado em pé; ele herda o `--accent` do card, então o A é
   vermelho e o B é azul.
+- **O Finalizar pergunta antes** (`#fimBox`, um `<dialog>` fora de `#treinos` como manda a
+  arquitetura). É a única ação da página que fecha uma sessão, e um botão de largura cheia no
+  fim de um card longo é fácil de esbarrar com o polegar. **ESC e toque no backdrop caem no lado
+  do "não"**: quem esbarrou não pode perder a sessão por não achar o cancelar.
+- **`fimPendente` guarda qual treino espera resposta, em memória e não no DOM.** `render()`
+  reescreve `#treinos` e o diálogo vive fora dele, então um `data-` no card não sobreviveria.
+  O handler de `cancel` (o ESC do `<dialog>`) zera a variável: sem isso o treino ficaria
+  pendurado e o próximo "sim" fecharia a sessão errada.
 - **Tocar numa bolinha chama `render()` inteiro**, e não só `updateProg()`, porque a linha de
   repetições aparece e some com a marcação. É barato: a delegação no `document` não religa nada,
   e não há campo em foco quando se toca numa bolinha (o `change` do campo dispara antes, no

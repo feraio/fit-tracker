@@ -770,6 +770,35 @@
   .ex-media:hover{color:var(--ink)}
   a.ex-media{text-decoration:none}
 
+  /* Divide a caixa do diálogo de conta: mesma largura, mesmo fundo, mesmo
+     backdrop. Só o corpo é próprio, porque aqui não há <form>. */
+  #fimBox{
+    border:0;
+    padding:0;
+    margin:auto;
+    width:min(92vw,380px);
+    background:var(--card);
+    border-radius:var(--r);
+    color:var(--ink);
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  #fimBox::backdrop{background:rgba(22,24,27,.72)}
+  .fim-corpo{padding:16px 14px 14px}
+  .fim-corpo h4{
+    margin:0 0 4px;
+    font-family:var(--cond);
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    font-size:16px;
+    font-weight:700;
+  }
+  .fim-corpo .ajuda{
+    margin:0;
+    font-size:12px;
+    line-height:1.4;
+    color:var(--ink2);
+  }
+
   #mediaBox{
     border:0;
     padding:0;
@@ -901,6 +930,21 @@
       <button class="btn primario" type="submit" id="loginEnviar">Entrar</button>
     </div>
   </form>
+</dialog>
+
+<!-- Fora de .wrap e de #treinos: render() reescreve #treinos inteiro.
+     Finalizar é a única ação da página que fecha uma sessão, e sem a tela de
+     histórico ainda não há de onde desfazer. Um botão de largura cheia no fim
+     de um card longo é fácil de esbarrar com o polegar, então ele pergunta. -->
+<dialog id="fimBox" aria-labelledby="fimTitulo">
+  <div class="fim-corpo">
+    <h4 id="fimTitulo">Finalizar treino?</h4>
+    <p class="ajuda">As séries, as repetições, a sensação e as observações vão para o registro, e o card fica limpo para a próxima sessão. A carga continua preenchida.</p>
+    <div class="login-acoes">
+      <button class="btn" type="button" data-fim-nao>Não</button>
+      <button class="btn primario" type="button" data-fim-sim>Sim, finalizar</button>
+    </div>
+  </div>
 </dialog>
 
 <!-- Fora de .wrap e de #treinos: render() reescreve #treinos inteiro.
@@ -2245,13 +2289,42 @@ document.addEventListener('click', function(ev){
      de novo. */
   var fin = ev.target.closest('[data-finalizar]');
   if (fin){
-    var pl = planoAtual(), idT = fin.dataset.finalizar;
-    var alvo = null;
-    blocoAtual(pl).treinos.forEach(function(t){ if (t.id === idT) alvo = t; });
-    if (alvo && finalizar(pl, alvo)) render();
+    fimPendente = fin.dataset.finalizar;
+    document.getElementById('fimTitulo').textContent = 'Finalizar treino ' + fimPendente + '?';
+    document.getElementById('fimBox').showModal();
     return;
   }
 });
+
+/* ---------- Confirmação do Finalizar ----------
+   Qual treino está esperando resposta. Guardado aqui e não no DOM porque
+   render() reescreve #treinos, e o diálogo vive fora dele. */
+var fimPendente = null;
+
+function fecharFim(){
+  fimPendente = null;
+  document.getElementById('fimBox').close();
+}
+
+/* Delegado no mesmo listener de clique do resto da página. ESC e toque no
+   backdrop caem no ramo do "não", que é o lado seguro: quem esbarrou no botão
+   não perde a sessão por não achar o cancelar. */
+document.addEventListener('click', function(ev){
+  var box = document.getElementById('fimBox');
+  if (ev.target === box){ fecharFim(); return; }
+  if (ev.target.closest('[data-fim-nao]')){ fecharFim(); return; }
+  if (!ev.target.closest('[data-fim-sim]')) return;
+
+  var pl = planoAtual(), idT = fimPendente, alvo = null;
+  fecharFim();
+  if (!idT) return;
+  blocoAtual(pl).treinos.forEach(function(t){ if (t.id === idT) alvo = t; });
+  if (alvo && finalizar(pl, alvo)) render();
+});
+
+/* O `cancel` do <dialog> é o ESC. Sem soltar o pendente aqui, o treino ficaria
+   guardado e o próximo "sim" fecharia a sessão errada. */
+document.getElementById('fimBox').addEventListener('cancel', function(){ fimPendente = null; });
 
 /* Navegação por setas entre as abas, como manda o padrão de tablist.
    Delegado no document pelo mesmo motivo do clique: renderAbas() reescreve os
