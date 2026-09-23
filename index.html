@@ -2272,6 +2272,18 @@ function exercicosDoPlano(plano){
 
 function plural(n, um, varios){ return n + ' ' + (n === 1 ? um : varios); }
 
+/* O rótulo da semana sai dos blocos do plano, e nunca do valor cru gravado.
+   Assim uma sessão antiga com `semana` que não corresponde a bloco nenhum (as
+   do PPL, gravadas antes da guarda em `finalizar()`) simplesmente não mostra
+   semana, em vez de inventar uma. */
+function rotuloSemana(plano, id){
+  if (!id || !plano.semanas) return '';
+  for (var i = 0; i < plano.semanas.length; i++){
+    if (plano.semanas[i].id === id) return plano.semanas[i].rot.toLowerCase();
+  }
+  return '';
+}
+
 function rotuloSensacao(id){
   for (var i = 0; i < SENSACOES.length; i++){ if (SENSACOES[i].id === id) return SENSACOES[i].rot; }
   return '';
@@ -2311,7 +2323,7 @@ function renderHistorico(plano){
           '<span class="hist-corpo">' +
             '<span class="hist-data">' + dataDe(ses.id) + '</span>' +
             '<span class="hist-det">' + horaDe(ses.id) +
-              (ses.meta.semana ? ' · semana ' + esc(ses.meta.semana === '34' ? '3-4' : ses.meta.semana) : '') +
+              (rotuloSemana(plano, ses.meta.semana) ? ' · ' + rotuloSemana(plano, ses.meta.semana) : '') +
               ' · ' + plural(seriesDaSessao(ses), 'série', 'séries') +
             '</span>' +
           '</span>' +
@@ -2338,7 +2350,7 @@ function renderSessao(plano, id){
      não estiver mais no plano entra depois, para não sumir do registro. */
   var ordem = [], vistos = {};
   (plano.semanas || [plano]).forEach(function(b){
-    if (b.id && ses.meta.semana && b.id !== ses.meta.semana) return;
+    if (plano.semanas && ses.meta.semana && b.id !== ses.meta.semana) return;
     (b.treinos || []).forEach(function(t){
       if (t.id !== ses.meta.treino) return;
       t.ex.forEach(function(e){ if (!vistos[e.id]){ vistos[e.id] = 1; ordem.push(e.id); } });
@@ -2356,7 +2368,7 @@ function renderSessao(plano, id){
       '<div class="t-head">' +
         '<div class="badge' + ((ses.meta.treino || '').length > 1 ? ' sm' : '') + '">' + esc(ses.meta.treino || '?') + '</div>' +
         '<div class="t-title"><h3>' + dataDe(ses.id) + '</h3><span>' + horaDe(ses.id) +
-          (ses.meta.semana ? ' · semana ' + esc(ses.meta.semana === '34' ? '3-4' : ses.meta.semana) : '') + '</span></div>' +
+          (rotuloSemana(plano, ses.meta.semana) ? ' · ' + rotuloSemana(plano, ses.meta.semana) : '') + '</span></div>' +
         '<div class="t-prog"><b>' + seriesDaSessao(ses) + '</b><small>' +
           (seriesDaSessao(ses) === 1 ? 'série' : 'séries') + '</small></div>' +
       '</div>' +
@@ -2509,7 +2521,10 @@ function render(){
 
     html += '</ol>' +
       '<div class="t-foot">' +
-        '<span>' + soma + ' séries · ' + t.ex.length + ' itens · ' + bloco.descanso + '</span>' +
+        /* `descanso` é campo do bloco de semana, e plano sem `semanas[]` (o PPL)
+           não tem nenhum: sem esta guarda o rodapé dele lia "· undefined". */
+        '<span>' + soma + ' séries · ' + t.ex.length + ' itens' +
+          (bloco.descanso ? ' · ' + bloco.descanso : '') + '</span>' +
       '</div>' +
       '<div class="fechar">' +
         '<span class="fechar-rot">Como foi o treino</span>' +
@@ -2572,7 +2587,12 @@ function finalizar(plano, t){
     var kg = store.get(chaveKg(plano, t, e));
     if (kg !== null && kg !== '') store.set(destino + 'kg.' + e.id, kg);
   });
-  store.set(destino + 'meta', JSON.stringify({semana: bloco.id, treino: t.id, quando: id}));
+  /* `semana` só entra quando o plano tem blocos. Sem a guarda, `bloco` é o
+     próprio plano e o registro do PPL saía com "semana ppl", que o histórico
+     mostrava como se fosse um bloco de verdade. */
+  var meta = {treino: t.id, quando: id};
+  if (plano.semanas) meta.semana = bloco.id;
+  store.set(destino + 'meta', JSON.stringify(meta));
   return true;
 }
 

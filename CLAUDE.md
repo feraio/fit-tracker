@@ -354,6 +354,26 @@ porque o título, o eyebrow e o link mudam com a vista e os três vivem fora de 
 - **Trocar de aba sai do histórico.** O histórico é de um plano, e continuar nele depois de
   trocar mostraria a lista de um com o cabeçalho do outro. Plano sem `key` (a bike) não registra
   sessão, então o link não aparece e um `#historico` forçado na URL cai de volta no treino.
+- **O PPL ganhou histórico de graça, e foi ele que revelou dois defeitos.** Nada no registro é
+  específico do A/B: `plano.key` é o que decide, então qualquer plano com `key` e `treinos[]` já
+  marca série, grava carga, finaliza e lista. Mas o PPL não tem `semanas[]`, e dois pontos do
+  código tratavam o bloco como se sempre houvesse um:
+  - `bloco.descanso` é campo do bloco de semana. Sem bloco, o rodapé do PPL lia
+    "18 séries · 6 itens · **undefined**". Agora o trecho só entra quando existe.
+  - `finalizar()` gravava `semana: bloco.id`, e sem `semanas[]` o bloco é o próprio plano: o
+    registro do PPL saía com `semana: "ppl"` e a lista mostrava "semana ppl". Agora `semana` só
+    é gravada quando o plano tem blocos, e **`rotuloSemana()` resolve o rótulo pelos blocos do
+    plano em vez de imprimir o valor cru** — sessão antiga com um valor que não corresponde a
+    bloco nenhum simplesmente não mostra semana, em vez de inventar uma.
+
+  A lição para quem adicionar plano novo: `semanas[]` é opcional, e todo código que lê `bloco`
+  precisa aguentar o bloco ser o próprio plano.
+- **A bike continua sem histórico, e isso é decisão, não lacuna.** Ela não tem `key` nem
+  `treinos[]`, não encosta no `localStorage` e o contador de tiros vive só em memória de
+  propósito (ver "Bike intervalado"). Dar histórico a ela não é estender a estrutura: é criar
+  uma sessão onde não existe nenhuma, e decidir o que uma sessão de bike registra (tiros
+  completados? duração? como foi?), já que não há carga nem repetição. É pergunta de produto,
+  não de encanamento.
 
 ## Service worker
 
