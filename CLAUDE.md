@@ -185,21 +185,44 @@ espera rede**. O Supabase é uma cópia durável por cima disso.
 
 ## Bike intervalado
 
-A aba **Bike** é o primeiro plano **somente leitura** da página: mostra a prescrição da versão
-vigente para conferir em cima do aparelho, e não recebe input nenhum.
+A **prescrição** da bike é somente leitura: as etapas são conferidas em cima do aparelho e não
+recebem input. O que recebe input é o **pé do card**, e só ele.
 
-- **`leitura:1` no plano é o que separa os dois mundos.** `render()` desvia para
-  `renderLeitura()` antes de tocar em `plano.key` ou `plano.treinos` — a bike não tem nenhum
-  dos dois. Sem série para marcar e sem carga para guardar, **nada nesta aba encosta no
-  `localStorage`**, e por consequência nada dela entra na fila, na lápide ou no RLS. Não há
-  sincronização nova a fazer aqui, e não há nenhuma a manter.
-- **O contador de tiros é a única coisa interativa, e vive só em memória.** `tiros` é um objeto
-  no script, indexado pela etapa; `store` não é chamado em lugar nenhum deste caminho, e é isso
-  que mantém o parágrafo acima verdadeiro. Não persistir é escolha, não esquecimento: a
-  contagem é do treino de hoje, e gravada faria a sessão de segunda abrir com os oito tiros já
-  marcados. Em memória e **não** só no DOM porque `render()` roda por fora — o pull redesenha a
-  página quando traz mudança, e isso acontece toda vez que a aba volta ao primeiro plano;
-  guardado só no DOM, destravar o celular no meio do bloco apagaria a contagem.
+- **`leitura:1` separa a prescrição.** `render()` desvia para `renderLeitura()`, que desenha
+  etapas em vez de cards — a bike não tem `treinos[]`, porque não tem exercício, carga nem
+  repetição.
+- **A bike REGISTRA sessão desde setembro de 2026, e por isso ganhou `key`
+  (`fittracker.bike.v1.`).** Foi pedido do Felipe: ele já registrava as sessões de bike no
+  Garmin e no GymRats, e queria os três tipos de treino num banco só. Tempo detalhado e métrica
+  fina seguem no Garmin; aqui fica o que serve para lembrar que a sessão aconteceu.
+  A entrada anterior dizia que "nada nesta aba encosta no `localStorage`". **Isso não vale
+  mais.**
+- **A sessão registra três coisas e mais nada**: tiros por etapa, tempo total em minutos e
+  nível de esforço (o mesmo componente `.sens` dos cards de força). Escopo definido pelo Felipe,
+  e vale respeitar: sem carga, sem repetição, sem observações. Se um dia entrar observação, é
+  decisão nova.
+- **O contador de tiros passou a persistir, e isto reverte uma decisão registrada.** Ele vivia
+  só em memória porque, sem um jeito de fechar a sessão, gravar faria a de segunda abrir com os
+  oito tiros já marcados. **Com o Finalizar existindo, essa razão caiu** — e ficar em memória
+  virou o problema, porque o número que a sessão precisa registrar é justamente este. Um campo
+  guarda as duas coisas, o "em qual eu estou" e o "quantos fiz", em vez de um contador volátil
+  mais um campo de registro que poderiam divergir. É o mesmo princípio das repetições feitas nos
+  cards de força.
+- **Os tiros são chaveados pelo `id` da etapa, nunca pelo índice.** O contrato do `id` vale aqui
+  como vale para exercício: reordenar as etapas com chave por índice reatribuiria a contagem à
+  etapa errada, em silêncio. Só etapa com `reps` ≥ `MIN_TIROS` **e** com `id` conta tiro
+  (`temTiros()`), e é a mesma função que decide se a etapa aparece no detalhe do histórico — uma
+  etapa que nunca conta (a ativação, com 3) não pode aparecer lá com um traço eterno fingindo
+  que faltou algo. Prescrição nova que dê 4 ou mais tiros a uma etapa precisa dar `id` a ela.
+- **`finalizarLeitura()` é o `finalizar()` dos planos sem exercício.** Mesma forma (varre
+  `atual.`, move para `log.<id>.`, apaga a origem, com a mesma volta para o navegador que recusa
+  enumerar o `localStorage`), sem o retrato de carga, que não existe aqui. A meta guarda
+  `versao` e não `semana`: o que muda a prescrição da bike é a versão, e é ela que dá sentido ao
+  número de tiros de uma sessão antiga.
+- **A sessão inteira não cabe mais numa tela.** A prescrição cabe: do topo até o critério de
+  avanço são ~930px numa tela de 844, e o pé de registro leva a página a ~2040px. É o preço de
+  registrar, e é aceitável porque o pé é lido no fim, não entre os tiros. Ao mexer no cabeçalho
+  desta aba, o que se confere agora é que a **prescrição** continua perto de uma tela.
 - **A intensidade é descrita em palavras, não em número.** "Resistência baixa", "forte",
   "fácil" — no `det` da etapa, como na especificação. Não há campo de velocidade nem de PSE, e
   isso é decisão: km/h no marcador de bike é função da calibração daquele aparelho e não
@@ -218,10 +241,8 @@ vigente para conferir em cima do aparelho, e não recebe input nenhum.
   Trocar de versão é um deploy, não uma edição de dados.
 - **O componente é desenhado para ser lido de longe**, com o corpo em movimento: número grande
   sempre na mesma coluna à direita, uma etapa por linha, e o bloco principal destacado com o
-  `--accent` do card. O critério de avanço fica no **pé** do card, que é quando ele é lido: no
-  fim da sessão. Sem calendário e sem nota, a sessão inteira cabe numa tela de 390×844 com
-  folga. Ao mexer no cabeçalho desta aba, conferir isso de novo — a folga é o que se gasta sem
-  perceber.
+  `--accent` do card. O critério de avanço fica no **pé** da prescrição, que é quando ele é
+  lido: no fim da sessão, logo antes do registro.
 - O amarelo (`--yellow15`) já era a cor do que não é musculação — "15 kg · futebol / recarga".
   A bike herda ela, no card e no `h1 .slash.bk`.
 - Os macros do bloco Nutricional continuam fora da alternância, como nos outros dois planos.
@@ -368,12 +389,10 @@ porque o título, o eyebrow e o link mudam com a vista e os três vivem fora de 
 
   A lição para quem adicionar plano novo: `semanas[]` é opcional, e todo código que lê `bloco`
   precisa aguentar o bloco ser o próprio plano.
-- **A bike continua sem histórico, e isso é decisão, não lacuna.** Ela não tem `key` nem
-  `treinos[]`, não encosta no `localStorage` e o contador de tiros vive só em memória de
-  propósito (ver "Bike intervalado"). Dar histórico a ela não é estender a estrutura: é criar
-  uma sessão onde não existe nenhuma, e decidir o que uma sessão de bike registra (tiros
-  completados? duração? como foi?), já que não há carga nem repetição. É pergunta de produto,
-  não de encanamento.
+- **A bike também tem histórico**, desde que passou a registrar sessão (ver "Bike intervalado").
+  Como ela não tem exercício nem carga, `renderSessao()` desvia para `renderSessaoLeitura()` no
+  detalhe, e `resumoDaSessao()` é o único lugar que decide o que resume uma sessão: força conta
+  série, bike conta tiro e minuto. Um lugar só, para a lista e o detalhe não divergirem.
 
 ## Service worker
 

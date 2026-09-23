@@ -321,6 +321,7 @@
   }
   ol.hist li.a{--accent:var(--red25)}
   ol.hist li.b{--accent:var(--blue20)}
+  ol.hist li.bk{--accent:var(--yellow15)}
   ol.hist li a{
     display:flex;
     align-items:center;
@@ -610,6 +611,10 @@
     text-transform:uppercase;color:var(--ink3);margin-bottom:8px;
   }
   .senss{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  /* O campo de tempo divide o visual do campo de carga, mas não fica à direita
+     de uma lista de bolinhas: aqui ele é a própria linha. */
+  .kgwrap.tempo{margin:0 0 12px;justify-content:flex-start}
+  .kgwrap.tempo .kg{text-align:center}
   .sens{
     font-family:var(--mono);font-size:11px;letter-spacing:.04em;
     background:transparent;border:1px solid var(--line);
@@ -1400,6 +1405,7 @@ function sincronizar(){
    os aparelhos para limpar bytes inertes. */
 var KEY_AB = 'fittracker.ab.v2.';
 var KEY_PPL = 'fittracker.ppl.v1.';
+var KEY_BIKE = 'fittracker.bike.v1.';
 var KEY_PLANO = 'fittracker.plano.v1';
 
 /* ---------- Dados ----------
@@ -1607,12 +1613,16 @@ var planos = [
     ]
   },
   {
-    /* Bike intervalado, condicionamento. Este plano é SOMENTE LEITURA: mostra a
-       prescrição da versão vigente para conferir em cima do aparelho, e não
-       recebe input nenhum. Por isso não tem `key` e não tem `treinos`: não há
-       série para marcar nem carga para guardar, então nada aqui encosta no
-       localStorage nem entra na fila de sincronização. `leitura:1` é o que
-       manda render() desenhar o componente de etapas em vez dos cards.
+    /* Bike intervalado, condicionamento. A PRESCRIÇÃO é somente leitura: as
+       etapas são conferidas em cima do aparelho e não recebem input. Por isso
+       não há `treinos[]`, e `leitura:1` manda render() desenhar o componente de
+       etapas em vez dos cards.
+
+       O que MUDOU: a bike passou a registrar sessão, a pedido do Felipe, para
+       os três tipos de treino ficarem no mesmo lugar em vez de espalhados entre
+       Garmin e GymRats. Por isso ela ganhou `key`. O corpo do card continua
+       sendo só prescrição; o que recebe input é o pé, e só ele: tiros, tempo e
+       esforço. Nada de carga nem repetição, que não existem aqui.
 
        Trocar de versão é deploy, não edição de dados. A V2, a V3, a V4 e o
        critério de avanço estão em docs/bike-intervalado.md, fora do código de
@@ -1621,16 +1631,17 @@ var planos = [
     id:'bike',
     aba:'Bike', abaTag:'V1',
     leitura:1,
+    key:KEY_BIKE,
     doc:'Central de Comando · Bike intervalado',
     eyebrow:'Central de comando · Condicionamento',
     titulo:'Bike <span class="slash bk">Intervalado</span>',
-    lede:'Sessão única nos dias leves, somada ao Ciclo A/B. Só para conferência: nada aqui é salvo.',
+    lede:'Sessão única nos dias leves, somada ao Ciclo A/B. A prescrição é fixa; no fim da sessão ficam os tiros, o tempo e o esforço.',
     sessao:{
       cls:'bk', badge:'V1',
       nome:'Intervalado', sub:'Dia leve · sozinho',
       dur:'35–40', durUn:'min',
       avanco:'<strong>Avançar para a V2</strong> quando os tiros saírem todos completos e o último no mesmo ritmo do primeiro, em duas sessões seguidas, e a qualidade da força na sequência da semana se mantiver. Se a força cair, reduzir o número de tiros antes de trocar de versão.',
-      rodape:'Prescrição fixa · o contador não é salvo e zera ao recarregar',
+      rodape:'Prescrição fixa · tempo e detalhe fino seguem no Garmin',
       /* `reps` é quantas repetições a etapa tem, e é ele que decide se a fileira
          de bolinhas aparece (MIN_TIROS). Etapa medida em tempo corrido, como o
          aquecimento, não tem `reps` e não ganha contador.
@@ -1641,8 +1652,8 @@ var planos = [
          precisão falsa. Ver docs/bike-intervalado.md. */
       etapas:[
         {n:'Aquecimento',     num:'12–15', un:'min', det:'Resistência baixa, cadência confortável, subindo aos poucos'},
-        {n:'Ativação',        num:'3 × 10', un:'s',  det:'1 min fácil entre eles', reps:3},
-        {n:'Bloco principal', num:'8 × 30', un:'s',  det:'Forte · 90 s fácil entre eles', forte:1, reps:8},
+        {n:'Ativação',        num:'3 × 10', un:'s',  det:'1 min fácil entre eles', reps:3, id:'ativacao'},
+        {n:'Bloco principal', num:'8 × 30', un:'s',  det:'Forte · 90 s fácil entre eles', forte:1, reps:8, id:'principal'},
         {n:'Volta à calma',   num:'5–8',   un:'min'}
       ]
     }
@@ -2032,16 +2043,20 @@ function trocarPlano(id){
    guardar de cabeça, e a fileira só ocuparia tela. */
 var MIN_TIROS = 4;
 
-/* Quantos tiros já saíram, por índice de etapa. Vive em memória e mais nada:
-   o contador é do treino de hoje, não um registro. Gravar no localStorage
-   quebraria o contrato desta aba e ainda faria a sessão de segunda começar com
-   os oito tiros marcados.
+/* Quantos tiros já saíram, por `id` da etapa (nunca por índice de array: o
+   contrato do `id` vale aqui como vale para exercício).
 
-   Em memória, e não só no DOM, porque render() roda de novo por fora — o pull
-   redesenha a página quando traz mudança, e isso acontece toda vez que a aba
-   volta ao primeiro plano. Sem guardar aqui, destravar o celular no meio do
-   bloco apagaria a contagem. */
-var tiros = {};
+   ANTES ISTO VIVIA SÓ EM MEMÓRIA, e a razão era boa: sem um jeito de fechar a
+   sessão, gravar faria a de segunda abrir com os oito tiros já marcados. Com o
+   Finalizar existindo, a razão caiu — e ficar em memória passou a ser o
+   problema, porque o número que o Felipe quer registrar é justamente este.
+
+   Um campo guarda as duas coisas, o "em qual eu estou" e o "quantos fiz", em
+   vez de um contador volátil mais um campo de registro que poderiam divergir.
+   É o mesmo princípio das repetições feitas nos cards de força. */
+function chaveTiros(plano, etapa){ return plano.key + 'atual.tiros.' + etapa.id; }
+function chaveTempo(plano){ return plano.key + 'atual.tempo'; }
+function chaveEsforco(plano){ return plano.key + 'atual.esforco'; }
 
 function renderLeitura(plano){
   var s = plano.sessao;
@@ -2063,44 +2078,64 @@ function renderLeitura(plano){
         '</div>' +
         '<span class="et-num">' + e.num + '<small>' + e.un + '</small></span>' +
       '</div>' +
-      tirosHtml(e, i) +
+      tirosHtml(plano, e) +
     '</li>';
   });
 
   html += '</ol>' +
     (s.avanco ? '<p class="et-avanco">' + s.avanco + '</p>' : '') +
-    '<div class="t-foot"><span>' + s.rodape + '</span></div></article>';
+    '<div class="t-foot"><span>' + s.rodape + '</span></div>';
+
+  /* O pé é a ÚNICA parte interativa desta aba. O corpo do card continua sendo
+     prescrição pura, lida de longe com o corpo em movimento; o registro fica no
+     fim, que é quando ele é preenchido. Três campos e só: tiros (que já estão
+     marcados acima), tempo e esforço. Carga e repetição não existem aqui. */
+  var kEsf = chaveEsforco(plano), kTmp = chaveTempo(plano);
+  var esf = store.get(kEsf) || '', botoes = '';
+  SENSACOES.forEach(function(x){
+    botoes += '<button class="sens" type="button" aria-pressed="' + (x.id === esf) + '" ' +
+              'data-esforco="' + x.id + '">' + x.rot + '</button>';
+  });
+
+  html += '<div class="fechar">' +
+      '<span class="fechar-rot">Tempo total</span>' +
+      '<div class="kgwrap tempo"><input class="kg" type="text" inputmode="numeric" ' +
+        'data-int="1" autocomplete="off" placeholder="—" ' +
+        'value="' + esc(store.get(kTmp) || '') + '" data-campo="' + esc(kTmp) + '" ' +
+        'aria-label="Tempo total da sessão, em minutos"><label>MIN</label></div>' +
+      '<span class="fechar-rot">Nível de esforço</span>' +
+      '<div class="senss">' + botoes + '</div>' +
+      '<button class="btn bloco" type="button" data-finalizar-leitura="1">Finalizar sessão</button>' +
+    '</div>' +
+  '</article>';
 
   document.getElementById('treinos').innerHTML = html;
-  s.etapas.forEach(function(e, i){ if (temTiros(e)) pintarTiros(i); });
 }
 
-function temTiros(e){ return e.reps >= MIN_TIROS; }
+function temTiros(e){ return e.reps >= MIN_TIROS && !!e.id; }
 
-function tirosHtml(e, i){
+function etapaPorId(plano, id){
+  var achou = null;
+  ((plano.sessao || {}).etapas || []).forEach(function(e){ if (e.id === id) achou = e; });
+  return achou;
+}
+
+function tirosHtml(plano, e){
   if (!temTiros(e)) return '';
-  var html = '<div class="tiros" data-etapa="' + i + '"><div class="sets">';
+  var feitos = tirosFeitos(plano, e);
+  var html = '<div class="tiros"><div class="sets">';
   for (var t = 1; t <= e.reps; t++){
-    html += '<button class="tiro" type="button" aria-pressed="false" ' +
+    html += '<button class="tiro" type="button" aria-pressed="' + (t <= feitos) + '" ' +
             'aria-label="Tiro ' + t + ' de ' + e.reps + ' · ' + esc(e.n) + '" ' +
-            'data-etapa="' + i + '" data-tiro="' + t + '">' + t + '</button>';
+            'data-etapa="' + esc(e.id) + '" data-tiro="' + t + '">' + t + '</button>';
   }
   return html + '</div><span class="tiros-meta">' +
-    '<span><b data-tiros-prog="' + i + '">0</b>/' + e.reps + '</span>' +
-    '<button class="tiros-zerar" type="button" data-tiros-zerar="' + i + '">Zerar</button>' +
+    '<span><b>' + feitos + '</b>/' + e.reps + '</span>' +
+    '<button class="tiros-zerar" type="button" data-tiros-zerar="' + esc(e.id) + '">Zerar</button>' +
   '</span></div>';
 }
 
-function pintarTiros(i){
-  var feitos = tiros[i] || 0;
-  var caixa = document.querySelector('.tiros[data-etapa="' + i + '"]');
-  if (!caixa) return;
-  caixa.querySelectorAll('.tiro').forEach(function(b){
-    b.setAttribute('aria-pressed', String(+b.dataset.tiro <= feitos));
-  });
-  var prog = document.querySelector('[data-tiros-prog="' + i + '"]');
-  if (prog) prog.textContent = feitos;
-}
+function tirosFeitos(plano, etapa){ return +(store.get(chaveTiros(plano, etapa)) || 0); }
 
 /* ---------- Bloco de semana ----------
    Plano com `semanas[]` tem mais de uma prescrição, e é o bloco escolhido que
@@ -2272,6 +2307,25 @@ function exercicosDoPlano(plano){
 
 function plural(n, um, varios){ return n + ' ' + (n === 1 ? um : varios); }
 
+/* O que resume uma sessão depende do plano: força conta série, bike conta tiro
+   e minuto. Um só lugar decide, para a lista e o detalhe não divergirem. */
+function resumoDaSessao(plano, ses){
+  if (!plano.leitura){
+    return (rotuloSemana(plano, ses.meta.semana) ? rotuloSemana(plano, ses.meta.semana) + ' · ' : '') +
+           plural(seriesDaSessao(ses), 'série', 'séries');
+  }
+  var partes = [];
+  ((plano.sessao || {}).etapas || []).forEach(function(e){
+    if (!e.id) return;
+    var n = ses.campos['tiros.' + e.id];
+    if (n) partes.push(n + '/' + e.reps + ' tiros');
+  });
+  if (ses.campos.tempo) partes.push(ses.campos.tempo + ' min');
+  var esf = rotuloSensacao(ses.campos.esforco);
+  if (esf) partes.push(esf.toLowerCase());
+  return partes.length ? partes.join(' · ') : 'sem detalhe';
+}
+
 /* O rótulo da semana sai dos blocos do plano, e nunca do valor cru gravado.
    Assim uma sessão antiga com `semana` que não corresponde a bloco nenhum (as
    do PPL, gravadas antes da guarda em `finalizar()`) simplesmente não mostra
@@ -2316,16 +2370,14 @@ function renderHistorico(plano){
 
     html += '<ol class="hist">';
     lista.forEach(function(ses){
-      var cls = ses.meta.treino === 'B' ? 'b' : 'a';
+      var cls = plano.leitura ? 'bk' : (ses.meta.treino === 'B' ? 'b' : 'a');
+      var selo = plano.leitura ? (ses.meta.versao || 'V?') : (ses.meta.treino || '?');
       html += '<li class="' + cls + '">' +
         '<a href="#historico/' + esc(ses.id) + '">' +
-          '<span class="badge sm">' + esc(ses.meta.treino || '?') + '</span>' +
+          '<span class="badge sm">' + esc(selo) + '</span>' +
           '<span class="hist-corpo">' +
             '<span class="hist-data">' + dataDe(ses.id) + '</span>' +
-            '<span class="hist-det">' + horaDe(ses.id) +
-              (rotuloSemana(plano, ses.meta.semana) ? ' · ' + rotuloSemana(plano, ses.meta.semana) : '') +
-              ' · ' + plural(seriesDaSessao(ses), 'série', 'séries') +
-            '</span>' +
+            '<span class="hist-det">' + horaDe(ses.id) + ' · ' + resumoDaSessao(plano, ses) + '</span>' +
           '</span>' +
           '<span class="hist-seta">›</span>' +
         '</a>' +
@@ -2341,6 +2393,8 @@ function renderSessao(plano, id){
   var ses = null;
   lista.forEach(function(x){ if (x.id === id) ses = x; });
   if (!ses){ location.hash = '#historico'; return; }
+
+  if (plano.leitura){ renderSessaoLeitura(plano, ses); return; }
 
   var exs = exercicosDoPlano(plano);
   var cls = ses.meta.treino === 'B' ? 'b' : 'a';
@@ -2407,6 +2461,44 @@ function renderSessao(plano, id){
   document.getElementById('treinos').innerHTML = html;
 }
 
+/* Detalhe de uma sessão de plano somente leitura. Não tem exercício nem carga,
+   então não reaproveita a lista de `<li>`: são três linhas e o pé. */
+function renderSessaoLeitura(plano, ses){
+  var linhas = '';
+  /* `temTiros` é a mesma regra que decide se a etapa ganha bolinha na
+     prescrição: etapa que nunca conta tiro (a ativação, com 3) não pode
+     aparecer aqui com um traço eterno fingindo que faltou algo. */
+  ((plano.sessao || {}).etapas || []).forEach(function(e){
+    if (!temTiros(e)) return;
+    var n = ses.campos['tiros.' + e.id];
+    linhas += '<li><div class="ex-top">' +
+      '<div class="ex-id"><span class="ex-name">' + e.n + '</span>' +
+        '<span class="ex-eq">' + e.num + ' ' + e.un + '</span></div>' +
+      '<span class="ex-presc">' + (n ? esc(n) + '/' + e.reps : '—') + '</span>' +
+    '</div></li>';
+  });
+  if (ses.campos.tempo){
+    linhas += '<li><div class="ex-top">' +
+      '<div class="ex-id"><span class="ex-name">Tempo total</span></div>' +
+      '<span class="ex-presc">' + esc(ses.campos.tempo) + ' min</span>' +
+    '</div></li>';
+  }
+
+  var esf = rotuloSensacao(ses.campos.esforco);
+  document.getElementById('treinos').innerHTML =
+    '<p class="hist-voltar"><a href="#historico">‹ Voltar ao histórico</a></p>' +
+    '<article class="treino bk leitura">' +
+      '<div class="t-head">' +
+        '<div class="badge sm">' + esc(ses.meta.versao || 'V?') + '</div>' +
+        '<div class="t-title"><h3>' + dataDe(ses.id) + '</h3><span>' + horaDe(ses.id) + '</span></div>' +
+      '</div>' +
+      '<ol class="ex">' + linhas + '</ol>' +
+      (esf ? '<div class="fechar"><span class="fechar-rot">Nível de esforço</span>' +
+             '<p class="hist-sens">' + esc(esf) + '</p></div>' : '') +
+      '<div class="t-foot"><button class="btn ghost" type="button" data-apagar="' + esc(ses.id) + '">Apagar sessão</button></div>' +
+    '</article>';
+}
+
 /* Apaga a sessão inteira. Lápide em cada chave, que é o que faz ela sumir
    também nos outros aparelhos — `DELETE` não propagaria. */
 function apagarSessao(plano, id){
@@ -2416,12 +2508,44 @@ function apagarSessao(plano, id){
   });
 }
 
+/* Fecha a sessão de um plano somente leitura. Mesma forma do `finalizar()` dos
+   cards de força — varre `atual.`, move para `log.<id>.` e apaga a origem — mas
+   sem carga e sem exercício, que não existem aqui. */
+function finalizarLeitura(plano){
+  var pre = plano.key + 'atual.';
+  var todas = chavesSincronizaveis();
+  var achadas;
+  if (todas){
+    achadas = todas.filter(function(k){ return k.indexOf(pre) === 0; });
+  } else {
+    achadas = [pre + 'tempo', pre + 'esforco'];
+    ((plano.sessao || {}).etapas || []).forEach(function(e){
+      if (e.id) achadas.push(pre + 'tiros.' + e.id);
+    });
+    achadas = achadas.filter(function(k){ return store.get(k) !== null; });
+  }
+  if (!achadas.length) return false;
+
+  var id = String(Date.now()), destino = plano.key + 'log.' + id + '.';
+  achadas.forEach(function(k){
+    store.set(destino + k.slice(pre.length), store.get(k));
+    store.del(k);
+  });
+  /* `versao` e não `semana`: o que muda a prescrição da bike é a versão, e é
+     ela que dá sentido ao número de tiros de uma sessão antiga. */
+  store.set(destino + 'meta', JSON.stringify({
+    versao: (plano.sessao || {}).badge || '', quando: id
+  }));
+  return true;
+}
+
 /* ---------- Treinos ---------- */
 function render(){
   var plano = planoAtual();
   var vista = vistaAtual();
-  /* Plano somente leitura (a bike) não registra sessão, então não tem histórico
-     para mostrar: o hash cai de volta no treino em vez de abrir uma tela vazia. */
+  /* Plano sem `key` não registra sessão e não tem histórico: o hash cai de volta
+     no treino em vez de abrir uma tela vazia. A bike tem `key` desde que passou
+     a registrar, então ela entra aqui como os outros. */
   if (vista.nome !== 'treinos' && !plano.key) vista = {nome:'treinos'};
 
   document.getElementById('semanas').hidden = vista.nome !== 'treinos' || !plano.semanas;
@@ -2649,24 +2773,48 @@ document.addEventListener('click', function(ev){
   if (ev.target.closest('.mb-close')){ mediaBox.close(); return; }
   if (ev.target === mediaBox){ mediaBox.close(); return; }   /* toque no backdrop */
 
-  /* Contador de tiros. Antes do ramo de `.set` só por proximidade de assunto —
-     as classes são distintas, então a ordem não decide nada. O que decide é o
-     que cada uma faz: esta não chama `store`, e é por isso que a aba continua
-     sem gravar nada. */
+  /* Contador de tiros. Grava, ao contrário do que fazia antes: o número é o
+     que a sessão registra, e um contador volátil mais um campo de registro
+     poderiam divergir. Chaveado pelo `id` da etapa, nunca pelo índice. */
   var tiro = ev.target.closest('.tiro');
   if (tiro){
-    var i = tiro.dataset.etapa, n = +tiro.dataset.tiro;
+    var pT = planoAtual(), et = etapaPorId(pT, tiro.dataset.etapa), n = +tiro.dataset.tiro;
+    if (!et) return;
     /* Cumulativo, e não oito interruptores soltos: tiro é sequência, e a
        pergunta é "em qual eu estou". Tocar no último marcado volta um, que é o
        conserto de quem errou o dedo com a mão suada. */
-    tiros[i] = (tiros[i] === n) ? n - 1 : n;
-    pintarTiros(i);
+    var feitos = tirosFeitos(pT, et) === n ? n - 1 : n;
+    if (feitos > 0) store.set(chaveTiros(pT, et), String(feitos));
+    else store.del(chaveTiros(pT, et));
+    render();
     return;
   }
   var zerar = ev.target.closest('[data-tiros-zerar]');
   if (zerar){
-    tiros[zerar.dataset.tirosZerar] = 0;
-    pintarTiros(zerar.dataset.tirosZerar);
+    var pZ = planoAtual(), etZ = etapaPorId(pZ, zerar.dataset.tirosZerar);
+    if (etZ) store.del(chaveTiros(pZ, etZ));
+    render();
+    return;
+  }
+
+  var esf = ev.target.closest('[data-esforco]');
+  if (esf){
+    var kE = chaveEsforco(planoAtual());
+    if (esf.getAttribute('aria-pressed') === 'true') store.del(kE);
+    else store.set(kE, esf.dataset.esforco);
+    render();
+    return;
+  }
+
+  var finL = ev.target.closest('[data-finalizar-leitura]');
+  if (finL){
+    var pL = planoAtual();
+    pedirConfirmacao(
+      'Finalizar sessão?',
+      'Os tiros, o tempo e o esforço vão para o registro, e o card fica limpo para a próxima.',
+      'Sim, finalizar',
+      function(){ if (finalizarLeitura(pL)) render(); }
+    );
     return;
   }
 
