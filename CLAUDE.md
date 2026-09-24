@@ -56,7 +56,12 @@ abaixo).
   bike: a de retorno lombar repetia o que o botão de fase dizia na época (a fase também já
   saiu, ver acima), e a de rotação do PPL descrevia um plano que não está em vigor. Com isso `#planoNota` e o CSS de `.note` também
   saíram — não sobrou caminho de render sem conteúdo. As notas **por exercício** (`ex[].nota`,
-  classe `.ex-note`) e as tarjas AJUSTE/LOMBAR são outra coisa e continuam.
+  classe `.ex-note`) são outra coisa e continuam.
+- **Nenhum exercício tem `flag` hoje**, e por isso a legenda AJUSTE/LOMBAR saiu do `<footer>`:
+  ela explicava tarjas que não existiam mais em lugar nenhum da página. O mecanismo (`ex[].flag`,
+  `flagOk`, o CSS de `.flag`) continua no lugar, porque uma prescrição nova pode trazer um ponto
+  a confirmar com a personal. Quem reintroduzir uma `flag` precisa devolver a legenda junto,
+  senão a tarja fica sem explicação.
 - **Cada plano tem o seu prefixo de persistência** (`key`): `fittracker.ab.v1.` e
   `fittracker.ppl.v1.`. Trocar de aba nunca mistura séries nem cargas. O prefixo do A/B não
   muda nunca — é onde já estão os dados salvos no navegador de quem usa a página.
@@ -541,7 +546,8 @@ O repositório é **público**, então a procedência das imagens importa.
 - **Não usar `free-exercise-db`.** Declara Unlicense, mas a proveniência das imagens é
   questionada em issues abertas do próprio repositório e nunca foi esclarecida. Um repo
   declarar domínio público não transfere esse status a imagens de terceiros.
-- CC-BY-SA exige atribuição — vai no `<footer>`, que já existe. Imagem recortada ou editada é
+- CC-BY-SA exige atribuição — vai no `<footer>`, que existe e hoje só tem a data justamente
+  para caber isso. Imagem recortada ou editada é
   obra derivada e continua CC-BY-SA.
 
 `assets/ex/agachamento-hack.webp` é um **placeholder autoral**, feito só para o mecanismo ser
