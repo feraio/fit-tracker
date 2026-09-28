@@ -659,6 +659,10 @@
     background:#F3F5F6;
   }
   .t-foot span{font-family:var(--mono);font-size:11px;color:var(--ink3);line-height:1.4}
+  /* No rodapé do detalhe são dois botões: Copiar à esquerda e Apagar empurrado
+     para a direita pelo `margin-left:auto` que `.btn.ghost` já tem. Separar os
+     dois importa: um é inofensivo e o outro não tem volta. */
+  .t-foot .btn{flex:0 0 auto}
   /* ---------- Etapas · prescrição somente leitura ----------
      Este componente é lido em cima da bike, com o corpo em movimento: uma
      etapa por linha, número grande encostado à direita sempre na mesma
@@ -2391,20 +2395,11 @@ function renderHistorico(plano){
   document.getElementById('treinos').innerHTML = html;
 }
 
-function renderSessao(plano, id){
-  var lista = lerLog(plano) || [];
-  var ses = null;
-  lista.forEach(function(x){ if (x.id === id) ses = x; });
-  if (!ses){ location.hash = '#historico'; return; }
-
-  if (plano.leitura){ renderSessaoLeitura(plano, ses); return; }
-
-  var exs = exercicosDoPlano(plano);
-  var cls = ses.meta.treino === 'B' ? 'b' : 'a';
-
-  /* Os exercícios saem na ordem do bloco daquela sessão, e não na ordem em que
-     as chaves foram varridas: a sessão é lida como o treino foi feito. O que
-     não estiver mais no plano entra depois, para não sumir do registro. */
+/* Os exercícios saem na ordem do bloco daquela sessão, e não na ordem em que as
+   chaves foram varridas: a sessão é lida como o treino foi feito. O que não
+   estiver mais no plano entra depois, pelo id cru, para não sumir do registro.
+   Função própria porque o detalhe e o texto copiado precisam da mesma ordem. */
+function ordemDaSessao(plano, ses){
   var ordem = [], vistos = {};
   (plano.semanas || [plano]).forEach(function(b){
     if (plano.semanas && ses.meta.semana && b.id !== ses.meta.semana) return;
@@ -2419,6 +2414,21 @@ function renderSessao(plano, id){
     var eid = c.slice(0, ponto);
     if (!vistos[eid]){ vistos[eid] = 1; ordem.push(eid); }
   }
+  return ordem;
+}
+
+function renderSessao(plano, id){
+  var lista = lerLog(plano) || [];
+  var ses = null;
+  lista.forEach(function(x){ if (x.id === id) ses = x; });
+  if (!ses){ location.hash = '#historico'; return; }
+
+  if (plano.leitura){ renderSessaoLeitura(plano, ses); return; }
+
+  var exs = exercicosDoPlano(plano);
+  var cls = ses.meta.treino === 'B' ? 'b' : 'a';
+
+  var ordem = ordemDaSessao(plano, ses);
 
   var html = '<p class="hist-voltar"><a href="#historico">‹ Voltar ao histórico</a></p>' +
     '<article class="treino ' + cls + ' leitura">' +
@@ -2458,7 +2468,10 @@ function renderSessao(plano, id){
       (ses.campos.obs ? '<span class="fechar-rot">Observações</span><p class="hist-obs">' + esc(ses.campos.obs) + '</p>' : '') +
     '</div>';
   }
-  html += '<div class="t-foot"><button class="btn ghost" type="button" data-apagar="' + esc(ses.id) + '">Apagar sessão</button></div>' +
+  html += '<div class="t-foot">' +
+        '<button class="btn" type="button" data-copiar="' + esc(ses.id) + '">Copiar</button>' +
+        '<button class="btn ghost" type="button" data-apagar="' + esc(ses.id) + '">Apagar sessão</button>' +
+      '</div>' +
   '</article>';
 
   document.getElementById('treinos').innerHTML = html;
@@ -2498,8 +2511,74 @@ function renderSessaoLeitura(plano, ses){
       '<ol class="ex">' + linhas + '</ol>' +
       (esf ? '<div class="fechar"><span class="fechar-rot">Nível de esforço</span>' +
              '<p class="hist-sens">' + esc(esf) + '</p></div>' : '') +
-      '<div class="t-foot"><button class="btn ghost" type="button" data-apagar="' + esc(ses.id) + '">Apagar sessão</button></div>' +
+      '<div class="t-foot">' +
+        '<button class="btn" type="button" data-copiar="' + esc(ses.id) + '">Copiar</button>' +
+        '<button class="btn ghost" type="button" data-apagar="' + esc(ses.id) + '">Apagar sessão</button>' +
+      '</div>' +
     '</article>';
+}
+
+/* ---------- Exportar a sessão como texto ----------
+   O Felipe não tem como me mostrar o que vê: o histórico vive no localStorage
+   do aparelho dele, e o Supabase só devolve linha para quem está autenticado
+   (política `dono lê`, em supabase/schema.sql). Print funciona para problema
+   visual; para número, texto é melhor, porque o valor chega exato.
+
+   Data absoluta aqui, e não o "ontem" da tela: o texto é colado num chat dias
+   depois, e "ontem" ali não quer dizer nada. */
+function dataAbsoluta(ms){
+  var d = new Date(+ms), dois = function(n){ return (n < 10 ? '0' : '') + n; };
+  return dois(d.getDate()) + '/' + dois(d.getMonth() + 1) + '/' + d.getFullYear() +
+         ' ' + dois(d.getHours()) + ':' + dois(d.getMinutes());
+}
+
+function textoDaSessao(plano, ses){
+  var nome = plano.titulo.replace(/<[^>]+>/g, '');
+  var linhas = [];
+
+  if (plano.leitura){
+    linhas.push(nome + ' · ' + (ses.meta.versao || 'V?') + ' · ' + dataAbsoluta(ses.id));
+    linhas.push('');
+    ((plano.sessao || {}).etapas || []).forEach(function(e){
+      if (!temTiros(e)) return;
+      var n = ses.campos['tiros.' + e.id];
+      linhas.push(e.n + ' · ' + e.num + ' ' + e.un + ' · ' + (n ? n + '/' + e.reps + ' tiros' : 'não registrado'));
+    });
+    if (ses.campos.tempo) linhas.push('Tempo total · ' + ses.campos.tempo + ' min');
+    if (rotuloSensacao(ses.campos.esforco)){
+      linhas.push('');
+      linhas.push('Esforço: ' + rotuloSensacao(ses.campos.esforco));
+    }
+    return linhas.join('\n');
+  }
+
+  var cab = [nome, 'Treino ' + (ses.meta.treino || '?'), dataAbsoluta(ses.id)];
+  var sem = rotuloSemana(plano, ses.meta.semana);
+  if (sem) cab.push(sem);
+  cab.push(plural(seriesDaSessao(ses), 'série', 'séries'));
+  linhas.push(cab.join(' · '));
+  linhas.push('');
+
+  var exs = exercicosDoPlano(plano);
+  ordemDaSessao(plano, ses).forEach(function(eid){
+    var e = exs[eid], reps = [], i = 1;
+    while (ses.campos[eid + '.' + i] !== undefined){ reps.push(ses.campos[eid + '.' + i]); i++; }
+    var kg = ses.campos['kg.' + eid];
+    if (!reps.length && kg === undefined) return;
+
+    var partes = [e ? e.n : eid];
+    if (kg !== undefined && kg !== '') partes.push(kg + ' kg');
+    /* Exercício sem repetição contável (prancha, cardio) guarda '1' em cada
+       série marcada: listar "1/1/1" seria ruído. Conta quantas foram. */
+    if (reps.length) partes.push(e && metaDe(e, 1) === '' ? plural(reps.length, 'série', 'séries') : reps.join('/'));
+    linhas.push(partes.join(' · '));
+  });
+
+  var sens = rotuloSensacao(ses.campos.sensacao);
+  if (sens || ses.campos.obs) linhas.push('');
+  if (sens) linhas.push('Como foi: ' + sens);
+  if (ses.campos.obs) linhas.push('Obs: ' + ses.campos.obs);
+  return linhas.join('\n');
 }
 
 /* Apaga a sessão inteira. Lápide em cada chave, que é o que faz ela sumir
@@ -2871,6 +2950,28 @@ document.addEventListener('click', function(ev){
       'Sim, finalizar',
       function(){ if (finalizar(pl, alvo)) render(); }
     );
+    return;
+  }
+
+  /* Copiar a sessão. Sem diálogo, a pedido do Felipe: o retorno é o próprio
+     botão trocando de rótulo por um instante. Se a área de transferência
+     recusar (ela pede contexto seguro e tem manias no Safari), o botão diz que
+     não deu, e o caminho de sempre continua valendo — selecionar o texto da
+     tela e copiar à mão. Botão que às vezes não faz nada é que não pode. */
+  var cop = ev.target.closest('[data-copiar]');
+  if (cop){
+    var pC = planoAtual(), sesC = null;
+    (lerLog(pC) || []).forEach(function(x){ if (x.id === cop.dataset.copiar) sesC = x; });
+    if (!sesC) return;
+    var rotulo = cop.textContent;
+    var avisa = function(txt){
+      cop.textContent = txt;
+      setTimeout(function(){ if (cop.isConnected) cop.textContent = rotulo; }, 1600);
+    };
+    try {
+      navigator.clipboard.writeText(textoDaSessao(pC, sesC))
+        .then(function(){ avisa('Copiado'); }, function(){ avisa('Não deu'); });
+    } catch(e){ avisa('Não deu'); }
     return;
   }
 

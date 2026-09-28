@@ -394,6 +394,18 @@ porque o título, o eyebrow e o link mudam com a vista e os três vivem fora de 
 
   A lição para quem adicionar plano novo: `semanas[]` é opcional, e todo código que lê `bloco`
   precisa aguentar o bloco ser o próprio plano.
+- **O detalhe tem um botão Copiar, e ele existe por uma limitação real.** Quem escreve esta
+  página não tem como ver o que o Felipe vê: o histórico mora no `localStorage` do aparelho
+  dele, e o Supabase só devolve linha para quem está autenticado (política `dono lê`, em
+  `supabase/schema.sql`). Print resolve problema visual; para número, texto é melhor, porque o
+  valor chega exato e dá para comparar sessões. `textoDaSessao()` monta o texto, e
+  `ordemDaSessao()` é compartilhada com o detalhe para os dois lerem a sessão na mesma ordem.
+  **Sem diálogo, a pedido do Felipe**: o retorno é o próprio botão virando "Copiado" ou "Não
+  deu" por um instante. A área de transferência pede contexto seguro e tem manias no Safari,
+  então o "Não deu" importa — o caminho de sempre (selecionar o texto da tela) continua valendo,
+  e botão que às vezes não faz nada é que não pode.
+  No texto, exercício sem repetição contável (prancha, cardio) sai como "2 séries" em vez de
+  "1/1": o `'1'` guardado ali é marcador de série feita, não contagem.
 - **A bike também tem histórico**, desde que passou a registrar sessão (ver "Bike intervalado").
   Como ela não tem exercício nem carga, `renderSessao()` desvia para `renderSessaoLeitura()` no
   detalhe, e `resumoDaSessao()` é o único lugar que decide o que resume uma sessão: força conta
