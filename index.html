@@ -193,6 +193,31 @@
     word-break:break-all;
   }
 
+  /* Diagnóstico da sincronização, dentro do diálogo de conta.
+     O botão do topo só tem largura para a palavra "erro", e "erro" sozinho é
+     beco sem saída: não dá para saber se o treino subiu, se a rede caiu ou se o
+     servidor recusou a linha. A mensagem real já existia em `ultimoErro` desde
+     sempre; faltava lugar onde ela pudesse ser lida. */
+  .sync-diag{
+    margin:10px 0 0;
+    padding:8px 10px;
+    border-left:3px solid var(--line);
+    background:var(--bg);
+    font-size:12px;
+    line-height:1.45;
+    color:var(--ink2);
+  }
+  .sync-diag.ruim{border-left-color:var(--red25);background:#FBEDEC}
+  .sync-diag p{margin:0}
+  .sync-diag p + p{margin-top:6px}
+  .sync-diag code{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--ink);
+    word-break:break-word;
+  }
+  .sync-diag .btn{margin-top:8px}
+
   /* ---------- Cabeçalho ---------- */
   header{padding:32px 0 8px}
   .eyebrow{
@@ -1248,6 +1273,30 @@ function rest(caminho, opcoes, jaRenovou){
   });
 }
 
+/* O status sozinho não diz nada a quem está na academia olhando para "erro":
+   404 de projeto que sumiu, 401 de token vencido e 42501 de RLS recusando a
+   linha são o mesmo número de três dígitos na tela e três causas diferentes. O
+   PostgREST manda a razão no corpo, então é de lá que ela vem. Corpo ilegível
+   não pode virar erro novo — cai para string vazia e sobra só o status. */
+function detalheErro(r){
+  return r.text().then(function(t){
+    if (!t) return '';
+    try {
+      var j = JSON.parse(t);
+      return j.message || j.msg || j.error_description || j.error || j.hint || t;
+    } catch (e) { return t; }
+  }, function(){ return ''; }).then(function(s){
+    s = String(s).replace(/\s+/g, ' ').trim();
+    return s.length > 180 ? s.slice(0, 180) + '…' : s;
+  });
+}
+
+function falhaRest(r, onde){
+  return detalheErro(r).then(function(d){
+    throw new Error(onde + ' ' + r.status + (d ? ' · ' + d : ''));
+  });
+}
+
 /* ---------- Push e pull ---------- */
 function push(g){
   var fila = lerFila();
@@ -1258,7 +1307,7 @@ function push(g){
     headers:{'Content-Type':'application/json', 'Prefer':'resolution=merge-duplicates'},
     body: JSON.stringify(linhas)
   }).then(function(r){
-    if (!r.ok) throw new Error('push ' + r.status);
+    if (!r.ok) return falhaRest(r, 'push');
     /* Trocou de conta enquanto isto subia: a fila agora é da conta nova, e
        mexer nela aqui apagaria o que ainda não subiu para ela. */
     if (g !== geracao) return false;
@@ -1276,7 +1325,7 @@ function pull(g){
             '&atualizado_em=gt.' + encodeURIComponent(desde) +
             '&order=atualizado_em.asc';
   return rest(url, {}).then(function(r){
-    if (!r.ok) throw new Error('pull ' + r.status);
+    if (!r.ok) return falhaRest(r, 'pull');
     return r.json();
   }).then(function(linhas){
     /* Estas linhas são da conta que pediu, e ela já saiu. Gravar aqui devolveria
@@ -1782,6 +1831,40 @@ function pintarSync(){
   if (escondidoAntes) mostrarAbaAtiva();
 }
 
+/* ---------- Diagnóstico da sincronização ----------
+   Vive no diálogo de conta, que é exatamente onde o botão "erro" leva. Ele
+   responde as duas perguntas que a palavra "erro" não responde: o que falhou, e
+   se o treino se perdeu. Nunca se perde — a fonte de verdade é o localStorage e
+   a fila é o que garante a volta — mas isso tem que estar escrito na tela, e não
+   só nesta documentação. */
+function diagSync(){
+  var pend = lerFila().length;
+  var fila = pend
+    ? '<p>' + pend + (pend > 1 ? ' mudanças' : ' mudança') + ' esperando para subir. ' +
+      'Está tudo salvo neste aparelho, e sobe sozinho quando a sincronização voltar.</p>'
+    : '<p>Nada esperando para subir.</p>';
+  var botao = '<button class="btn" type="button" data-sync-agora>Tentar agora</button>';
+
+  if (emVoo) return {ruim:false, html:'<p>Sincronizando agora…</p>' + fila};
+  if (ultimoErro){
+    return {ruim:true, html:'<p>A última sincronização falhou:<br><code>' +
+                            esc(ultimoErro) + '</code></p>' + fila + botao};
+  }
+  if (!navigator.onLine) return {ruim:false, html:'<p>Este aparelho está sem rede.</p>' + fila};
+  if (pend) return {ruim:false, html:fila + botao};
+  return {ruim:false, html:'<p>Tudo sincronizado com a sua conta.</p>'};
+}
+
+/* O bloco é repintado sem refazer o diálogo: refazer apagaria o foco e, com o
+   diálogo aberto durante uma tentativa, trocaria o botão por baixo do dedo. */
+function pintarDiagSync(){
+  var el = document.getElementById('loginSync');
+  if (!el) return;                 /* diálogo fechado no meio da tentativa */
+  var d = diagSync();
+  el.className = 'sync-diag' + (d.ruim ? ' ruim' : '');
+  el.innerHTML = d.html;
+}
+
 /* ---------- Diálogo de conta ---------- */
 function abrirLogin(){
   var box = document.getElementById('loginBox');
@@ -1794,7 +1877,9 @@ function abrirLogin(){
 
   if (logado()){
     var quem = (sessao.user && sessao.user.email) || 'sessão ativa';
-    campos.innerHTML = '<p class="login-quem">' + esc(quem) + '</p>';
+    campos.innerHTML = '<p class="login-quem">' + esc(quem) + '</p>' +
+                       '<div id="loginSync"></div>';
+    pintarDiagSync();
     ajuda.textContent = 'O progresso deste aparelho sobe para a sua conta e volta em qualquer outro.';
     enviar.textContent = 'Sair';
   } else {
@@ -2841,6 +2926,17 @@ function abrirMidia(src, nome){
 
 document.addEventListener('click', function(ev){
   if (ev.target.closest('#sync')){ abrirLogin(); return; }
+  /* Erro de sincronização não se resolve sozinho enquanto nada muda na página:
+     a nova tentativa está pendurada no `visibilitychange`, no `online` e na
+     próxima chave suja. Em pé na academia, com a fila cheia e o botão vermelho,
+     o que falta é poder tentar na hora e ver o que volta. */
+  if (ev.target.closest('[data-sync-agora]')){
+    var bt = ev.target.closest('[data-sync-agora]');
+    bt.disabled = true;
+    bt.textContent = 'Tentando…';
+    sincronizar().then(pintarDiagSync);
+    return;
+  }
   if (ev.target.closest('[data-fechar-login]')){ document.getElementById('loginBox').close(); return; }
   if (ev.target === document.getElementById('loginBox')){ document.getElementById('loginBox').close(); return; }
 

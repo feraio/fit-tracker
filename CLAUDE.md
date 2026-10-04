@@ -145,6 +145,19 @@ espera rede**. O Supabase é uma cópia durável por cima disso.
   `sincronizavel()`.
 - **Entrar é opcional e nunca bloqueia.** Sem login a página funciona inteira, só local. Isso é
   deliberado: um erro de autenticação não pode deixar ninguém sem treino no meio da série.
+- **O botão de sincronização diz o estado; o diálogo de conta diz a razão.** O botão tem largura
+  para uma palavra, e "erro" sozinho é beco sem saída: não dá para saber se o treino subiu, se a
+  rede caiu ou se o servidor recusou a linha. A mensagem real sempre existiu em `ultimoErro` e
+  nunca aparecia em lugar nenhum. Agora `diagSync()` monta um bloco dentro do diálogo com ela,
+  com quantas chaves estão na fila e com a frase que importa — está tudo salvo neste aparelho —,
+  e `push`/`pull` carregam o corpo da resposta do PostgREST no erro (`push 404 · relation ... does
+  not exist`), porque 404 de projeto que sumiu, 401 de token vencido e 42501 de RLS recusando são
+  três números e três causas diferentes.
+- **Existe um "Tentar agora" nesse bloco, e ele não é redundante.** A nova tentativa automática
+  está pendurada no `visibilitychange`, no `online` e na próxima chave suja; com a fila cheia e
+  nada mais mudando na página, o erro fica na tela sem nada que o resolva. O botão repinta só o
+  bloco (`pintarDiagSync()`), nunca o diálogo inteiro: refazer o diálogo trocaria o botão por
+  baixo do dedo.
 - **A chave anônima no fonte é segura, e só por causa do RLS.** O repositório é público. Toda
   tabela precisa de RLS ligado e política explícita; uma tabela sem RLS é lida por qualquer
   pessoa com a chave. Nunca colocar a `service_role` na página — ela ignora o RLS.
