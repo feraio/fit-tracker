@@ -2,7 +2,17 @@
 # banco. Treinar 2–4x por semana já mantém vivo, mas férias ou uma pausa por
 # lesão pausariam o projeto — e aí o celular não sincroniza até religar no painel.
 #
-# Este workflow bate no REST todo dia só para marcar atividade.
+# Este workflow bate no banco todo dia só para marcar atividade. São DUAS
+# requisições, e a ordem não é casual:
+#
+#   1. ESCRITA, via `rpc/keepalive_toca`. É o ping que a gente acredita que
+#      conta. Em outubro de 2026 o projeto pausou por inatividade com um SELECT
+#      perfeito rodando a cada 3 dias, então leitura sozinha não bastou.
+#      HIPÓTESE NÃO VERIFICADA: ver a seção "Keepalive" no CLAUDE.md.
+#   2. LEITURA, a de sempre. Ela não é redundante: é ela que confere que a
+#      chave publicável vale, que a rota existe e que o RLS continua filtrando
+#      (corpo `[]`). A escrita passa por uma função `security definer`, que por
+#      definição ignora o RLS e por isso não prova nada sobre ele.
 #
 # DIÁRIO, e não a cada 3 dias como antes. O agendador do GitHub atrasa e às
 # vezes pula rodada quando a fila está cheia (todas as rodadas deste workflow
@@ -33,58 +43,76 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Consultar o REST para marcar atividade
+      - name: Marcar atividade no banco
+        env:
+          BASE: ${{ secrets.SUPABASE_URL }}
+          CHAVE: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          if [ -z "${{ secrets.SUPABASE_URL }}" ]; then
+          if [ -z "$BASE" ]; then
             echo "SUPABASE_URL não configurado — nada a fazer."
             exit 0
           fi
 
-          # `|| true` para o erro do curl não derrubar o passo com um número
-          # solto. Em outubro de 2026 esta rodada morreu com "exit code 6" e só
-          # isso: o 6 é "não consegui resolver o host" do curl, mas quem abre a
-          # aba Actions vê um número, não uma causa. Abaixo o código vira frase.
-          : > cabecalhos.txt; : > corpo.txt; : > erro.txt
-          set +e
-          cod=$(curl -s -S -m 20 -D cabecalhos.txt -o corpo.txt -w '%{http_code}' \
-                  -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-                  "${{ secrets.SUPABASE_URL }}/rest/v1/estado?select=chave&limit=1" \
-                2>erro.txt)
-          saida=$?
-          set -e
-          cache=$(tr -d '\r' < cabecalhos.txt | grep -i '^cf-cache-status:' | cut -d' ' -f2 || true)
-          corpo=$(head -c 200 corpo.txt | tr -d '\n')
-          motivo=$(tr -d '\n' < erro.txt)
+          # Uma função só para os dois tipos de requisição: duas cópias do
+          # mesmo curl com os mesmos quatro testes seria uma para manter em
+          # sincronia com a outra.
+          bater(){
+            rotulo=$1; metodo=$2; caminho=$3
+            : > h.txt; : > c.txt; : > e.txt
 
-          # ::notice:: e não echo: anotação fica na API do check-run, e o log do
-          # job é servido por outro host. Quando este workflow falhar, o que
-          # diagnostica tem que estar legível sem baixar arquivo nenhum.
-          echo "::notice::HTTP ${cod:-000} · CF-Cache-Status: ${cache:-ausente} · corpo: ${corpo:-vazio}"
+            args=(-s -S -m 20 -D h.txt -o c.txt -w '%{http_code}' -H "apikey: $CHAVE")
+            if [ "$metodo" = POST ]; then
+              args+=(-X POST -H 'Content-Type: application/json' -d '{}')
+            fi
 
-          if [ "${cod:-000}" = "000" ]; then
-            echo "::error::Sem resposta (curl $saida: ${motivo:-sem detalhe}). Projeto apagado, pausado, ou DNS fora."
-            exit 1
-          fi
+            # `|| true` para o erro do curl não derrubar o passo com um número
+            # solto. Em outubro de 2026 uma rodada morreu com "exit code 6" e
+            # só isso: o 6 é "não consegui resolver o host", mas quem abre a
+            # aba Actions vê um número. Abaixo o código vira frase.
+            set +e
+            cod=$(curl "${args[@]}" "$BASE/rest/v1/$caminho" 2>e.txt)
+            saida=$?
+            set -e
 
-          # SÓ 200 PASSA, e isto mudou depois da pausa de outubro de 2026.
-          # Antes qualquer 2xx ou 4xx era aceito como atividade, com o
-          # argumento de que o importante era a requisição ter chegado. O
-          # argumento está errado: 401 de chave trocada e 404 de rota que mudou
-          # são recusados no gateway, antes do Postgres, e o timer de
-          # inatividade segue correndo com o histórico todo verde. Um pinger que
-          # não pode falhar é um pinger que não informa nada.
-          if [ "$cod" != "200" ]; then
-            echo "::error::HTTP $cod — a requisição não chegou ao banco. Conferir a chave e a rota."
-            exit 1
-          fi
+            cache=$(tr -d '\r' < h.txt | grep -i '^cf-cache-status:' | cut -d' ' -f2 || true)
+            corpo=$(head -c 200 c.txt | tr -d '\n')
+            motivo=$(tr -d '\n' < e.txt)
 
-          # O status sozinho não prova nada: um HIT é um 200 idêntico servido
-          # pelo Cloudflare sem tocar no Postgres, e o timer de inatividade
-          # continuaria correndo com o histórico todo verde. DYNAMIC é o que diz
-          # que a requisição chegou no banco. Ausente não reprova — só o HIT.
-          if [ "$cache" = "HIT" ]; then
-            echo "::error::Resposta veio do cache do Cloudflare: o ping não marcou atividade."
-            exit 1
-          fi
+            # ::notice:: e não echo: anotação sai pela API do check-run, e o log
+            # do job é servido por outro host. Quando este workflow falhar, o
+            # que diagnostica tem que estar legível sem baixar arquivo nenhum.
+            echo "::notice::$rotulo → HTTP ${cod:-000} · CF-Cache-Status: ${cache:-ausente} · corpo: ${corpo:-vazio}"
+
+            if [ "${cod:-000}" = "000" ]; then
+              echo "::error::$rotulo: sem resposta (curl $saida: ${motivo:-sem detalhe}). Projeto apagado, pausado, ou DNS fora."
+              return 1
+            fi
+
+            # SÓ 200 PASSA, e isto mudou depois da pausa de outubro de 2026.
+            # Antes qualquer 2xx ou 4xx era aceito como atividade, com o
+            # argumento de que o importante era a requisição ter chegado. O
+            # argumento está errado: 401 de chave trocada e 404 de rota que
+            # mudou são recusados no gateway, ANTES do Postgres, e o timer de
+            # inatividade segue correndo com o histórico todo verde. Pinger que
+            # não pode falhar não informa nada.
+            if [ "$cod" != "200" ]; then
+              echo "::error::$rotulo: HTTP $cod — não chegou ao banco. Conferir a chave e a rota."
+              return 1
+            fi
+
+            # Um HIT é um 200 idêntico servido pelo Cloudflare sem tocar no
+            # Postgres. Ausente não reprova — só o HIT.
+            if [ "$cache" = "HIT" ]; then
+              echo "::error::$rotulo: resposta veio do cache do Cloudflare, não marcou atividade."
+              return 1
+            fi
+          }
+
+          # A escrita devolve o carimbo ANTERIOR, não o novo. Esse número no
+          # ::notice:: diz quando foi o ping passado: se ele for de poucas horas
+          # atrás, o pinger do cron-job.org continua vivo; se for de dias, só
+          # este aqui está de pé.
+          bater "escrita" POST "rpc/keepalive_toca"
+          bater "leitura" GET  "estado?select=chave&limit=1"
 
           echo "Projeto acordado."

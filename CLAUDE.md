@@ -564,12 +564,42 @@ painel. Treinar já mantém vivo; o risco é férias ou lesão.
   publicar o diagnóstico como anotação são boas por si: elas transformam um pinger que não podia
   falhar num que informa. O que elas não fazem é manter o projeto de pé, porque o problema não
   era a qualidade do ping.
+- **Por isso o ping passou a ESCREVER, e a escrita é o experimento em curso desde 6 de outubro
+  de 2026.** O workflow faz duas requisições, nesta ordem: um `POST rpc/keepalive_toca`, que é a
+  escrita, e o `GET estado?select=chave&limit=1` de sempre. A leitura não virou redundante — é
+  ela que confere que a chave publicável vale, que a rota existe e que o RLS continua filtrando
+  (corpo `[]`). A escrita passa por uma função `security definer`, que por definição ignora o
+  RLS e por isso não prova nada sobre ele. **Se o projeto pausar de novo com as duas verdes, a
+  hipótese "só escrita conta" está morta e a métrica é outra coisa** (conexões, CPU, egress).
+  Registrar aqui quando acontecer, com a data, em vez de tentar um terceiro palpite.
+- **A escrita não abre política de UPDATE para `anon`, e isso foi decisão.** O caminho óbvio
+  seria uma tabela de uma linha com `for update to anon using (true)`. Recusado: o repositório é
+  público e a chave publicável está no fonte da página, então aquilo seria escrita aberta a
+  qualquer pessoa da internet. O que está no `supabase/schema.sql` é a tabela `keepalive` com
+  **RLS ligado e zero políticas** (inalcançável pela API) mais a função `keepalive_toca()`, que
+  é `security definer` e escreve por dentro. O que o `anon` ganha é um verbo só: carimbar um
+  timestamp. Não lê nada, não insere, não apaga, e não encosta em `estado`.
+- **`security definer` é a parte afiada, e as travas dela são de propósito.** A função roda com
+  os privilégios da dona e passa por cima do RLS. Por isso ela **não recebe argumento nenhum**,
+  toca uma linha de uma tabela só, tem corpo fixo e `set search_path = public` (que fecha o
+  truque de plantar um objeto homônimo num schema anterior no caminho de busca). Nunca dar
+  parâmetro a ela, e nunca deixar ela encostar em `estado`.
+- **A função devolve o carimbo ANTERIOR, não o novo.** Assim a resposta do ping diz quando foi o
+  ping passado, e isso vai para o `::notice::`: carimbo de poucas horas atrás significa que o
+  pinger do cron-job.org continua vivo; carimbo de dias atrás significa que só o do GitHub está
+  de pé. É o único jeito de saber isso sem dar permissão de leitura na tabela.
+- **Rodar a função é um deploy manual, uma vez.** O `supabase/schema.sql` é documentação: quem
+  precisar recriar isso roda o arquivo inteiro no SQL Editor do painel, que é idempotente.
 - **Um só não basta**, e não é redundância paranoica: o GitHub desativa workflow agendado após
   60 dias sem commits no repositório. Ou seja, "parei de treinar e parei de commitar" derruba o
   workflow e o banco junto — que é precisamente o cenário que ele deveria cobrir. Os dois
   pingers falham por motivos não correlacionados.
-- Não trocar por `pg_cron` dentro do próprio Supabase: a atividade que conta para o timer é
-  requisição externa.
+- **Não trocar por `pg_cron` dentro do próprio Supabase.** A razão escrita aqui antes era que "a
+  atividade que conta é requisição externa", e essa afirmação vinha da mesma premissa não
+  verificada que outubro de 2026 derrubou. A razão que continua de pé é outra e não depende de
+  saber o que conta: `pg_cron` roda **dentro** do projeto, então no instante em que ele pausa o
+  agendador pausa junto e não tem como se acordar. Um pinger precisa estar fora do que ele
+  protege.
 - A página não depende disso para funcionar. Banco pausado significa sync parado, não treino
   perdido — o `localStorage` continua sendo a fonte de verdade.
 
