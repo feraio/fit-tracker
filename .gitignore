@@ -1,0 +1,4 @@
+# Prints de teste gerados pelo Playwright durante o desenvolvimento.
+# Eles nascem na raiz quando o script roda com o cwd do projeto.
+*.png
+!assets/**/*.png
