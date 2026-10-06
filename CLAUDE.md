@@ -590,6 +590,21 @@ painel. Treinar já mantém vivo; o risco é férias ou lesão.
   de pé. É o único jeito de saber isso sem dar permissão de leitura na tabela.
 - **Rodar a função é um deploy manual, uma vez.** O `supabase/schema.sql` é documentação: quem
   precisar recriar isso roda o arquivo inteiro no SQL Editor do painel, que é idempotente.
+- **O pinger do cron-job.org também escreve, e a configuração dele mora só lá.** Como o painel
+  não é versionado, fica registrado aqui: `POST` em
+  `https://<projeto>.supabase.co/rest/v1/rpc/keepalive_toca`, com os headers `apikey` (a chave
+  publicável) e `Content-Type: application/json`, corpo `{}`, diário às 15:30 em
+  `America/Sao_Paulo`. O `POST` não é preferência: o PostgREST só aceita `GET` em função
+  declarada `stable` ou `immutable`, e esta escreve. O corpo `{}` também não: a função não
+  recebe argumento, mas o PostgREST exige JSON válido, e corpo vazio dá 400.
+- **Os dois horários são deslocados de propósito, e o deslocamento real não é o pedido.** O
+  workflow pede 06:17 UTC e o agendador do GitHub entrega por volta das 13:20; o cron-job.org
+  cai às 18:30 UTC. Ao mexer no horário de um, conferir onde o outro está **de fato** caindo, e
+  não o que está escrito no cron.
+- **Um ping lê o carimbo que o outro deixou, e é assim que se confere a dupla sem abrir dois
+  painéis.** Em 6 de outubro de 2026 a rodada do GitHub escreveu às 13:20:59 UTC e o teste do
+  cron-job.org, às 13:49, devolveu `2026-10-06T13:21:04` como anterior. Carimbo de poucas horas
+  atrás significa que os dois estão de pé; carimbo de 24 horas significa que sobrou um.
 - **Um só não basta**, e não é redundância paranoica: o GitHub desativa workflow agendado após
   60 dias sem commits no repositório. Ou seja, "parei de treinar e parei de commitar" derruba o
   workflow e o banco junto — que é precisamente o cenário que ele deveria cobrir. Os dois
