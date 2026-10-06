@@ -120,3 +120,9 @@ grant execute on function keepalive_toca() to anon, authenticated;
 -- Chamada: POST /rest/v1/rpc/keepalive_toca com o header apikey e mais nada.
 -- POST e não GET porque a função escreve, e o PostgREST só aceita GET em
 -- função declarada stable ou immutable.
+
+-- O PostgREST guarda um cache do schema e só enxerga a função depois de
+-- recarregar. O Supabase costuma recarregar sozinho ao fim de um DDL, mas isso
+-- leva alguns segundos — e uma primeira chamada que volta 404 parece erro de
+-- rota quando é só cache frio. Este NOTIFY tira a dúvida.
+notify pgrst, 'reload schema';
