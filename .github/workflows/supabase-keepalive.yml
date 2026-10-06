@@ -2,7 +2,12 @@
 # banco. Treinar 2–4x por semana já mantém vivo, mas férias ou uma pausa por
 # lesão pausariam o projeto — e aí o celular não sincroniza até religar no painel.
 #
-# Este workflow bate no REST a cada 3 dias só para marcar atividade.
+# Este workflow bate no REST todo dia só para marcar atividade.
+#
+# DIÁRIO, e não a cada 3 dias como antes. O agendador do GitHub atrasa e às
+# vezes pula rodada quando a fila está cheia (todas as rodadas deste workflow
+# saíram horas depois do horário pedido). Com 3 dias de cadência, duas rodadas
+# perdidas já comem a janela de 7; diário custa o mesmo e deixa margem.
 #
 # Requer um secret SUPABASE_URL e outro SUPABASE_ANON_KEY no repositório
 # (Settings > Secrets and variables > Actions). São públicos por natureza, mas
@@ -21,7 +26,7 @@ name: Supabase keepalive
 
 on:
   schedule:
-    - cron: '17 6 */3 * *'
+    - cron: '17 6 * * *'
   workflow_dispatch:
 
 jobs:
@@ -34,20 +39,44 @@ jobs:
             echo "SUPABASE_URL não configurado — nada a fazer."
             exit 0
           fi
-          cabecalhos=$(curl -s -D - -o /dev/null \
-            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-            "${{ secrets.SUPABASE_URL }}/rest/v1/estado?select=chave&limit=1")
-          codigo=$(printf '%s' "$cabecalhos" | head -1 | tr -d '\r' | cut -d' ' -f2)
-          cache=$(printf '%s' "$cabecalhos" | tr -d '\r' \
-                  | grep -i '^cf-cache-status:' | cut -d' ' -f2)
-          echo "HTTP ${codigo:-000} | CF-Cache-Status: ${cache:-ausente}"
 
-          # 200 com [] é o esperado: sem JWT o RLS não devolve linha nenhuma.
-          # Qualquer 2xx/4xx serve como atividade; 5xx ou 000 indica projeto fora.
-          case "$codigo" in
-            2*|4*) ;;
-            *) echo "::error::Projeto pode estar pausado (HTTP ${codigo:-000})"; exit 1 ;;
-          esac
+          # `|| true` para o erro do curl não derrubar o passo com um número
+          # solto. Em outubro de 2026 esta rodada morreu com "exit code 6" e só
+          # isso: o 6 é "não consegui resolver o host" do curl, mas quem abre a
+          # aba Actions vê um número, não uma causa. Abaixo o código vira frase.
+          : > cabecalhos.txt; : > corpo.txt; : > erro.txt
+          set +e
+          cod=$(curl -s -S -m 20 -D cabecalhos.txt -o corpo.txt -w '%{http_code}' \
+                  -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+                  "${{ secrets.SUPABASE_URL }}/rest/v1/estado?select=chave&limit=1" \
+                2>erro.txt)
+          saida=$?
+          set -e
+          cache=$(tr -d '\r' < cabecalhos.txt | grep -i '^cf-cache-status:' | cut -d' ' -f2 || true)
+          corpo=$(head -c 200 corpo.txt | tr -d '\n')
+          motivo=$(tr -d '\n' < erro.txt)
+
+          # ::notice:: e não echo: anotação fica na API do check-run, e o log do
+          # job é servido por outro host. Quando este workflow falhar, o que
+          # diagnostica tem que estar legível sem baixar arquivo nenhum.
+          echo "::notice::HTTP ${cod:-000} · CF-Cache-Status: ${cache:-ausente} · corpo: ${corpo:-vazio}"
+
+          if [ "${cod:-000}" = "000" ]; then
+            echo "::error::Sem resposta (curl $saida: ${motivo:-sem detalhe}). Projeto apagado, pausado, ou DNS fora."
+            exit 1
+          fi
+
+          # SÓ 200 PASSA, e isto mudou depois da pausa de outubro de 2026.
+          # Antes qualquer 2xx ou 4xx era aceito como atividade, com o
+          # argumento de que o importante era a requisição ter chegado. O
+          # argumento está errado: 401 de chave trocada e 404 de rota que mudou
+          # são recusados no gateway, antes do Postgres, e o timer de
+          # inatividade segue correndo com o histórico todo verde. Um pinger que
+          # não pode falhar é um pinger que não informa nada.
+          if [ "$cod" != "200" ]; then
+            echo "::error::HTTP $cod — a requisição não chegou ao banco. Conferir a chave e a rota."
+            exit 1
+          fi
 
           # O status sozinho não prova nada: um HIT é um 200 idêntico servido
           # pelo Cloudflare sem tocar no Postgres, e o timer de inatividade
@@ -57,4 +86,5 @@ jobs:
             echo "::error::Resposta veio do cache do Cloudflare: o ping não marcou atividade."
             exit 1
           fi
+
           echo "Projeto acordado."

@@ -521,15 +521,34 @@ Cinco armadilhas, todas silenciosas — nenhuma delas dá erro, todas dão dado 
 O plano gratuito do Supabase pausa o projeto após 7 dias sem atividade, e religar é manual no
 painel. Treinar já mantém vivo; o risco é férias ou lesão.
 
-- **São dois pingers, de propósito.** `.github/workflows/supabase-keepalive.yml` roda a cada 3
-  dias, e há um segundo no cron-job.org, externo, **diário** e em horário deslocado. Diário e não
-  a cada 3 dias porque o agendador de lá é grade de dia-do-mês, não expressão cron: "a cada 3
-  dias" só sairia marcando 1, 4, 7… que desalinha na virada do mês. Diário custa o mesmo e
-  sobra margem.
+- **São dois pingers, de propósito, e os dois são diários.** O
+  `.github/workflows/supabase-keepalive.yml` rodava a cada 3 dias e passou a rodar todo dia; o
+  segundo é externo, no cron-job.org, em horário deslocado. O agendador do GitHub atrasa (todas
+  as rodadas deste workflow saíram horas depois do horário pedido) e pula rodada com a fila
+  cheia: com cadência de 3 dias, duas rodadas perdidas já comem a janela de 7. Diário custa o
+  mesmo. No cron-job.org é diário também, mas por outra razão: a grade de lá é dia-do-mês, não
+  expressão cron, então "a cada 3 dias" sairia marcando 1, 4, 7… e desalinharia na virada do mês.
 - **O que confirma que o ping vale é `CF-Cache-Status: DYNAMIC` na resposta.** `HIT` seria um
   200 idêntico servido pelo Cloudflare sem tocar no Postgres — um pinger que parece saudável e
   não marca atividade nenhuma. Ao mexer no endereço ou nos headers, conferir isso, e não só o
   código de status. `Content-Length: 2` (o `[]`) mostra que o RLS fez o seu papel.
+- **SÓ HTTP 200 PASSA, e isto mudou depois da pausa de outubro de 2026.** Antes qualquer 2xx ou
+  4xx era aceito como atividade, com o argumento de que o que importava era a requisição ter
+  chegado. O argumento está errado: 401 de chave trocada e 404 de rota que mudou são recusados
+  no gateway, **antes** do Postgres, e o timer de inatividade segue correndo com o histórico do
+  workflow todo verde. Pinger que não pode falhar não informa nada.
+- **O passo publica o diagnóstico como `::notice::`, e não como `echo`.** Anotação sai pela API
+  do check-run; o log do job é servido por outro host, que nem toda ferramenta alcança. Quando
+  este workflow falhar, o que diagnostica (código HTTP, `CF-Cache-Status`, começo do corpo)
+  precisa estar legível sem baixar arquivo nenhum. A rodada que falhou em 4 de outubro de 2026
+  morreu com um `exit code 6` e nada mais — o 6 é "não consegui resolver o host" do curl, mas
+  quem abre a aba Actions vê um número. Agora o código do curl vira frase.
+- **Verde no keepalive não provou nada em outubro de 2026, e vale lembrar por quê.** A rodada de
+  1 de outubro passou, houve treino sincronizado (escrita autenticada) entre 2 e 4, e mesmo
+  assim o projeto apareceu pausado em 4 — dentro de uma janela de 7 dias que deveria ter sido
+  reiniciada duas vezes. Ou os pings não contavam como atividade, ou a pausa não foi por
+  inatividade. As travas acima fecham a primeira hipótese; se acontecer de novo com todas elas
+  verdes, a causa é outra e o lugar de procurar é o painel do Supabase, não este arquivo.
 - **Um só não basta**, e não é redundância paranoica: o GitHub desativa workflow agendado após
   60 dias sem commits no repositório. Ou seja, "parei de treinar e parei de commitar" derruba o
   workflow e o banco junto — que é precisamente o cenário que ele deveria cobrir. Os dois
