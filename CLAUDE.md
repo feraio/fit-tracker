@@ -543,12 +543,27 @@ painel. Treinar já mantém vivo; o risco é férias ou lesão.
   precisa estar legível sem baixar arquivo nenhum. A rodada que falhou em 4 de outubro de 2026
   morreu com um `exit code 6` e nada mais — o 6 é "não consegui resolver o host" do curl, mas
   quem abre a aba Actions vê um número. Agora o código do curl vira frase.
-- **Verde no keepalive não provou nada em outubro de 2026, e vale lembrar por quê.** A rodada de
-  1 de outubro passou, houve treino sincronizado (escrita autenticada) entre 2 e 4, e mesmo
-  assim o projeto apareceu pausado em 4 — dentro de uma janela de 7 dias que deveria ter sido
-  reiniciada duas vezes. Ou os pings não contavam como atividade, ou a pausa não foi por
-  inatividade. As travas acima fecham a primeira hipótese; se acontecer de novo com todas elas
-  verdes, a causa é outra e o lugar de procurar é o painel do Supabase, não este arquivo.
+- **ATENÇÃO: o ping REST não impediu a pausa, e isso contradiz a premissa desta seção inteira.**
+  Em outubro de 2026 o projeto foi pausado por inatividade e a reconstrução ficou assim:
+  o keepalive rodou **verde em 1 de outubro às 13:13 UTC**, e o e-mail do Supabase pausando o
+  projeto chegou **em 2 de outubro às 17:40 UTC**, vinte e oito horas depois, dizendo
+  textualmente "we automatically pause free-tier projects after 7 days of inactivity". Havia
+  três rodadas verdes dentro da janela de 7 dias (25 e 28 de setembro, 1 de outubro). Depois de
+  religar o projeto, a mesma rodada disparada à mão devolveu
+  `HTTP 200 · CF-Cache-Status: DYNAMIC · corpo: []`, que é o ping tecnicamente perfeito:
+  chave válida, rota válida, resposta do PostgREST carimbada como vinda do banco.
+  **Ou seja: um SELECT do PostgREST filtrado pelo RLS não conta como atividade para o timer**,
+  ou não conta sozinho. O que vinha mantendo o projeto vivo era o Felipe treinando; a pausa veio
+  de uma semana sem treino, com os dois pingers verdes o tempo todo.
+  Duas hipóteses continuam abertas e **nenhuma está verificada**: que só escrita conte (o SELECT
+  não gera WAL nem toca disco), ou que a métrica seja outra coisa (conexões, CPU, egress) que um
+  request leve não move. Quem for mexer nisso **pergunta ao suporte antes de escrever código**,
+  em supabase.help: já houve uma rodada inteira de trabalho gasta em cima de uma premissa que
+  ninguém tinha confirmado.
+- **As travas acima continuam valendo, só não são a solução.** Só 200 passar, falhar no `HIT` e
+  publicar o diagnóstico como anotação são boas por si: elas transformam um pinger que não podia
+  falhar num que informa. O que elas não fazem é manter o projeto de pé, porque o problema não
+  era a qualidade do ping.
 - **Um só não basta**, e não é redundância paranoica: o GitHub desativa workflow agendado após
   60 dias sem commits no repositório. Ou seja, "parei de treinar e parei de commitar" derruba o
   workflow e o banco junto — que é precisamente o cenário que ele deveria cobrir. Os dois
