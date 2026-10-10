@@ -91,6 +91,23 @@ abaixo).
 - **`eq` é a lista de equipamentos aceitos, e fica fora do `n`.** "Crucifixo" é o que se varre na
   lista; "halter · cabo · máquina" é o que se lê uma vez e depois vira ruído. Separado, o nome
   fica com a primeira linha inteira e o ícone de vídeo para de cair numa linha sozinha.
+- **`eq` é lista de ids (`['halter','cabo','maquina']`), e com duas opções ou mais vira chips
+  de escolha.** Pedido do Felipe: em academia diferente nem sempre há o mesmo aparelho, e 10 kg
+  no halter e 10 kg na máquina são cargas diferentes de sentir. Por isso **a carga é guardada
+  por equipamento** (`kg.<treino>.<exercício>.<equipamento>`), e trocar o chip troca qual número
+  o campo mostra. Marcar só o equipamento, sem separar a carga, faria a carga da máquina ser
+  sobrescrita pela do halter. A escolha fica em `eq.<treino>.<exercício>` e sincroniza; sem
+  escolha vale o primeiro da lista. Exercício com uma opção ou nenhuma usa a chave de carga de
+  sempre, sem sufixo. Os rótulos com acento vivem em `EQUIP`, porque o id entra na chave.
+  - O Finalizar grava `eq.<exercício>` no log, e o detalhe e o Copiar mostram o equipamento.
+  - A carga de antes dos chips (sem sufixo) ficou órfã nos exercícios com escolha, e de
+    propósito: o Felipe pediu para não migrar, é evolução para as próximas sessões.
+  - **O halter é o reserva de quando falta aparelho.** Onde ele não era opção da personal,
+    entrou como último da lista só onde continua o mesmo exercício (Rosca Direta, Panturrilha
+    em Pé). Não entra em leg press, cadeiras, flexora, puxada nem polia: ali o halter vira outro
+    exercício, e trocar exercício é decisão da personal, não do aparelho disponível.
+  - Chip escolhido é contorno no `--accent`, não preenchido: cheio é a linguagem da série
+    feita, e o equipamento é contexto, não progresso.
 - **O cardio é uma entrada do treino, com `semKg:1`.** 30 minutos, marcável como qualquer série.
   **30 é o número do Felipe, não o do PDF**, que para ganho de massa pede 25-30 e reserva 30-45
   para recomposição corporal. Está escrito no código para ninguém "corrigir" depois.
@@ -318,6 +335,16 @@ na fila, na lápide e no RLS que existiam. Quem for mexer nisso não precisa toc
   série sumia sem ninguém encostar nela. Selecionar tudo e apagar antes de digitar é o gesto
   normal num teclado de celular. Vazio volta para a meta. O campo de **carga** segue a regra
   geral e apaga, porque ali vazio significa mesmo "não tem carga".
+- **Tocar no campo de repetições esvazia o campo**, com o número de antes no placeholder.
+  Pedido do Felipe e da Ana: corrigir obrigava a apagar à mão. Selecionar tudo no foco seria o
+  gesto clássico, mas o Safari do iPhone ignora seleção feita no `focus`. Sair sem digitar
+  devolve o número de antes no `focusout`, sem gravar nada (campo esvaziado por código não
+  dispara `change`); esvaziar e confirmar também volta para o de antes.
+- **Marcar uma série pré-preenche o que foi feito na anterior**, não a meta: quem fez 15 na
+  primeira faz perto de 15 na segunda. Só quando a faixa é a mesma; na série em que a
+  prescrição cai (12-15 → 10-12) o ponto de partida é a meta nova. A anterior é lida **na hora
+  do toque** (`data-ant` guarda a chave, não o valor): o número pode ter sido corrigido depois
+  do último render, e lido no render a série 2 nascia com a meta mesmo depois de digitar 15.
 - **O campo de repetições é inteiro, e trunca no primeiro caractere que não é dígito**
   (`data-int="1"`). Descartar os não-dígitos em vez de truncar faria "12,5" virar 125: uma
   contagem dez vezes maior, gravada em silêncio, exatamente o formato do defeito que o campo de

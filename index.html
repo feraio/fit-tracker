@@ -646,6 +646,17 @@
     border-radius:var(--r);padding:7px 10px;cursor:pointer;color:var(--ink2);
   }
   .sens[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  /* Chips de equipamento: mesma linguagem da .sens, menores, porque moram na
+     linha de baixo do nome. Altura mínima de toque mesmo assim. */
+  .eqs{display:flex;gap:4px;flex-wrap:wrap;margin-top:3px}
+  .eq{
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;line-height:1;
+    background:transparent;border:1px solid var(--line);
+    border-radius:var(--r);padding:6px 8px;min-height:26px;cursor:pointer;color:var(--ink3);
+  }
+  /* Escolhido em contorno, não cheio: cheio é a linguagem da série feita, e o
+     equipamento é contexto, não progresso. */
+  .eq[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);font-weight:600}
   .obs{
     display:block;
     width:100%;
@@ -1504,11 +1515,11 @@ var planos = [
           {
             id:'A', cls:'a', nome:'Superiores', sub:'Peito, costas, ombros e braços',
             ex:[
-              {id:'crucifixo', n:'Crucifixo', eq:'halter · cabo · máquina', s:3, r:'12-15'},
+              {id:'crucifixo', n:'Crucifixo', eq:['halter','cabo','maquina'], s:3, r:'12-15'},
               {id:'puxada-frontal', n:'Puxada Frontal Aberta Pronada', s:3, r:'12-15'},
-              {id:'desenvolvimento-sentado', n:'Desenvolvimento Sentado', eq:'halter · cabo · máquina', s:3, r:'12-15'},
+              {id:'desenvolvimento-sentado', n:'Desenvolvimento Sentado', eq:['halter','cabo','maquina'], s:3, r:'12-15'},
               {id:'triceps-corda', n:'Tríceps Corda', s:3, r:'12-15'},
-              {id:'rosca-direta', n:'Rosca Direta', eq:'barra W ou corda', s:3, r:'12-15'},
+              {id:'rosca-direta', n:'Rosca Direta', eq:['barra-w','corda','halter'], s:3, r:'12-15'},
               {id:'prancha', n:'Abdominal Prancha', s:3, r:'30s-1min', semKg:1},
               {id:'cardio', n:'Cardio pós-treino', s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
@@ -1520,10 +1531,10 @@ var planos = [
             id:'B', cls:'b', nome:'Inferiores e abdômen', sub:'Glúteos, quadríceps, femorais e panturrilhas',
             ex:[
               {id:'cadeira-adutora', n:'Cadeira Adutora', s:3, r:'12-15'},
-              {id:'mesa-flexora', n:'Flexora', eq:'mesa ou cadeira', s:3, r:'12-15'},
+              {id:'mesa-flexora', n:'Flexora', eq:['mesa','cadeira'], s:3, r:'12-15'},
               {id:'cadeira-extensora', n:'Cadeira Extensora', s:3, r:'12-15'},
               {id:'leg-press', n:'Leg Press', s:3, r:'12-15'},
-              {id:'panturrilha-em-pe', n:'Panturrilha em Pé', s:3, r:'12-15'},
+              {id:'panturrilha-em-pe', n:'Panturrilha em Pé', eq:['maquina','halter'], s:3, r:'12-15'},
               {id:'abdominal-crunch', n:'Abdominal Crunch', s:3, r:'12-15', semKg:1},
               {id:'cardio', n:'Cardio pós-treino', s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
@@ -1544,11 +1555,11 @@ var planos = [
           {
             id:'A', cls:'a', nome:'Superiores', sub:'Peito, costas, ombros e braços',
             ex:[
-              {id:'crucifixo', n:'Crucifixo', eq:'halter · cabo · máquina', s:3, rs:['12-15','12-15','10-12']},
+              {id:'crucifixo', n:'Crucifixo', eq:['halter','cabo','maquina'], s:3, rs:['12-15','12-15','10-12']},
               {id:'puxada-frontal', n:'Puxada Frontal Aberta Pronada', s:3, rs:['12-15','12-15','10-12']},
-              {id:'desenvolvimento-sentado', n:'Desenvolvimento Sentado', eq:'halter · cabo · máquina', s:3, rs:['12-15','12-15','10-12']},
+              {id:'desenvolvimento-sentado', n:'Desenvolvimento Sentado', eq:['halter','cabo','maquina'], s:3, rs:['12-15','12-15','10-12']},
               {id:'triceps-polia', n:'Tríceps na Polia', s:3, rs:['12-15','12-15','10-12']},
-              {id:'rosca-direta', n:'Rosca Direta', eq:'barra W ou corda', s:3, rs:['12-15','12-15','10-12']},
+              {id:'rosca-direta', n:'Rosca Direta', eq:['barra-w','corda','halter'], s:3, rs:['12-15','12-15','10-12']},
               {id:'prancha', n:'Abdominal Prancha', s:3, r:'30s-1min', semKg:1},
               {id:'cardio', n:'Cardio pós-treino', s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
@@ -1560,10 +1571,10 @@ var planos = [
             id:'B', cls:'b', nome:'Inferiores e abdômen', sub:'Glúteos, quadríceps, femorais e panturrilhas',
             ex:[
               {id:'cadeira-adutora', n:'Cadeira Adutora', s:3, r:'12-15'},
-              {id:'mesa-flexora', n:'Flexora', eq:'mesa ou cadeira', s:3, r:'12-15'},
+              {id:'mesa-flexora', n:'Flexora', eq:['mesa','cadeira'], s:3, r:'12-15'},
               {id:'cadeira-extensora', n:'Cadeira Extensora', s:3, r:'12-15'},
               {id:'leg-press', n:'Leg Press', s:3, r:'12-15'},
-              {id:'panturrilha-em-pe', n:'Panturrilha em Pé', s:3, r:'12-15'},
+              {id:'panturrilha-em-pe', n:'Panturrilha em Pé', eq:['maquina','halter'], s:3, r:'12-15'},
               {id:'abdominal-crunch', n:'Abdominal Crunch', s:3, r:'12-15', semKg:1},
               {id:'cardio', n:'Cardio pós-treino', s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
@@ -1582,15 +1593,15 @@ var planos = [
           {
             id:'A', cls:'a', nome:'Superiores', sub:'Peito, costas, ombros e braços',
             ex:[
-              {id:'crucifixo', n:'Crucifixo', eq:'halter · cabo · máquina', s:4, rs:['12-15','12-15','10-12','10-12']},
-              {id:'supino-reto', n:'Supino Reto', eq:'halter · barra · máquina', s:4, rs:['12-15','12-15','10-12','10-12']},
+              {id:'crucifixo', n:'Crucifixo', eq:['halter','cabo','maquina'], s:4, rs:['12-15','12-15','10-12','10-12']},
+              {id:'supino-reto', n:'Supino Reto', eq:['halter','barra','maquina'], s:4, rs:['12-15','12-15','10-12','10-12']},
               {id:'puxada-frontal', n:'Puxada Frontal Aberta Pronada', s:4, rs:['12-15','12-15','10-12','10-12']},
-              {id:'remada-unilateral', n:'Remada Unilateral', eq:'halter ou máquina', s:4, rs:['12-15','12-15','10-12','10-12']},
-              {id:'desenvolvimento-sentado', n:'Desenvolvimento Sentado', eq:'halter · cabo · máquina', s:4, rs:['12-15','12-15','10-12','10-12']},
-              {id:'elevacao-lateral', n:'Elevação Lateral', eq:'halter', s:4, rs:['12-15','12-15','10-12','10-12']},
+              {id:'remada-unilateral', n:'Remada Unilateral', eq:['halter','maquina'], s:4, rs:['12-15','12-15','10-12','10-12']},
+              {id:'desenvolvimento-sentado', n:'Desenvolvimento Sentado', eq:['halter','cabo','maquina'], s:4, rs:['12-15','12-15','10-12','10-12']},
+              {id:'elevacao-lateral', n:'Elevação Lateral', eq:['halter'], s:4, rs:['12-15','12-15','10-12','10-12']},
               {id:'triceps-polia', n:'Tríceps na Polia', s:4, rs:['12-15','12-15','10-12','10-12']},
-              {id:'triceps-frances', n:'Tríceps Francês', eq:'halter ou corda', s:4, rs:['12-15','12-15','10-12','10-12']},
-              {id:'rosca-direta', n:'Rosca Direta', eq:'barra W ou corda', s:4, rs:['12-15','12-15','10-12','10-12']},
+              {id:'triceps-frances', n:'Tríceps Francês', eq:['halter','corda'], s:4, rs:['12-15','12-15','10-12','10-12']},
+              {id:'rosca-direta', n:'Rosca Direta', eq:['barra-w','corda','halter'], s:4, rs:['12-15','12-15','10-12','10-12']},
               /* O PDF traz "10 a 12 reps" na quarta série da prancha, o que não
                  existe: prancha é medida em tempo. Lido como arrasto da linha de
                  cima e corrigido para as quatro em tempo. */
@@ -1605,11 +1616,11 @@ var planos = [
             id:'B', cls:'b', nome:'Inferiores e abdômen', sub:'Glúteos, quadríceps, femorais e panturrilhas',
             ex:[
               {id:'cadeira-adutora', n:'Cadeira Adutora', s:4, r:'12-15'},
-              {id:'mesa-flexora', n:'Flexora', eq:'mesa ou cadeira', s:4, r:'12-15'},
+              {id:'mesa-flexora', n:'Flexora', eq:['mesa','cadeira'], s:4, r:'12-15'},
               {id:'cadeira-extensora', n:'Cadeira Extensora', s:4, r:'12-15'},
-              {id:'agachamento', n:'Agachamento', eq:'halter · barra · hack squat', s:4, r:'12-15'},
+              {id:'agachamento', n:'Agachamento', eq:['halter','barra','hack'], s:4, r:'12-15'},
               {id:'leg-press', n:'Leg Press', s:4, r:'12-15'},
-              {id:'panturrilha-em-pe', n:'Panturrilha em Pé', s:4, r:'12-15'},
+              {id:'panturrilha-em-pe', n:'Panturrilha em Pé', eq:['maquina','halter'], s:4, r:'12-15'},
               {id:'abdominal-crunch', n:'Abdominal Crunch', s:4, r:'12-15', semKg:1},
               {id:'cardio', n:'Cardio pós-treino', s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
@@ -2287,7 +2298,48 @@ function chaveSerie(plano, t, e, i){ return plano.key + 'atual.' + t.id + '.' + 
    deixa o campo preenchido, porque voltar na quinta e reencontrar a barra vazia
    seria perder justamente o número que o personal mandou anotar. Zerar é apagar
    o campo à mão, como em qualquer outro campo da página. */
-function chaveKg(plano, t, e){ return plano.key + 'kg.' + t.id + '.' + e.id; }
+function chaveKg(plano, t, e){
+  var eq = eqEscolhido(plano, t, e);
+  return plano.key + 'kg.' + t.id + '.' + e.id + (eq ? '.' + eq : '');
+}
+
+/* ---------- Equipamento ----------
+   10 kg no halter e 10 kg na máquina são cargas diferentes de sentir, então a
+   carga é guardada POR EQUIPAMENTO: trocar o chip troca qual número aparece no
+   campo de kg, e o da máquina continua lá quando se volta para ela.
+   Só exercício com duas opções ou mais tem escolha; com uma (Elevação Lateral)
+   ou nenhuma, a chave de carga é a de sempre, sem sufixo, e nada muda.
+   A escolha sincroniza: na próxima sessão abre no último equipamento usado.
+   O halter é o reserva de quando falta aparelho, e por isso é o último da
+   lista onde não era opção da personal (Rosca Direta, Panturrilha). Não entra
+   onde viraria outro exercício (leg press, cadeiras, polia): ali a troca é de
+   exercício, e quem decide é a personal. */
+var EQUIP = {
+  'halter':'halter', 'cabo':'cabo', 'maquina':'máquina', 'barra':'barra',
+  'barra-w':'barra W', 'corda':'corda', 'hack':'hack squat',
+  'mesa':'mesa', 'cadeira':'cadeira'
+};
+function rotuloEq(id){ return EQUIP[id] || id; }
+function chaveEq(plano, t, e){ return plano.key + 'eq.' + t.id + '.' + e.id; }
+/* Devolve '' quando não há escolha a fazer. Valor gravado que saiu da lista
+   (prescrição mudou) cai no primeiro, em vez de apontar para carga órfã. */
+function eqEscolhido(plano, t, e){
+  if (!e.eq || e.eq.length < 2) return '';
+  var v = store.get(chaveEq(plano, t, e));
+  return e.eq.indexOf(v) >= 0 ? v : e.eq[0];
+}
+/* Os chips ocupam a mesma linha que o texto "halter · cabo · máquina"
+   ocupava, então o card não ganha linha nova. Opção única continua texto. */
+function eqHtml(plano, t, e){
+  if (!e.eq) return '';
+  if (e.eq.length < 2) return '<span class="ex-eq">' + rotuloEq(e.eq[0]) + '</span>';
+  var atual = eqEscolhido(plano, t, e), html = '';
+  e.eq.forEach(function(id){
+    html += '<button class="eq" type="button" aria-pressed="' + (id === atual) + '" ' +
+            'data-eq="' + id + '" data-k="' + esc(chaveEq(plano, t, e)) + '">' + rotuloEq(id) + '</button>';
+  });
+  return '<span class="eqs" role="group" aria-label="Equipamento de ' + esc(e.n) + '">' + html + '</span>';
+}
 function chaveSensacao(plano, t){ return plano.key + 'atual.' + t.id + '.sensacao'; }
 function chaveObs(plano, t){ return plano.key + 'atual.' + t.id + '.obs'; }
 
@@ -2345,7 +2397,8 @@ function horaDe(ms){
 }
 
 /* Agrupa `<prefixo>log.<id>.<campo>` por sessão. Os campos são `meta` (JSON com
-   semana e treino), `sensacao`, `obs`, `kg.<exercício>` e `<exercício>.<série>`.
+   semana e treino), `sensacao`, `obs`, `kg.<exercício>`, `eq.<exercício>` e
+   `<exercício>.<série>`.
    Nenhum id de exercício tem ponto, então o primeiro ponto sempre separa certo.
 
    Devolve null quando não deu para enumerar o localStorage: a tela avisa em vez
@@ -2373,11 +2426,11 @@ function lerLog(plano){
 }
 
 /* Quantas séries a sessão registrou. Conta os campos `<exercício>.<série>`, que
-   são as bolinhas marcadas, e ignora `kg.`, `meta`, `sensacao` e `obs`. */
+   são as bolinhas marcadas, e ignora `kg.`, `eq.`, `meta`, `sensacao` e `obs`. */
 function seriesDaSessao(ses){
   var n = 0;
   for (var c in ses.campos){
-    if (c.indexOf('kg.') === 0) continue;
+    if (c.indexOf('kg.') === 0 || c.indexOf('eq.') === 0) continue;
     if (c === 'meta' || c === 'sensacao' || c === 'obs') continue;
     if (c.indexOf('.') > 0) n++;
   }
@@ -2495,7 +2548,7 @@ function ordemDaSessao(plano, ses){
   });
   for (var c in ses.campos){
     var ponto = c.indexOf('.');
-    if (ponto < 0 || c.indexOf('kg.') === 0) continue;
+    if (ponto < 0 || c.indexOf('kg.') === 0 || c.indexOf('eq.') === 0) continue;
     var eid = c.slice(0, ponto);
     if (!vistos[eid]){ vistos[eid] = 1; ordem.push(eid); }
   }
@@ -2535,7 +2588,9 @@ function renderSessao(plano, id){
     html += '<li>' +
       '<div class="ex-top">' +
         '<div class="ex-id"><span class="ex-name">' + esc(nome) + '</span>' +
-          (e && e.eq ? '<span class="ex-eq">' + e.eq + '</span>' : '') +
+          /* O equipamento daquela sessão, quando houve escolha; senão a lista. */
+          (ses.campos['eq.' + eid] ? '<span class="ex-eq">' + esc(rotuloEq(ses.campos['eq.' + eid])) + '</span>' :
+           e && e.eq ? '<span class="ex-eq">' + e.eq.map(rotuloEq).join(' · ') + '</span>' : '') +
         '</div>' +
         '<span class="ex-presc">' + (kg !== undefined && kg !== '' ? esc(kg) + ' kg' : '—') + '</span>' +
       '</div>' +
@@ -2652,6 +2707,7 @@ function textoDaSessao(plano, ses){
     if (!reps.length && kg === undefined) return;
 
     var partes = [e ? e.n : eid];
+    if (ses.campos['eq.' + eid]) partes.push(rotuloEq(ses.campos['eq.' + eid]));
     if (kg !== undefined && kg !== '') partes.push(kg + ' kg');
     /* Exercício sem repetição contável (prancha, cardio) guarda '1' em cada
        série marcada: listar "1/1/1" seria ruído. Conta quantas foram. */
@@ -2747,9 +2803,18 @@ function render(){
         var k = chaveSerie(plano, t, e, i);
         var v = store.get(k);
         var on = v !== null;
+        /* Marcar a série já preenche o que foi feito na anterior (`data-ant`,
+           lido na hora do toque, porque o número pode ter sido corrigido depois
+           do último render): quem fez 15 na primeira provavelmente faz perto de
+           15 na segunda, não a meta de 12. Só quando a faixa é a mesma: na série
+           em que a prescrição cai (12-15 → 10-12), a meta nova é o ponto de
+           partida certo. */
+        var ant = i > 1 && metaDe(e, i) !== '' && repDe(e, i) === repDe(e, i - 1) ?
+                  chaveSerie(plano, t, e, i - 1) : '';
         chips += '<button class="set" type="button" aria-pressed="' + on + '" ' +
                  'aria-label="Série ' + i + ' de ' + e.n + ', meta ' + repDe(e, i) + '" ' +
                  'data-k="' + esc(k) + '" data-t="' + t.id + '" ' +
+                 (ant ? 'data-ant="' + esc(ant) + '" ' : '') +
                  'data-meta="' + (metaDe(e, i) || '1') + '">' + i + '</button>';
         /* O campo de repetições feitas só existe depois que a série é marcada, e
            já nasce com a meta dentro. Card intocado fica idêntico ao de antes:
@@ -2786,7 +2851,7 @@ function render(){
              "halter · cabo · máquina" é o que se lê uma vez e depois vira ruído.
              Separado, o nome ganha a primeira linha inteira e o ícone de vídeo
              para de cair sozinho embaixo. */
-          (e.eq ? '<span class="ex-eq">' + e.eq + '</span>' : '') +
+          eqHtml(plano, t, e) +
           '</div>' +
           '<span class="ex-presc">' + prescDe(e) + '</span>' +
         '</div>' +
@@ -2877,6 +2942,11 @@ function finalizar(plano, t){
   t.ex.forEach(function(e){
     var kg = store.get(chaveKg(plano, t, e));
     if (kg !== null && kg !== '') store.set(destino + 'kg.' + e.id, kg);
+    /* Com qual equipamento, para a carga do registro fazer sentido. Só quando
+       houve escolha e o exercício foi feito ou tem carga. */
+    var eq = eqEscolhido(plano, t, e);
+    var feito = (kg !== null && kg !== '') || achadas.some(function(k){ return k.indexOf(pre + e.id + '.') === 0; });
+    if (eq && feito) store.set(destino + 'eq.' + e.id, eq);
   });
   /* `semana` só entra quando o plano tem blocos. Sem a guarda, `bloco` é o
      próprio plano e o registro do PPL saía com "semana ppl", que o histórico
@@ -3006,10 +3076,22 @@ document.addEventListener('click', function(ev){
   if (set){
     var on = set.getAttribute('aria-pressed') === 'true';
     if (on) store.del(set.dataset.k);
-    else store.set(set.dataset.k, set.dataset.meta || '1');
+    else {
+      var feitaAnt = set.dataset.ant ? store.get(set.dataset.ant) : null;
+      store.set(set.dataset.k, /^\d+$/.test(feitaAnt || '') ? feitaAnt : (set.dataset.meta || '1'));
+    }
     /* Re-render do card inteiro porque a linha de reps feitas aparece e some
        com a marcação. É barato: a delegação no document não precisa religar
        nada, e o campo de carga não está em foco quando se toca numa bolinha. */
+    render();
+    return;
+  }
+
+  /* Trocar o equipamento troca qual carga o campo de kg mostra, então é
+     render() inteiro, como a bolinha. */
+  var eqb = ev.target.closest('[data-eq]');
+  if (eqb){
+    store.set(eqb.dataset.k, eqb.dataset.eq);
     render();
     return;
   }
@@ -3174,12 +3256,33 @@ document.addEventListener('change', function(ev){
      número para redigitar. E pior em silêncio: a bolinha continuava pintada até
      o próximo render, e aí a série sumia sem ninguém encostar nela. Selecionar
      tudo e apagar antes de digitar é o gesto normal num teclado de celular, e
-     ele não pode custar a série. Vazio volta para a meta. */
-  if (v === '' && campo.dataset.meta) v = campo.dataset.meta;
+     ele não pode custar a série. Vazio volta para o número de antes (ou a meta). */
+  if (v === '' && campo.dataset.meta) v = campo.dataset.antes || campo.dataset.meta;
   if (campo.dataset.int) campo.value = v;
 
   if (v === '') store.del(campo.dataset.campo);
   else store.set(campo.dataset.campo, v);
+});
+
+/* Tocar no campo de repetições ESVAZIA o campo, e o número que estava fica no
+   placeholder. Pedido do Felipe e da Ana: o número já vem preenchido, e
+   corrigir significava apagar à mão antes de digitar. Selecionar tudo seria o
+   gesto clássico, mas o Safari do iPhone ignora seleção feita no foco.
+   Sair sem digitar devolve o número de antes, sem gravar nada: o valor salvo
+   só muda pelo `change`, e campo esvaziado por código não dispara `change`.
+   `focusin`/`focusout` porque `focus`/`blur` não borbulham até o document. */
+document.addEventListener('focusin', function(ev){
+  var c = ev.target;
+  if (!c.matches || !c.matches('input[data-int]')) return;
+  c.dataset.antes = c.value;
+  c.placeholder = c.value || '—';
+  c.value = '';
+});
+document.addEventListener('focusout', function(ev){
+  var c = ev.target;
+  if (!c.matches || !c.matches('input[data-int]')) return;
+  if (c.value === '' && c.dataset.antes) c.value = c.dataset.antes;
+  c.placeholder = '—';
 });
 
 /* A carga é `type="text"`, e não `type="number"`, justamente para chegar aqui.
