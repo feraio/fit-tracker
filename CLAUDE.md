@@ -341,8 +341,10 @@ na fila, na lápide e no RLS que existiam. Quem for mexer nisso não precisa toc
   devolve o número de antes no `focusout`, sem gravar nada (campo esvaziado por código não
   dispara `change`); esvaziar e confirmar também volta para o de antes.
 - **Marcar uma série pré-preenche o que foi feito na anterior**, não a meta: quem fez 15 na
-  primeira faz perto de 15 na segunda. Só quando a faixa é a mesma; na série em que a
-  prescrição cai (12-15 → 10-12) o ponto de partida é a meta nova. A anterior é lida **na hora
+  primeira faz perto de 15 na segunda. **Sempre a anterior, mesmo quando a faixa cai**
+  (12-15 → 10-12): a primeira versão voltava para a meta nova nessa série, e o Felipe pediu
+  para mudar, porque o que cada pessoa aguenta de fato diz mais que a meta, e a Ana usa a mesma
+  página. A meta só entra na série 1 ou quando a anterior não foi marcada. A anterior é lida **na hora
   do toque** (`data-ant` guarda a chave, não o valor): o número pode ter sido corrigido depois
   do último render, e lido no render a série 2 nascia com a meta mesmo depois de digitar 15.
 - **O campo de repetições é inteiro, e trunca no primeiro caractere que não é dígito**

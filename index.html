@@ -2806,11 +2806,10 @@ function render(){
         /* Marcar a série já preenche o que foi feito na anterior (`data-ant`,
            lido na hora do toque, porque o número pode ter sido corrigido depois
            do último render): quem fez 15 na primeira provavelmente faz perto de
-           15 na segunda, não a meta de 12. Só quando a faixa é a mesma: na série
-           em que a prescrição cai (12-15 → 10-12), a meta nova é o ponto de
-           partida certo. */
-        var ant = i > 1 && metaDe(e, i) !== '' && repDe(e, i) === repDe(e, i - 1) ?
-                  chaveSerie(plano, t, e, i - 1) : '';
+           15 na segunda, não a meta de 12. Sempre a anterior, mesmo quando a
+           faixa cai (12-15 → 10-12): decisão do Felipe, porque o que cada pessoa
+           de fato aguenta diz mais que a meta, e a Ana usa a mesma página. */
+        var ant = i > 1 && metaDe(e, i) !== '' ? chaveSerie(plano, t, e, i - 1) : '';
         chips += '<button class="set" type="button" aria-pressed="' + on + '" ' +
                  'aria-label="Série ' + i + ' de ' + e.n + ', meta ' + repDe(e, i) + '" ' +
                  'data-k="' + esc(k) + '" data-t="' + t.id + '" ' +
