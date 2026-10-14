@@ -103,9 +103,27 @@ abaixo).
   - A carga de antes dos chips (sem sufixo) ficou órfã nos exercícios com escolha, e de
     propósito: o Felipe pediu para não migrar, é evolução para as próximas sessões.
   - **O halter é o reserva de quando falta aparelho.** Onde ele não era opção da personal,
-    entrou como último da lista só onde continua o mesmo exercício (Rosca Direta, Panturrilha
-    em Pé). Não entra em leg press, cadeiras, flexora, puxada nem polia: ali o halter vira outro
-    exercício, e trocar exercício é decisão da personal, não do aparelho disponível.
+    entrou como último da lista: Rosca Direta, Panturrilha em Pé e, desde outubro de 2026, os
+    três tríceps (Corda e Polia ganharam `máquina · halter`, o Francês ganhou `máquina`). Os
+    tríceps foram pedido do Felipe, com o critério dele: "o importante é ter mais opções para
+    cada músculo trabalhado". Leg press, cadeiras, flexora e puxada continuam sem chips.
+  - **`eqBase` preserva a carga de quem já tinha carga antes dos chips.** O equipamento
+    nomeado ali lê a chave sem sufixo (`kg.A.triceps-polia`), então os 15 kg anotados antes
+    continuam no campo quando o chip é o da polia. Só vale para exercício que ganhou chips
+    depois de ter carga; os que nasceram com chips gravam com sufixo desde o início, e pôr
+    `eqBase` neles esconderia a carga já gravada com sufixo.
+  - **`eqRot` renomeia uma opção num exercício só, sem mexer no id.** Na Rosca Direta o id
+    `corda` aparece como "máquina": o Felipe anotava a máquina como corda e pediu para trocar
+    só o nome, mantendo a carga. Trocar o id zeraria a carga, pelo mesmo contrato do `id` de
+    exercício. Consequência: se a corda de verdade voltar para a rosca, ela precisa de outro id.
+    Vale também para a Ana: o que ela anotou como corda na rosca passou a aparecer como máquina.
+  - **Os chips também trocam de exercício quando só a prescrição muda: o abdominal.** Nos dois
+    treinos ele é `prancha · crunch` (o Treino A começa na prancha, o B no crunch), e o nome
+    virou só "Abdominal". A primeira opção é o próprio exercício; a outra vem em `variante`,
+    com o `r` dela e o `vid` (id do vídeo). `comVariante()` devolve uma cópia com isso
+    aplicado, e é o que `render()` e o texto do histórico usam: crunch pede repetições (meta
+    12-15, decisão do Felipe), prancha só marca a série. A variante da prancha no Treino B
+    copia o tempo do bloco (30s-1min, e 45s-1min nas semanas 3-4).
   - Chip escolhido é contorno no `--accent`, não preenchido: cheio é a linguagem da série
     feita, e o equipamento é contexto, não progresso.
 - **O cardio é uma entrada do treino, com `semKg:1`.** 30 minutos, marcável como qualquer série.

@@ -1518,9 +1518,9 @@ var planos = [
               {id:'crucifixo', n:'Crucifixo', eq:['halter','cabo','maquina'], s:3, r:'12-15'},
               {id:'puxada-frontal', n:'Puxada Frontal Aberta Pronada', s:3, r:'12-15'},
               {id:'desenvolvimento-sentado', n:'Desenvolvimento Sentado', eq:['halter','cabo','maquina'], s:3, r:'12-15'},
-              {id:'triceps-corda', n:'Tríceps Corda', s:3, r:'12-15'},
-              {id:'rosca-direta', n:'Rosca Direta', eq:['barra-w','corda','halter'], s:3, r:'12-15'},
-              {id:'prancha', n:'Abdominal Prancha', s:3, r:'30s-1min', semKg:1},
+              {id:'triceps-corda', n:'Tríceps Corda', eq:['corda','maquina','halter'], eqBase:'corda', s:3, r:'12-15'},
+              {id:'rosca-direta', n:'Rosca Direta', eq:['barra-w','corda','halter'], eqRot:{corda:'máquina'}, s:3, r:'12-15'},
+              {id:'prancha', n:'Abdominal', eq:['prancha','crunch'], variante:{crunch:{r:'12-15', vid:'abdominal-crunch'}}, s:3, r:'30s-1min', semKg:1},
               {id:'cardio', n:'Cardio pós-treino', s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
                   massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
@@ -1535,7 +1535,7 @@ var planos = [
               {id:'cadeira-extensora', n:'Cadeira Extensora', s:3, r:'12-15'},
               {id:'leg-press', n:'Leg Press', s:3, r:'12-15'},
               {id:'panturrilha-em-pe', n:'Panturrilha em Pé', eq:['maquina','halter'], s:3, r:'12-15'},
-              {id:'abdominal-crunch', n:'Abdominal Crunch', s:3, r:'12-15', semKg:1},
+              {id:'abdominal-crunch', n:'Abdominal', eq:['crunch','prancha'], variante:{prancha:{r:'30s-1min', vid:'prancha'}}, s:3, r:'12-15', semKg:1},
               {id:'cardio', n:'Cardio pós-treino', s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
                   massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
@@ -1558,9 +1558,9 @@ var planos = [
               {id:'crucifixo', n:'Crucifixo', eq:['halter','cabo','maquina'], s:3, rs:['12-15','12-15','10-12']},
               {id:'puxada-frontal', n:'Puxada Frontal Aberta Pronada', s:3, rs:['12-15','12-15','10-12']},
               {id:'desenvolvimento-sentado', n:'Desenvolvimento Sentado', eq:['halter','cabo','maquina'], s:3, rs:['12-15','12-15','10-12']},
-              {id:'triceps-polia', n:'Tríceps na Polia', s:3, rs:['12-15','12-15','10-12']},
-              {id:'rosca-direta', n:'Rosca Direta', eq:['barra-w','corda','halter'], s:3, rs:['12-15','12-15','10-12']},
-              {id:'prancha', n:'Abdominal Prancha', s:3, r:'30s-1min', semKg:1},
+              {id:'triceps-polia', n:'Tríceps na Polia', eq:['polia','maquina','halter'], eqBase:'polia', s:3, rs:['12-15','12-15','10-12']},
+              {id:'rosca-direta', n:'Rosca Direta', eq:['barra-w','corda','halter'], eqRot:{corda:'máquina'}, s:3, rs:['12-15','12-15','10-12']},
+              {id:'prancha', n:'Abdominal', eq:['prancha','crunch'], variante:{crunch:{r:'12-15', vid:'abdominal-crunch'}}, s:3, r:'30s-1min', semKg:1},
               {id:'cardio', n:'Cardio pós-treino', s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
                   massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
@@ -1575,7 +1575,7 @@ var planos = [
               {id:'cadeira-extensora', n:'Cadeira Extensora', s:3, r:'12-15'},
               {id:'leg-press', n:'Leg Press', s:3, r:'12-15'},
               {id:'panturrilha-em-pe', n:'Panturrilha em Pé', eq:['maquina','halter'], s:3, r:'12-15'},
-              {id:'abdominal-crunch', n:'Abdominal Crunch', s:3, r:'12-15', semKg:1},
+              {id:'abdominal-crunch', n:'Abdominal', eq:['crunch','prancha'], variante:{prancha:{r:'30s-1min', vid:'prancha'}}, s:3, r:'12-15', semKg:1},
               {id:'cardio', n:'Cardio pós-treino', s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
                   massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
@@ -1599,13 +1599,13 @@ var planos = [
               {id:'remada-unilateral', n:'Remada Unilateral', eq:['halter','maquina'], s:4, rs:['12-15','12-15','10-12','10-12']},
               {id:'desenvolvimento-sentado', n:'Desenvolvimento Sentado', eq:['halter','cabo','maquina'], s:4, rs:['12-15','12-15','10-12','10-12']},
               {id:'elevacao-lateral', n:'Elevação Lateral', eq:['halter'], s:4, rs:['12-15','12-15','10-12','10-12']},
-              {id:'triceps-polia', n:'Tríceps na Polia', s:4, rs:['12-15','12-15','10-12','10-12']},
-              {id:'triceps-frances', n:'Tríceps Francês', eq:['halter','corda'], s:4, rs:['12-15','12-15','10-12','10-12']},
-              {id:'rosca-direta', n:'Rosca Direta', eq:['barra-w','corda','halter'], s:4, rs:['12-15','12-15','10-12','10-12']},
+              {id:'triceps-polia', n:'Tríceps na Polia', eq:['polia','maquina','halter'], eqBase:'polia', s:4, rs:['12-15','12-15','10-12','10-12']},
+              {id:'triceps-frances', n:'Tríceps Francês', eq:['halter','corda','maquina'], s:4, rs:['12-15','12-15','10-12','10-12']},
+              {id:'rosca-direta', n:'Rosca Direta', eq:['barra-w','corda','halter'], eqRot:{corda:'máquina'}, s:4, rs:['12-15','12-15','10-12','10-12']},
               /* O PDF traz "10 a 12 reps" na quarta série da prancha, o que não
                  existe: prancha é medida em tempo. Lido como arrasto da linha de
                  cima e corrigido para as quatro em tempo. */
-              {id:'prancha', n:'Abdominal Prancha', s:4, r:'45s-1min', semKg:1},
+              {id:'prancha', n:'Abdominal', eq:['prancha','crunch'], variante:{crunch:{r:'12-15', vid:'abdominal-crunch'}}, s:4, r:'45s-1min', semKg:1},
               {id:'cardio', n:'Cardio pós-treino', s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
                   massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
@@ -1621,7 +1621,7 @@ var planos = [
               {id:'agachamento', n:'Agachamento', eq:['halter','barra','hack'], s:4, r:'12-15'},
               {id:'leg-press', n:'Leg Press', s:4, r:'12-15'},
               {id:'panturrilha-em-pe', n:'Panturrilha em Pé', eq:['maquina','halter'], s:4, r:'12-15'},
-              {id:'abdominal-crunch', n:'Abdominal Crunch', s:4, r:'12-15', semKg:1},
+              {id:'abdominal-crunch', n:'Abdominal', eq:['crunch','prancha'], variante:{prancha:{r:'45s-1min', vid:'prancha'}}, s:4, r:'12-15', semKg:1},
               {id:'cardio', n:'Cardio pós-treino', s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
                   massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
@@ -2300,7 +2300,10 @@ function chaveSerie(plano, t, e, i){ return plano.key + 'atual.' + t.id + '.' + 
    o campo à mão, como em qualquer outro campo da página. */
 function chaveKg(plano, t, e){
   var eq = eqEscolhido(plano, t, e);
-  return plano.key + 'kg.' + t.id + '.' + e.id + (eq ? '.' + eq : '');
+  /* `eqBase` é o equipamento de um exercício que já tinha carga salva antes de
+     ganhar chips (Tríceps Corda, Tríceps na Polia). Ele continua lendo a chave
+     sem sufixo, e por isso a carga anotada antes dos chips não se perde. */
+  return plano.key + 'kg.' + t.id + '.' + e.id + (eq && eq !== e.eqBase ? '.' + eq : '');
 }
 
 /* ---------- Equipamento ----------
@@ -2317,9 +2320,30 @@ function chaveKg(plano, t, e){
 var EQUIP = {
   'halter':'halter', 'cabo':'cabo', 'maquina':'máquina', 'barra':'barra',
   'barra-w':'barra W', 'corda':'corda', 'hack':'hack squat',
-  'mesa':'mesa', 'cadeira':'cadeira'
+  'mesa':'mesa', 'cadeira':'cadeira', 'polia':'polia',
+  'prancha':'prancha', 'crunch':'crunch'
 };
-function rotuloEq(id){ return EQUIP[id] || id; }
+/* `eqRot` renomeia uma opção só naquele exercício, sem mudar o id gravado. É o
+   contrato do `id` aplicado ao equipamento: o id é a chave da carga e o rótulo
+   é livre. Na Rosca Direta, o id `corda` aparece como "máquina" a pedido do
+   Felipe, porque a carga anotada ali era de máquina; trocar o id para
+   `maquina` faria a carga sumir. Se um dia a corda de verdade voltar para a
+   rosca, ela precisa de outro id. */
+function rotuloEq(id, e){ return (e && e.eqRot && e.eqRot[id]) || EQUIP[id] || id; }
+
+/* Os chips também servem para trocar de EXERCÍCIO quando a troca muda só a
+   prescrição: o abdominal é prancha ou crunch, nos dois treinos. A primeira
+   opção é o próprio exercício; as outras trazem em `variante` o que muda (`r`,
+   e `vid`, o id do vídeo). Devolve uma cópia: o objeto dos dados não muda. */
+function comVariante(e, v){
+  var alt = e && e.variante && e.variante[v];
+  if (!alt) return e;
+  var c = {}, k;
+  for (k in e) c[k] = e[k];
+  for (k in alt) c[k] = alt[k];
+  if (alt.r) delete c.rs;
+  return c;
+}
 function chaveEq(plano, t, e){ return plano.key + 'eq.' + t.id + '.' + e.id; }
 /* Devolve '' quando não há escolha a fazer. Valor gravado que saiu da lista
    (prescrição mudou) cai no primeiro, em vez de apontar para carga órfã. */
@@ -2332,13 +2356,13 @@ function eqEscolhido(plano, t, e){
    ocupava, então o card não ganha linha nova. Opção única continua texto. */
 function eqHtml(plano, t, e){
   if (!e.eq) return '';
-  if (e.eq.length < 2) return '<span class="ex-eq">' + rotuloEq(e.eq[0]) + '</span>';
+  if (e.eq.length < 2) return '<span class="ex-eq">' + rotuloEq(e.eq[0], e) + '</span>';
   var atual = eqEscolhido(plano, t, e), html = '';
   e.eq.forEach(function(id){
     html += '<button class="eq" type="button" aria-pressed="' + (id === atual) + '" ' +
-            'data-eq="' + id + '" data-k="' + esc(chaveEq(plano, t, e)) + '">' + rotuloEq(id) + '</button>';
+            'data-eq="' + id + '" data-k="' + esc(chaveEq(plano, t, e)) + '">' + rotuloEq(id, e) + '</button>';
   });
-  return '<span class="eqs" role="group" aria-label="Equipamento de ' + esc(e.n) + '">' + html + '</span>';
+  return '<span class="eqs" role="group" aria-label="Opções de ' + esc(e.n) + '">' + html + '</span>';
 }
 function chaveSensacao(plano, t){ return plano.key + 'atual.' + t.id + '.sensacao'; }
 function chaveObs(plano, t){ return plano.key + 'atual.' + t.id + '.obs'; }
@@ -2589,8 +2613,8 @@ function renderSessao(plano, id){
       '<div class="ex-top">' +
         '<div class="ex-id"><span class="ex-name">' + esc(nome) + '</span>' +
           /* O equipamento daquela sessão, quando houve escolha; senão a lista. */
-          (ses.campos['eq.' + eid] ? '<span class="ex-eq">' + esc(rotuloEq(ses.campos['eq.' + eid])) + '</span>' :
-           e && e.eq ? '<span class="ex-eq">' + e.eq.map(rotuloEq).join(' · ') + '</span>' : '') +
+          (ses.campos['eq.' + eid] ? '<span class="ex-eq">' + esc(rotuloEq(ses.campos['eq.' + eid], e)) + '</span>' :
+           e && e.eq ? '<span class="ex-eq">' + e.eq.map(function(x){ return rotuloEq(x, e); }).join(' · ') + '</span>' : '') +
         '</div>' +
         '<span class="ex-presc">' + (kg !== undefined && kg !== '' ? esc(kg) + ' kg' : '—') + '</span>' +
       '</div>' +
@@ -2707,7 +2731,9 @@ function textoDaSessao(plano, ses){
     if (!reps.length && kg === undefined) return;
 
     var partes = [e ? e.n : eid];
-    if (ses.campos['eq.' + eid]) partes.push(rotuloEq(ses.campos['eq.' + eid]));
+    if (ses.campos['eq.' + eid]) partes.push(rotuloEq(ses.campos['eq.' + eid], e));
+    /* A variante decide se a série é contagem (crunch) ou marcador (prancha). */
+    e = comVariante(e, ses.campos['eq.' + eid]);
     if (kg !== undefined && kg !== '') partes.push(kg + ' kg');
     /* Exercício sem repetição contável (prancha, cardio) guarda '1' em cada
        série marcada: listar "1/1/1" seria ruído. Conta quantas foram. */
@@ -2798,6 +2824,7 @@ function render(){
       '<ol class="ex">';
 
     t.ex.forEach(function(e){
+      e = comVariante(e, eqEscolhido(plano, t, e));   /* crunch no lugar da prancha, etc. */
       var chips = '', feitas = '';
       for (var i = 1; i <= e.s; i++){
         var k = chaveSerie(plano, t, e, i);
@@ -2841,7 +2868,7 @@ function render(){
               ICON_MIDIA + '</button>' : '') +
             /* <a> de verdade, com target e rel: abre o vídeo fora da página e
                não passa pelo handler de clique delegado. */
-            (VIDEOS[e.id] ? '<a class="ex-media" href="' + esc(VIDEOS[e.id]) + '" ' +
+            (VIDEOS[e.vid || e.id] ? '<a class="ex-media" href="' + esc(VIDEOS[e.vid || e.id]) + '" ' +
               'target="_blank" rel="noopener noreferrer" ' +
               'aria-label="Ver demonstração de ' + esc(e.n) + ' (abre o YouTube)">' +
               ICON_VIDEO + '</a>' : '') +
