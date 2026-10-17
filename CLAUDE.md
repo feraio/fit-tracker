@@ -128,6 +128,10 @@ abaixo).
     aplicado, e é o que `render()` e o texto do histórico usam: crunch pede repetições (meta
     12-15, decisão do Felipe), prancha só marca a série. A variante da prancha no Treino B
     copia o tempo do bloco (30s-1min, e 45s-1min nas semanas 3-4).
+  - **O cardio também tem variante: `moderado · intenso`.** Moderado é o de sempre (30 min,
+    conversa fácil); intenso é 10 min em intensidade alta, que o Felipe passou a fazer em
+    outubro de 2026. A variante troca o `r` e a `nota`, que descreve o ritmo e por isso não
+    podia continuar dizendo "conversa fácil" com o intenso escolhido.
   - Chip escolhido é contorno no `--accent`, não preenchido: cheio é a linguagem da série
     feita, e o equipamento é contexto, não progresso.
 - **O cardio é uma entrada do treino, com `semKg:1`.** 30 minutos, marcável como qualquer série.

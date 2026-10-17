@@ -1521,7 +1521,7 @@ var planos = [
               {id:'triceps-corda', n:'Tríceps', eq:['corda','maquina','halter'], eqBase:'corda', s:3, r:'12-15'},
               {id:'rosca-direta', n:'Rosca Direta', eq:['barra-w','corda','halter'], eqRot:{corda:'máquina'}, s:3, r:'12-15'},
               {id:'prancha', n:'Abdominal', eq:['prancha','crunch'], variante:{crunch:{r:'12-15', vid:'abdominal-crunch'}}, s:3, r:'30s-1min', semKg:1},
-              {id:'cardio', n:'Cardio pós-treino', s:1, r:'30 min', semKg:1, notaOk:1,
+              {id:'cardio', n:'Cardio pós-treino', eq:['moderado','intenso'], variante:{intenso:{r:'10 min', nota:'Esteira, bike ou elíptico em intensidade alta.'}}, s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
                   massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
                nota:'Esteira (inclinação 0 a 5%), bike em ritmo moderado ou elíptico em baixa resistência. Intensidade de conversa fácil: dá para falar frases completas.'}
@@ -1536,7 +1536,7 @@ var planos = [
               {id:'leg-press', n:'Leg Press', s:3, r:'12-15'},
               {id:'panturrilha-em-pe', n:'Panturrilha em Pé', eq:['maquina','halter'], s:3, r:'12-15'},
               {id:'abdominal-crunch', n:'Abdominal', eq:['crunch','prancha'], variante:{prancha:{r:'30s-1min', vid:'prancha'}}, s:3, r:'12-15', semKg:1},
-              {id:'cardio', n:'Cardio pós-treino', s:1, r:'30 min', semKg:1, notaOk:1,
+              {id:'cardio', n:'Cardio pós-treino', eq:['moderado','intenso'], variante:{intenso:{r:'10 min', nota:'Esteira, bike ou elíptico em intensidade alta.'}}, s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
                   massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
                nota:'Esteira (inclinação 0 a 5%), bike em ritmo moderado ou elíptico em baixa resistência. Intensidade de conversa fácil: dá para falar frases completas.'}
@@ -1561,7 +1561,7 @@ var planos = [
               {id:'triceps-polia', n:'Tríceps', eq:['polia','maquina','halter'], eqBase:'polia', s:3, rs:['12-15','12-15','10-12']},
               {id:'rosca-direta', n:'Rosca Direta', eq:['barra-w','corda','halter'], eqRot:{corda:'máquina'}, s:3, rs:['12-15','12-15','10-12']},
               {id:'prancha', n:'Abdominal', eq:['prancha','crunch'], variante:{crunch:{r:'12-15', vid:'abdominal-crunch'}}, s:3, r:'30s-1min', semKg:1},
-              {id:'cardio', n:'Cardio pós-treino', s:1, r:'30 min', semKg:1, notaOk:1,
+              {id:'cardio', n:'Cardio pós-treino', eq:['moderado','intenso'], variante:{intenso:{r:'10 min', nota:'Esteira, bike ou elíptico em intensidade alta.'}}, s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
                   massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
                nota:'Esteira (inclinação 0 a 5%), bike em ritmo moderado ou elíptico em baixa resistência. Intensidade de conversa fácil: dá para falar frases completas.'}
@@ -1576,7 +1576,7 @@ var planos = [
               {id:'leg-press', n:'Leg Press', s:3, r:'12-15'},
               {id:'panturrilha-em-pe', n:'Panturrilha em Pé', eq:['maquina','halter'], s:3, r:'12-15'},
               {id:'abdominal-crunch', n:'Abdominal', eq:['crunch','prancha'], variante:{prancha:{r:'30s-1min', vid:'prancha'}}, s:3, r:'12-15', semKg:1},
-              {id:'cardio', n:'Cardio pós-treino', s:1, r:'30 min', semKg:1, notaOk:1,
+              {id:'cardio', n:'Cardio pós-treino', eq:['moderado','intenso'], variante:{intenso:{r:'10 min', nota:'Esteira, bike ou elíptico em intensidade alta.'}}, s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
                   massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
                nota:'Esteira (inclinação 0 a 5%), bike em ritmo moderado ou elíptico em baixa resistência. Intensidade de conversa fácil: dá para falar frases completas.'}
@@ -1606,7 +1606,7 @@ var planos = [
                  existe: prancha é medida em tempo. Lido como arrasto da linha de
                  cima e corrigido para as quatro em tempo. */
               {id:'prancha', n:'Abdominal', eq:['prancha','crunch'], variante:{crunch:{r:'12-15', vid:'abdominal-crunch'}}, s:4, r:'45s-1min', semKg:1},
-              {id:'cardio', n:'Cardio pós-treino', s:1, r:'30 min', semKg:1, notaOk:1,
+              {id:'cardio', n:'Cardio pós-treino', eq:['moderado','intenso'], variante:{intenso:{r:'10 min', nota:'Esteira, bike ou elíptico em intensidade alta.'}}, s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
                   massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
                nota:'Esteira (inclinação 0 a 5%), bike em ritmo moderado ou elíptico em baixa resistência. Intensidade de conversa fácil: dá para falar frases completas.'}
@@ -1622,7 +1622,7 @@ var planos = [
               {id:'leg-press', n:'Leg Press', s:4, r:'12-15'},
               {id:'panturrilha-em-pe', n:'Panturrilha em Pé', eq:['maquina','halter'], s:4, r:'12-15'},
               {id:'abdominal-crunch', n:'Abdominal', eq:['crunch','prancha'], variante:{prancha:{r:'45s-1min', vid:'prancha'}}, s:4, r:'12-15', semKg:1},
-              {id:'cardio', n:'Cardio pós-treino', s:1, r:'30 min', semKg:1, notaOk:1,
+              {id:'cardio', n:'Cardio pós-treino', eq:['moderado','intenso'], variante:{intenso:{r:'10 min', nota:'Esteira, bike ou elíptico em intensidade alta.'}}, s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
                   massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
                nota:'Esteira (inclinação 0 a 5%), bike em ritmo moderado ou elíptico em baixa resistência. Intensidade de conversa fácil: dá para falar frases completas.'}
@@ -2321,7 +2321,7 @@ var EQUIP = {
   'halter':'halter', 'cabo':'cabo', 'maquina':'máquina', 'barra':'barra',
   'barra-w':'barra W', 'corda':'corda', 'hack':'hack squat',
   'mesa':'mesa', 'cadeira':'cadeira', 'polia':'polia',
-  'prancha':'prancha', 'crunch':'crunch'
+  'prancha':'prancha', 'crunch':'crunch', 'moderado':'moderado', 'intenso':'intenso'
 };
 /* `eqRot` renomeia uma opção só naquele exercício, sem mudar o id gravado. É o
    contrato do `id` aplicado ao equipamento: o id é a chave da carga e o rótulo
