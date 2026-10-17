@@ -107,6 +107,10 @@ abaixo).
     três tríceps (Corda e Polia ganharam `máquina · halter`, o Francês ganhou `máquina`). Os
     tríceps foram pedido do Felipe, com o critério dele: "o importante é ter mais opções para
     cada músculo trabalhado". Leg press, cadeiras, flexora e puxada continuam sem chips.
+    Pelo mesmo critério, Corda e Polia passaram a se chamar só "Tríceps": "polia é um dos
+    tipos apenas", e o nome dizendo polia com o chip no halter se contradizia. Os ids
+    continuam `triceps-corda` e `triceps-polia`, e a troca da semana 1 para a 2 continua
+    visível no chip que abre escolhido (corda numa, polia na outra).
   - **`eqBase` preserva a carga de quem já tinha carga antes dos chips.** O equipamento
     nomeado ali lê a chave sem sufixo (`kg.A.triceps-polia`), então os 15 kg anotados antes
     continuam no campo quando o chip é o da polia. Só vale para exercício que ganhou chips
