@@ -570,6 +570,17 @@
     transition:background .12s ease,border-color .12s ease,color .12s ease;
   }
   .set:hover,.tiro:hover{border-color:var(--ink3)}
+  /* Aquecimento: mesma bolinha, borda tracejada e amarelo de anilha de 15 kg,
+     a cor do que não é série valendo. Não herda o --accent de propósito. */
+  .aq{
+    width:36px;height:36px;border-radius:50%;
+    border:2px dashed var(--line);background:transparent;
+    font-family:var(--mono);font-size:11px;font-weight:500;color:var(--ink3);
+    cursor:pointer;padding:0;
+  }
+  .aq[aria-pressed="true"]{background:var(--yellow15);border:2px solid var(--yellow15);color:#fff}
+  .aq:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  .aq-rep{color:var(--yellow15)}
   .set[aria-pressed="true"],.tiro[aria-pressed="true"]{
     background:var(--accent);
     border-color:var(--accent);
@@ -1520,7 +1531,7 @@ var planos = [
               {id:'desenvolvimento-sentado', n:'Desenvolvimento Sentado', eq:['halter','cabo','maquina'], s:3, r:'12-15'},
               {id:'triceps-corda', n:'Tríceps', eq:['corda','maquina','halter'], eqBase:'corda', s:3, r:'12-15'},
               {id:'rosca-direta', n:'Rosca Direta', eq:['barra-w','corda','halter'], eqRot:{corda:'máquina'}, s:3, r:'12-15'},
-              {id:'prancha', n:'Abdominal', eq:['prancha','crunch'], variante:{crunch:{r:'12-15', vid:'abdominal-crunch'}}, s:3, r:'30s-1min', semKg:1},
+              {id:'prancha', n:'Abdominal', eq:['prancha','crunch','pernas'], variante:{crunch:{r:'12-15', vid:'abdominal-crunch'}, pernas:{r:'12-15', vid:'elevacao-pernas'}}, s:3, r:'30s-1min', semKg:1},
               {id:'cardio', n:'Cardio pós-treino', eq:['moderado','intenso'], variante:{intenso:{r:'10 min', nota:'Esteira, bike ou elíptico em intensidade alta.'}}, s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
                   massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
@@ -1535,7 +1546,7 @@ var planos = [
               {id:'cadeira-extensora', n:'Cadeira Extensora', s:3, r:'12-15'},
               {id:'leg-press', n:'Leg Press', s:3, r:'12-15'},
               {id:'panturrilha-em-pe', n:'Panturrilha em Pé', eq:['maquina','halter'], s:3, r:'12-15'},
-              {id:'abdominal-crunch', n:'Abdominal', eq:['crunch','prancha'], variante:{prancha:{r:'30s-1min', vid:'prancha'}}, s:3, r:'12-15', semKg:1},
+              {id:'abdominal-crunch', n:'Abdominal', eq:['crunch','prancha','pernas'], variante:{prancha:{r:'30s-1min', vid:'prancha'}, pernas:{r:'12-15', vid:'elevacao-pernas'}}, s:3, r:'12-15', semKg:1},
               {id:'cardio', n:'Cardio pós-treino', eq:['moderado','intenso'], variante:{intenso:{r:'10 min', nota:'Esteira, bike ou elíptico em intensidade alta.'}}, s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
                   massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
@@ -1560,7 +1571,7 @@ var planos = [
               {id:'desenvolvimento-sentado', n:'Desenvolvimento Sentado', eq:['halter','cabo','maquina'], s:3, rs:['12-15','12-15','10-12']},
               {id:'triceps-polia', n:'Tríceps', eq:['polia','maquina','halter'], eqBase:'polia', s:3, rs:['12-15','12-15','10-12']},
               {id:'rosca-direta', n:'Rosca Direta', eq:['barra-w','corda','halter'], eqRot:{corda:'máquina'}, s:3, rs:['12-15','12-15','10-12']},
-              {id:'prancha', n:'Abdominal', eq:['prancha','crunch'], variante:{crunch:{r:'12-15', vid:'abdominal-crunch'}}, s:3, r:'30s-1min', semKg:1},
+              {id:'prancha', n:'Abdominal', eq:['prancha','crunch','pernas'], variante:{crunch:{r:'12-15', vid:'abdominal-crunch'}, pernas:{r:'12-15', vid:'elevacao-pernas'}}, s:3, r:'30s-1min', semKg:1},
               {id:'cardio', n:'Cardio pós-treino', eq:['moderado','intenso'], variante:{intenso:{r:'10 min', nota:'Esteira, bike ou elíptico em intensidade alta.'}}, s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
                   massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
@@ -1575,7 +1586,7 @@ var planos = [
               {id:'cadeira-extensora', n:'Cadeira Extensora', s:3, r:'12-15'},
               {id:'leg-press', n:'Leg Press', s:3, r:'12-15'},
               {id:'panturrilha-em-pe', n:'Panturrilha em Pé', eq:['maquina','halter'], s:3, r:'12-15'},
-              {id:'abdominal-crunch', n:'Abdominal', eq:['crunch','prancha'], variante:{prancha:{r:'30s-1min', vid:'prancha'}}, s:3, r:'12-15', semKg:1},
+              {id:'abdominal-crunch', n:'Abdominal', eq:['crunch','prancha','pernas'], variante:{prancha:{r:'30s-1min', vid:'prancha'}, pernas:{r:'12-15', vid:'elevacao-pernas'}}, s:3, r:'12-15', semKg:1},
               {id:'cardio', n:'Cardio pós-treino', eq:['moderado','intenso'], variante:{intenso:{r:'10 min', nota:'Esteira, bike ou elíptico em intensidade alta.'}}, s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
                   massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
@@ -1605,7 +1616,7 @@ var planos = [
               /* O PDF traz "10 a 12 reps" na quarta série da prancha, o que não
                  existe: prancha é medida em tempo. Lido como arrasto da linha de
                  cima e corrigido para as quatro em tempo. */
-              {id:'prancha', n:'Abdominal', eq:['prancha','crunch'], variante:{crunch:{r:'12-15', vid:'abdominal-crunch'}}, s:4, r:'45s-1min', semKg:1},
+              {id:'prancha', n:'Abdominal', eq:['prancha','crunch','pernas'], variante:{crunch:{r:'12-15', vid:'abdominal-crunch'}, pernas:{r:'12-15', vid:'elevacao-pernas'}}, s:4, r:'45s-1min', semKg:1},
               {id:'cardio', n:'Cardio pós-treino', eq:['moderado','intenso'], variante:{intenso:{r:'10 min', nota:'Esteira, bike ou elíptico em intensidade alta.'}}, s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
                   massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
@@ -1621,7 +1632,7 @@ var planos = [
               {id:'agachamento', n:'Agachamento', eq:['halter','barra','hack'], s:4, r:'12-15'},
               {id:'leg-press', n:'Leg Press', s:4, r:'12-15'},
               {id:'panturrilha-em-pe', n:'Panturrilha em Pé', eq:['maquina','halter'], s:4, r:'12-15'},
-              {id:'abdominal-crunch', n:'Abdominal', eq:['crunch','prancha'], variante:{prancha:{r:'45s-1min', vid:'prancha'}}, s:4, r:'12-15', semKg:1},
+              {id:'abdominal-crunch', n:'Abdominal', eq:['crunch','prancha','pernas'], variante:{prancha:{r:'45s-1min', vid:'prancha'}, pernas:{r:'12-15', vid:'elevacao-pernas'}}, s:4, r:'12-15', semKg:1},
               {id:'cardio', n:'Cardio pós-treino', eq:['moderado','intenso'], variante:{intenso:{r:'10 min', nota:'Esteira, bike ou elíptico em intensidade alta.'}}, s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
                   massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
@@ -2293,6 +2304,10 @@ function metaDe(e, i){
    `fittracker.`, então já entram na fila, na lápide e no RLS que existem. Não
    houve mudança nenhuma no schema do Supabase para o histórico existir. */
 function chaveSerie(plano, t, e, i){ return plano.key + 'atual.' + t.id + '.' + e.id + '.' + i; }
+/* Aquecimento mora ao lado das séries (`<exercício>.aq`), então o Finalizar o
+   leva para o log pela mesma varredura de prefixo. Quem conta série precisa
+   ignorar o sufixo `aq`. */
+function chaveAquec(plano, t, e){ return plano.key + 'atual.' + t.id + '.' + e.id + '.aq'; }
 /* A CARGA NÃO MORA NA SESSÃO, e por isso não está sob `atual.`. Ela é o valor
    corrente daquele exercício naquele treino: o Finalizar copia para o log e
    deixa o campo preenchido, porque voltar na quinta e reencontrar a barra vazia
@@ -2321,7 +2336,7 @@ var EQUIP = {
   'halter':'halter', 'cabo':'cabo', 'maquina':'máquina', 'barra':'barra',
   'barra-w':'barra W', 'corda':'corda', 'hack':'hack squat',
   'mesa':'mesa', 'cadeira':'cadeira', 'polia':'polia',
-  'prancha':'prancha', 'crunch':'crunch', 'moderado':'moderado', 'intenso':'intenso'
+  'prancha':'prancha', 'crunch':'crunch', 'pernas':'elevação de pernas', 'moderado':'moderado', 'intenso':'intenso'
 };
 /* `eqRot` renomeia uma opção só naquele exercício, sem mudar o id gravado. É o
    contrato do `id` aplicado ao equipamento: o id é a chave da carga e o rótulo
@@ -2456,6 +2471,7 @@ function seriesDaSessao(ses){
   for (var c in ses.campos){
     if (c.indexOf('kg.') === 0 || c.indexOf('eq.') === 0) continue;
     if (c === 'meta' || c === 'sensacao' || c === 'obs') continue;
+    if (/\.aq$/.test(c)) continue;                /* aquecimento não é série */
     if (c.indexOf('.') > 0) n++;
   }
   return n;
@@ -2608,7 +2624,8 @@ function renderSessao(plano, id){
     var kg = ses.campos['kg.' + eid];
     var reps = [], i = 1;
     while (ses.campos[eid + '.' + i] !== undefined){ reps.push(ses.campos[eid + '.' + i]); i++; }
-    if (!reps.length && kg === undefined) return;
+    var aqFeito = ses.campos[eid + '.aq'] !== undefined;
+    if (!reps.length && kg === undefined && !aqFeito) return;
     html += '<li>' +
       '<div class="ex-top">' +
         '<div class="ex-id"><span class="ex-name">' + esc(nome) + '</span>' +
@@ -2618,7 +2635,9 @@ function renderSessao(plano, id){
         '</div>' +
         '<span class="ex-presc">' + (kg !== undefined && kg !== '' ? esc(kg) + ' kg' : '—') + '</span>' +
       '</div>' +
-      (reps.length ? '<div class="hist-reps">' + reps.map(function(r, k){
+      (reps.length || aqFeito ? '<div class="hist-reps">' +
+        (aqFeito ? '<span class="hist-rep aq-rep">aq</span>' : '') +
+        reps.map(function(r, k){
           return '<span class="hist-rep"><small>' + (k + 1) + '</small>' + esc(r) + '</span>';
         }).join('') + '</div>' : '') +
     '</li>';
@@ -2728,7 +2747,8 @@ function textoDaSessao(plano, ses){
     var e = exs[eid], reps = [], i = 1;
     while (ses.campos[eid + '.' + i] !== undefined){ reps.push(ses.campos[eid + '.' + i]); i++; }
     var kg = ses.campos['kg.' + eid];
-    if (!reps.length && kg === undefined) return;
+    var aqFeito = ses.campos[eid + '.aq'] !== undefined;
+    if (!reps.length && kg === undefined && !aqFeito) return;
 
     var partes = [e ? e.n : eid];
     if (ses.campos['eq.' + eid]) partes.push(rotuloEq(ses.campos['eq.' + eid], e));
@@ -2737,6 +2757,7 @@ function textoDaSessao(plano, ses){
     if (kg !== undefined && kg !== '') partes.push(kg + ' kg');
     /* Exercício sem repetição contável (prancha, cardio) guarda '1' em cada
        série marcada: listar "1/1/1" seria ruído. Conta quantas foram. */
+    if (aqFeito) partes.push('aquec.');
     if (reps.length) partes.push(e && metaDe(e, 1) === '' ? plural(reps.length, 'série', 'séries') : reps.join('/'));
     linhas.push(partes.join(' · '));
   });
@@ -2853,6 +2874,16 @@ function render(){
             'aria-label="Repetições feitas na série ' + i + ' de ' + e.n + '"></label>';
         }
       }
+      /* Bolinha de aquecimento, antes das séries, a pedido do Felipe: ele faz
+         uma série leve antes das valendo na maioria dos exercícios. Classe
+         própria (`.aq`, não `.set`) para NÃO entrar na contagem do treino nem
+         no "exercício concluído": aquecimento não é série prescrita. Só em
+         exercício com carga; abdominal e cardio não aquecem assim. */
+      if (!e.semKg){
+        var ka = chaveAquec(plano, t, e);
+        chips = '<button class="aq" type="button" aria-pressed="' + (store.get(ka) !== null) + '" ' +
+                'aria-label="Aquecimento de ' + e.n + '" data-k="' + esc(ka) + '">aq</button>' + chips;
+      }
       var kgKey = chaveKg(plano, t, e);
       var kgVal = store.get(kgKey) || '';
       var mid = midiaDe(e);
@@ -2950,6 +2981,7 @@ function finalizar(plano, t){
     achadas = [pre + 'sensacao', pre + 'obs'];
     t.ex.forEach(function(e){
       for (var i = 1; i <= e.s; i++) achadas.push(pre + e.id + '.' + i);
+      achadas.push(pre + e.id + '.aq');
     });
     achadas = achadas.filter(function(k){ return store.get(k) !== null; });
   }
@@ -3109,6 +3141,14 @@ document.addEventListener('click', function(ev){
     /* Re-render do card inteiro porque a linha de reps feitas aparece e some
        com a marcação. É barato: a delegação no document não precisa religar
        nada, e o campo de carga não está em foco quando se toca numa bolinha. */
+    render();
+    return;
+  }
+
+  var aq = ev.target.closest('.aq');
+  if (aq){
+    if (aq.getAttribute('aria-pressed') === 'true') store.del(aq.dataset.k);
+    else store.set(aq.dataset.k, '1');
     render();
     return;
   }
@@ -3297,17 +3337,34 @@ document.addEventListener('change', function(ev){
    Sair sem digitar devolve o número de antes, sem gravar nada: o valor salvo
    só muda pelo `change`, e campo esvaziado por código não dispara `change`.
    `focusin`/`focusout` porque `focus`/`blur` não borbulham até o document. */
+/* A CARGA (`data-dec`) ganhou o mesmo gesto em outubro de 2026, a pedido do
+   Felipe. A diferença está no que vazio significa: nas repetições vazio volta
+   para o número de antes; na carga, apagar o que se digitou continua sendo o
+   jeito de zerar ("zerar é apagar o campo à mão"). Só que esvaziar por código
+   no foco muda a referência do navegador para o `change`: digitar e apagar
+   tudo volta ao mesmo vazio, e o `change` NÃO dispara. Por isso a decisão
+   fica no `focusout`, com `data-mexeu` marcado pelo `input`: carga mexida e
+   deixada vazia apaga a chave; carga não mexida volta para o número de antes. */
+var SELETOR_LIMPA = 'input[data-int], input.kg[data-dec]';
 document.addEventListener('focusin', function(ev){
   var c = ev.target;
-  if (!c.matches || !c.matches('input[data-int]')) return;
+  if (!c.matches || !c.matches(SELETOR_LIMPA)) return;
   c.dataset.antes = c.value;
+  c.dataset.mexeu = '';
   c.placeholder = c.value || '—';
   c.value = '';
 });
+document.addEventListener('input', function(ev){
+  var c = ev.target;
+  if (c.matches && c.matches(SELETOR_LIMPA)) c.dataset.mexeu = '1';
+});
 document.addEventListener('focusout', function(ev){
   var c = ev.target;
-  if (!c.matches || !c.matches('input[data-int]')) return;
-  if (c.value === '' && c.dataset.antes) c.value = c.dataset.antes;
+  if (!c.matches || !c.matches(SELETOR_LIMPA)) return;
+  if (c.value === '' && c.dataset.antes){
+    if (c.dataset.dec && c.dataset.mexeu) store.del(c.dataset.campo);
+    else c.value = c.dataset.antes;
+  }
   c.placeholder = '—';
 });
 

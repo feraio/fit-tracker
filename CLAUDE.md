@@ -88,6 +88,15 @@ abaixo).
   exercício e o Felipe apontou o erro: a regra vale para qualquer treino, e lida dentro do
   "Crucifixo" ela parecia uma instrução daquele exercício. É nota e não bolinha porque, como
   série, inflaria a contagem do treino com trabalho que não é o prescrito.
+- **Além da nota, cada exercício com carga tem uma bolinha de aquecimento (`.aq`)**, desde
+  outubro de 2026, a pedido do Felipe: ele faz uma série leve antes das valendo na maioria dos
+  exercícios ("1 alongamento + 3 séries"). Ela resolve a objeção acima por outro caminho: é
+  classe própria, não `.set`, então **não entra na contagem do treino** nem no "exercício
+  concluído", e `seriesDaSessao()` ignora o sufixo `.aq`. Chave `atual.<treino>.<ex>.aq`, valor
+  `'1'`, levada ao log pelo Finalizar como as séries. Tracejada quando vazia e amarela
+  (`--yellow15`, a cor do que não é série valendo) quando marcada; não herda o `--accent`.
+  Exercício `semKg` (abdominal, cardio) não ganha. O histórico mostra "aq" e o Copiar,
+  "aquec."
 - **`eq` é a lista de equipamentos aceitos, e fica fora do `n`.** "Crucifixo" é o que se varre na
   lista; "halter · cabo · máquina" é o que se lê uma vez e depois vira ruído. Separado, o nome
   fica com a primeira linha inteira e o ícone de vídeo para de cair numa linha sozinha.
@@ -128,6 +137,10 @@ abaixo).
     aplicado, e é o que `render()` e o texto do histórico usam: crunch pede repetições (meta
     12-15, decisão do Felipe), prancha só marca a série. A variante da prancha no Treino B
     copia o tempo do bloco (30s-1min, e 45s-1min nas semanas 3-4).
+    Desde outubro de 2026 há uma terceira opção nos dois treinos, `pernas` ("elevação de
+    pernas", suspenso), meta 12-15 como o crunch, pedido do Felipe. O `vid` dela aponta para
+    um id sem entrada em `VIDEOS` de propósito: vazio cairia no id do exercício e abriria o
+    vídeo da prancha ou do crunch.
   - **O cardio também tem variante: `moderado · intenso`.** Moderado é o de sempre (30 min,
     conversa fácil); intenso é 10 min em intensidade alta, que o Felipe passou a fazer em
     outubro de 2026. A variante troca o `r` e a `nota`, que descreve o ritmo e por isso não
@@ -366,6 +379,11 @@ na fila, na lápide e no RLS que existiam. Quem for mexer nisso não precisa toc
   gesto clássico, mas o Safari do iPhone ignora seleção feita no `focus`. Sair sem digitar
   devolve o número de antes no `focusout`, sem gravar nada (campo esvaziado por código não
   dispara `change`); esvaziar e confirmar também volta para o de antes.
+- **O campo de carga também esvazia no toque**, desde outubro de 2026, a pedido do Felipe.
+  Diferença: na carga, apagar o que se digitou continua zerando (é o único jeito de zerar).
+  Como esvaziar por código faz o navegador não disparar `change` quando se digita e apaga
+  tudo, quem decide é o `focusout`, com `data-mexeu` marcado pelo `input`: mexeu e deixou
+  vazio apaga a chave; não mexeu volta o número de antes.
 - **Marcar uma série pré-preenche o que foi feito na anterior**, não a meta: quem fez 15 na
   primeira faz perto de 15 na segunda. **Sempre a anterior, mesmo quando a faixa cai**
   (12-15 → 10-12): a primeira versão voltava para a meta nova nessa série, e o Felipe pediu
