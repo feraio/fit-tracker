@@ -729,8 +729,9 @@ O repositório é **público**, então a procedência das imagens importa.
 - **Não usar `free-exercise-db`.** Declara Unlicense, mas a proveniência das imagens é
   questionada em issues abertas do próprio repositório e nunca foi esclarecida. Um repo
   declarar domínio público não transfere esse status a imagens de terceiros.
-- CC-BY-SA exige atribuição — vai no `<footer>`, que existe e hoje só tem a data justamente
-  para caber isso. Imagem recortada ou editada é
+- CC-BY-SA exige atribuição — vai no `<footer>`, que existe e hoje está vazio (escondido por
+  `footer:empty`) justamente para caber isso. A data de atualização que ficava ali saiu em
+  novembro de 2026: ninguém lembrava de mexer nela. Imagem recortada ou editada é
   obra derivada e continua CC-BY-SA.
 
 `assets/ex/agachamento-hack.webp` é um **placeholder autoral**, feito só para o mecanismo ser

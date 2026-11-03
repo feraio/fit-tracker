@@ -921,6 +921,7 @@
     color:var(--ink3);
     line-height:1.6;
   }
+  footer:empty{display:none}
 
   /* ---------- Mídia do exercício ---------- */
   .ex-media{
@@ -1084,14 +1085,13 @@
   <div class="macros" id="nutri"></div>
 </section>
 
-<!-- O rodapé ficou só com a data. A legenda AJUSTE/LOMBAR saiu porque nenhum
-     exercício tem mais `flag` (a prescrição da adaptação não trouxe nenhuma), e
-     a linha sobre sincronização explicava o que o botão de conta já diz.
+<!-- O rodapé está vazio. A legenda AJUSTE/LOMBAR saiu porque nenhum exercício
+     tem mais `flag`, a linha sobre sincronização explicava o que o botão de conta
+     já diz, e a data de atualização ficava velha sem ninguém lembrar de mexer.
      O <footer> em si fica: é onde a atribuição CC-BY-SA das ilustrações vai
-     quando elas entrarem. -->
-<footer>
-  Atualizado em setembro de 2026.
-</footer>
+     quando elas entrarem. Enquanto estiver vazio, `footer:empty` o esconde —
+     por isso as tags ficam coladas, sem espaço entre elas. -->
+<footer></footer>
 
 </div>
 
