@@ -13,7 +13,7 @@
     /* Paleta derivada da codificação de cor das anilhas olímpicas */
     --red25:#C8322B;      /* 25 kg · Treino A */
     --blue20:#1F4E9C;     /* 20 kg · Treino B */
-    --yellow15:#C98A06;   /* 15 kg · futebol / recarga */
+    --yellow15:#C98A06;   /* 15 kg · futebol / bike */
     --green10:#2E7D5B;    /* 10 kg · concluído */
 
     --ink:#16181B;
@@ -844,7 +844,6 @@
   .btn.ghost{margin-left:auto}
 
   /* ---------- Nutrição ---------- */
-  .macros{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .macro{
     background:var(--card);
     border:1px solid var(--line2);
@@ -853,7 +852,6 @@
     padding:14px;
   }
   .macro.pad{--accent:var(--ink)}
-  .macro.rec{--accent:var(--yellow15)}
   .macro h3{
     font-family:var(--cond);
     text-transform:uppercase;
@@ -865,7 +863,7 @@
   .kcal{
     display:flex;
     align-items:baseline;
-    margin:6px 0 2px;
+    margin:6px 0 12px;
   }
   /* O número grande é o próprio campo: não existe valor derivado para
      redesenhar, então digitar nunca dispara re-render. */
@@ -889,7 +887,6 @@
   .kcal input:focus{outline:none;border-bottom-color:var(--accent)}
   .kcal input::placeholder{color:var(--line)}
   .kcal small{font-family:var(--mono);font-size:12px;font-weight:400;color:var(--ink3);margin-left:4px}
-  .when{font-size:12px;color:var(--ink2);margin:0 0 12px;line-height:1.35}
   dl{margin:0;font-family:var(--mono);font-size:13px}
   dl div{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:3px 0;border-top:1px solid var(--line2)}
   dl dt{color:var(--ink2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -914,7 +911,6 @@
   dl dd input:focus{outline:none;border-bottom-color:var(--accent)}
   dl dd input::placeholder{color:var(--line);font-weight:400}
   dl dd .un{color:var(--ink3);font-size:11px}
-  .fixed{color:var(--ink3);font-size:10px;letter-spacing:.06em;text-transform:uppercase;margin-left:5px}
 
   footer{
     margin-top:40px;
@@ -1047,7 +1043,6 @@
   }
 
   @media (max-width:520px){
-    .macros{grid-template-columns:1fr}
     .kgwrap{margin-left:0;width:100%;justify-content:flex-end}
     .day .what{font-size:9px}
   }
@@ -1085,7 +1080,6 @@
 <section id="secNutri">
   <div class="sec-head">
     <h2>Nutricional</h2>
-    <span class="meta">Proteína e gordura fixas</span>
   </div>
   <div class="macros" id="nutri"></div>
 </section>
@@ -1759,23 +1753,12 @@ function planoAtual(){
 var KEY_NUTRI = 'fittracker.nutri.v1.';
 var NUTRI = [
   {
-    id:'padrao', cls:'pad', nome:'Dia padrão',
-    quando:'Todos os dias sem futebol.',
+    id:'padrao', cls:'pad', nome:'Diário',
     campos:[
       {id:'prot',  rot:'Proteínas',    un:'g'},
       {id:'carb',  rot:'Carboidratos', un:'g'},
       {id:'gord',  rot:'Gorduras',     un:'g'},
       {id:'fibra', rot:'Fibras',       un:'g', texto:1, dica:'25 a 35'}
-    ]
-  },
-  {
-    id:'recarga', cls:'rec', nome:'Recarga',
-    quando:'Dia de treino com a personal mais futebol. Todo o acréscimo vem de carboidrato.',
-    campos:[
-      {id:'prot',  rot:'Proteínas',    un:'g', fixa:1},
-      {id:'carb',  rot:'Carboidratos', un:'g'},
-      {id:'gord',  rot:'Gorduras',     un:'g', fixa:1},
-      {id:'jogo',  rot:'Antes do jogo', texto:1, dica:'baixa fibra'}
     ]
   }
 ];
@@ -1793,14 +1776,13 @@ function renderNutri(){
           'aria-label="Calorias · ' + esc(c.nome) + '">' +
         '<small>kcal</small>' +
       '</p>' +
-      '<p class="when">' + c.quando + '</p>' +
       '<dl>';
 
     c.campos.forEach(function(f){
       var k = KEY_NUTRI + c.id + '.' + f.id;
       var v = store.get(k) || '';
       html += '<div>' +
-        '<dt>' + f.rot + (f.fixa ? '<span class="fixed">fixa</span>' : '') + '</dt>' +
+        '<dt>' + f.rot + '</dt>' +
         '<dd>' +
           '<input class="' + (f.texto ? 'largo' : '') + '" ' +
             'type="' + (f.texto ? 'text' : 'number') + '" ' +

@@ -336,6 +336,12 @@ vivem no `localStorage` e sobem para o Supabase como qualquer outra chave:
 - Os valores que ficaram hardcoded até agosto de 2026 (2460/154/301/71/25 a 35 e
   3100/154/460/71) foram migrados para a conta do Felipe, não para o código. Estão registrados
   aqui só para poderem ser reconstruídos se a conta se perder.
+- **Desde novembro de 2026 é um card só** (`padrao`, exibido como "Diário"). O card de
+  Recarga (dia de personal mais futebol) saiu, junto com a tarja "fixa" e a legenda
+  "Proteína e gordura fixas", que só existiam por causa dele. O `id` `padrao` ficou
+  de propósito: trocar zeraria os valores já salvos. As chaves
+  `fittracker.nutri.v1.recarga.*` que já existiam ficam órfãs no `localStorage` e no
+  Supabase — inofensivas, ninguém mais lê.
 - O número grande de kcal é o próprio campo. Não há valor derivado para redesenhar, então
   digitar nunca dispara re-render — que é o que faria o foco pular no meio da edição.
 
