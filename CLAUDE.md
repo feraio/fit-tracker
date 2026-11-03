@@ -729,10 +729,14 @@ O repositório é **público**, então a procedência das imagens importa.
 - **Não usar `free-exercise-db`.** Declara Unlicense, mas a proveniência das imagens é
   questionada em issues abertas do próprio repositório e nunca foi esclarecida. Um repo
   declarar domínio público não transfere esse status a imagens de terceiros.
-- CC-BY-SA exige atribuição — vai no `<footer>`, que existe e hoje está vazio (escondido por
-  `footer:empty`) justamente para caber isso. A data de atualização que ficava ali saiu em
-  novembro de 2026: ninguém lembrava de mexer nela. Imagem recortada ou editada é
-  obra derivada e continua CC-BY-SA.
+- CC-BY-SA exige atribuição — vai no `<footer>`. Imagem recortada ou editada é obra derivada
+  e continua CC-BY-SA. A data de atualização que ficava no rodapé saiu em novembro de 2026:
+  ninguém lembrava de mexer nela.
+- **O favicon também exige crédito.** É o ícone
+  [Gym](https://www.svgrepo.com/svg/475554/gym), de Howieart, coleção Everyday Living Tritone
+  Icons, sob CC BY (o SVG Repo não diz a versão; o crédito aponta para a 4.0). Fica embutido
+  como data URI no `<head>`, com as coordenadas arredondadas, e por isso o crédito diz
+  "Adaptado". Trocar o ícone é trocar o crédito junto.
 
 `assets/ex/agachamento-hack.webp` é um **placeholder autoral**, feito só para o mecanismo ser
 verificável ponta a ponta. Substituir pela ilustração real.
