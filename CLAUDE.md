@@ -14,24 +14,30 @@ coisa nesta página.
   (documentação do banco) e `docs/bike-intervalado.md` (as versões da prescrição da bike que
   **não** estão em vigor — ver "Bike intervalado" abaixo). O Supabase é acessado por `fetch` na API REST, sem SDK, justamente
   para não reintroduzir dependência.
-- JS em estilo ES5: templating por concatenação de string dentro de `render()`, e **um único
-  listener de clique delegado no `document`**. Por causa da delegação, componentes novos não
-  precisam ser re-ligados depois que `render()` reescreve `#treinos`.
+- JS em estilo ES5: templating por concatenação de string dentro de `render()`, e **eventos
+  delegados no `document`**: um listener de clique para a página inteira, mais `keydown`,
+  `submit`, `change` e `focusin`/`input`/`focusout`. A exceção é a caixa de confirmação, que tem
+  um segundo listener de clique só dela, também no `document` (ver "Sessão e registro"). Por
+  causa da delegação, componentes novos não precisam ser re-ligados depois que `render()`
+  reescreve `#treinos`.
 - Qualquer markup que precise sobreviver ao re-render (overlays, diálogos) fica **fora** de
   `#treinos`.
 - CSS escrito à mão, com design tokens em `:root`. A variável `--accent` é reassociada por
-  card (`.treino.a` / `.treino.b`) — componentes novos devem herdá-la em vez de repetir cores.
+  card (`.treino.a` vermelho, `.treino.b` azul, `.treino.c` verde no Legs do PPL, `.treino.bk`
+  amarelo na bike) e pelas mesmas classes na lista do histórico (`ol.hist li.a`/`.b`/`.bk`) —
+  componentes novos devem herdá-la em vez de repetir cores.
 - Interface toda em pt-BR, incluindo os `aria-label`.
 
 ## Três planos, uma página
 
 `planos[]` guarda um objeto por plano: o **Ciclo A/B** (em vigor), o **PPL** (anterior, mantido
-só para consulta) e a **Bike** (intervalado, somente leitura). A aba escolhida fica em
-`fittracker.plano.v1`.
+só para consulta) e a **Bike** (intervalado: prescrição somente leitura, mas registra a sessão
+desde setembro de 2026, ver "Bike intervalado"). A aba escolhida fica em `fittracker.plano.v1`.
 
 **O plano é o Ciclo A/B; a FASE é que muda a cada quatro semanas.** Hoje a fase é Adaptação, e
-ela aparece só no `eyebrow` ("Central de comando · Fase de adaptação"). Quando virar Iniciante,
-o que muda são os exercícios dos blocos e essa string — não o nome do plano, não a aba, não o
+ela aparece em dois textos do cabeçalho: no `eyebrow` ("Central de comando · Fase de adaptação")
+e no começo do `lede` ("Quatro semanas de adaptação…"). Quando virar Iniciante, o que muda são
+os exercícios dos blocos e esses dois textos — não o nome do plano, não a aba, não o
 prefixo de persistência. Foi decisão explícita do Felipe, para não renomear tudo de quatro em
 quatro semanas.
 
@@ -39,12 +45,14 @@ A chave é `fittracker.ab.v2.`. O `v1` era outro conjunto de exercícios, de ant
 prescrição; as chaves `fittracker.ab.v1.*` continuam gravadas, órfãs, e ficam assim (ver
 abaixo).
 
-- Cada plano traz o próprio cabeçalho (`eyebrow`, `titulo`, `lede`, `legenda`), a própria faixa
-  de semana e os próprios treinos. `renderCabecalho()` reescreve tudo isso, que vive **fora** de
-  `#treinos`; `render()` cuida só dos cards.
+- Cada plano traz o próprio cabeçalho (`doc`, que vira o `document.title`, mais `eyebrow`,
+  `titulo` e `lede`), o rótulo da aba (`aba`, e `abaTag` opcional, como o "V1" da bike) e os
+  próprios treinos (ou `sessao`, na bike). `renderCabecalho()` reescreve o cabeçalho e as abas,
+  que vivem **fora** de `#treinos`; `render()` cuida dos cards.
 - **Não existe mais faixa da semana (o calendário Seg a Dom).** Ela saiu de todos os planos, a
   pedido do Felipe, junto com `renderSemana()`, o CSS de `.week`/`.day`/`.legend` e o campo
-  `semana[]` dos dados. O treino virou três sessões por semana em rotação A-B-A-B, sem dia fixo,
+  `semana[]` dos dados. Sobrou uma regra órfã, `.day .what`, dentro do
+  `@media (max-width:520px)`: não casa com nada e pode sair na próxima mexida no CSS. O treino virou três sessões por semana em rotação A-B-A-B, sem dia fixo,
   então um calendário desenhado mentiria sobre qual treino é o de hoje. Não confundir com a
   faixa de **semana do ciclo** (`.semanas`), que é outra coisa e está viva.
 - **A preferência `fittracker.prefs.v1.semana` morreu junto**, porque existia só para ligar e
@@ -54,26 +62,30 @@ abaixo).
   ao contrário de `fittracker.plano.v1`), mas hoje não tem nenhum membro.
 - **Não existe mais caixa de nota por plano.** As duas que havia saíram na revisão da aba da
   bike: a de retorno lombar repetia o que o botão de fase dizia na época (a fase também já
-  saiu, ver acima), e a de rotação do PPL descrevia um plano que não está em vigor. Com isso `#planoNota` e o CSS de `.note` também
-  saíram — não sobrou caminho de render sem conteúdo. As notas **por exercício** (`ex[].nota`,
-  classe `.ex-note`) são outra coisa e continuam.
+  saiu, ver abaixo), e a de rotação do PPL descrevia um plano que não está em vigor. Com isso
+  `#planoNota` e o CSS de `.note` também saíram — não sobrou caminho de render sem conteúdo. As
+  notas **por exercício** (`ex[].nota`, classe `.ex-note`) são outra coisa e continuam. A borda
+  delas é amarela; `notaOk:1` no exercício pinta de verde (hoje só o cardio usa).
 - **Nenhum exercício tem `flag` hoje**, e por isso a legenda AJUSTE/LOMBAR saiu do `<footer>`:
   ela explicava tarjas que não existiam mais em lugar nenhum da página. O mecanismo (`ex[].flag`,
   `flagOk`, o CSS de `.flag`) continua no lugar, porque uma prescrição nova pode trazer um ponto
   a confirmar com a personal. Quem reintroduzir uma `flag` precisa devolver a legenda junto,
   senão a tarja fica sem explicação.
-- **Cada plano tem o seu prefixo de persistência** (`key`): `fittracker.ab.v1.` e
-  `fittracker.ppl.v1.`. Trocar de aba nunca mistura séries nem cargas. O prefixo do A/B não
-  muda nunca — é onde já estão os dados salvos no navegador de quem usa a página.
+- **Cada plano tem o seu prefixo de persistência** (`key`): `fittracker.ab.v2.`,
+  `fittracker.ppl.v1.` e `fittracker.bike.v1.`. Trocar de aba nunca mistura séries nem cargas.
+  Trocar um prefixo deixa para trás tudo o que já está salvo com ele, no navegador e no
+  Supabase. No A/B isso aconteceu uma vez, de `v1` para `v2`, quando a prescrição mudou
+  inteira (ver acima); fora isso, o prefixo fica.
 - **O Ciclo A/B tem `semanas[]` no lugar de `treinos[]`.** É o primeiro plano assim. Cada bloco
   (`Semana 1`, `Semana 2`, `Semanas 3-4`) traz os próprios `treinos[]`, com os próprios
   exercícios e o próprio número de séries: a semana 1 e a 2 têm 3, as semanas 3 e 4 têm 4 e
   ganham exercícios novos. `blocoAtual()` resolve qual vale, e `render()` desenha o bloco.
-  Plano sem `semanas[]` (PPL, Bike) segue lendo `plano.treinos` direto, e `renderSemanas()`
-  esconde a faixa neles.
+  Plano sem `semanas[]` (PPL, Bike) segue lendo `plano.treinos` (ou `plano.sessao`) direto:
+  `render()` esconde a faixa (`#semanas`) neles e `renderSemanas()` a esvazia.
 - **A semana escolhida (`fittracker.ab.v2.semana`) SINCRONIZA.** Não é preferência de
-  aparelho: é em que ponto do ciclo a pessoa está, e isso é o mesmo no celular e no tablet. A
-  única chave `fittracker.` que não sincroniza continua sendo `fittracker.plano.v1`, a aba.
+  aparelho: é em que ponto do ciclo a pessoa está, e isso é o mesmo no celular e no tablet.
+  Fora as chaves de controle da própria sincronização (`fittracker.sync.*`), a única que não
+  sincroniza continua sendo `fittracker.plano.v1`, a aba.
 - **A variação por semana é prescrição escrita, não regra aplicada por cima.** Cada bloco lista
   os exercícios por extenso, inclusive os repetidos. Derivar a semana 2 da semana 1 pouparia
   linhas e esconderia a troca do Tríceps Corda pelo Tríceps na Polia, que é justamente o tipo de
@@ -115,7 +127,9 @@ abaixo).
     entrou como último da lista: Rosca Direta, Panturrilha em Pé e, desde outubro de 2026, os
     três tríceps (Corda e Polia ganharam `máquina · halter`, o Francês ganhou `máquina`). Os
     tríceps foram pedido do Felipe, com o critério dele: "o importante é ter mais opções para
-    cada músculo trabalhado". Leg press, cadeiras, flexora e puxada continuam sem chips.
+    cada músculo trabalhado". Leg press, cadeiras e puxada continuam sem chips. A Flexora tem
+    chips desde outubro de 2026, mas só `mesa · cadeira`, que já vinha na prescrição; o
+    halter não entrou nela.
     Pelo mesmo critério, Corda e Polia passaram a se chamar só "Tríceps": "polia é um dos
     tipos apenas", e o nome dizendo polia com o chip no halter se contradizia. Os ids
     continuam `triceps-corda` e `triceps-polia`, e a troca da semana 1 para a 2 continua
@@ -164,18 +178,24 @@ abaixo).
 - As abas seguem o padrão `tablist`, com `aria-selected`, tabindex móvel e navegação por
   setas. O `keydown` é delegado no `document` pelo mesmo motivo do clique: `renderAbas()`
   reescreve os botões a cada troca.
-- Os macros do bloco Nutricional são iguais nos dois planos, então ficam fora da alternância.
-- `semKg:1` no exercício esconde o campo de carga (aquecimento, trabalho por tempo).
+- Os macros do bloco Nutricional não dependem do plano: o bloco é o mesmo nas três abas, então
+  fica fora da alternância.
+- `semKg:1` no exercício esconde o campo de carga e a bolinha de aquecimento (abdominal,
+  cardio, a barra fixa de aquecimento do PPL: trabalho por tempo ou sem carga).
 - **O cabeçalho "Treinamento" não tem mais contador de séries à direita** (`#totalMeta`, que lia
   "57 séries no ciclo A-B" e, na bike, "V1 · sessão de 35 a 40 min"). Saiu a pedido do Felipe:
   o número que importa entre séries é o do card que está na mão, e esse continua no `t-prog` e
   no rodapé de cada treino. Um total de ciclo no topo é contabilidade, não prescrição. O `.meta`
-  do bloco Nutricional é outro e continua.
+  que o bloco Nutricional tinha ("Proteína e gordura fixas") também já saiu, com o card de
+  Recarga (ver "Nutrição"); sobra a regra `.sec-head .meta` no CSS, sem uso.
 
 ## O contrato do `id`
 
-Cada exercício em `treinos[].ex[]` tem um `id` estável que serve para **duas** coisas: chave
-no `localStorage` e nome do arquivo da ilustração em `assets/ex/`.
+Cada exercício em `treinos[].ex[]` (no A/B, dentro de cada bloco de `semanas[]`) tem um `id`
+estável que serve para **duas** coisas: chave no `localStorage` e nome do arquivo da ilustração
+em `assets/ex/`. O mesmo id se repete entre blocos quando o exercício é o mesmo, e é isso que
+faz a carga atravessar a troca de semana. As etapas da bike seguem o mesmo contrato (ver "Bike
+intervalado").
 
 - Renomear `n` (o nome exibido) é livre e não quebra nada.
 - Renomear `id` zera a carga e as séries salvas daquele exercício, e quebra o caminho da
@@ -238,9 +258,12 @@ espera rede**. O Supabase é uma cópia durável por cima disso.
   descartar treino. Fila vazia: as chaves da conta anterior são apagadas e a tela é repintada
   ali mesmo — o pull não redesenha quando volta vazio, e a tela ficaria mostrando o treino de
   quem saiu.
-- **Um handler para todo campo que guarda valor.** Carga dos exercícios e macros da nutrição
-  usam o mesmo `data-campo`, que carrega a própria chave — não existe tabela de correspondência
-  para manter em sincronia. Campo esvaziado apaga a chave, e é isso que vira lápide.
+- **Um handler para todo campo que guarda valor.** Carga dos exercícios, repetições feitas,
+  observações da sessão, tempo da bike e macros da nutrição usam o mesmo `data-campo`, que
+  carrega a própria chave — não existe tabela de correspondência para manter em sincronia.
+  Campo esvaziado apaga a chave, e é isso que vira lápide. As exceções a essa regra são as
+  repetições (ver "Sessão e registro") e o efeito do esvaziar no toque sobre o tempo da bike
+  (ver "Bike intervalado").
 - **A carga é `type="text"` de propósito, com `data-dec="1"`.** `type="number"` só reconhece o
   ponto como separador decimal, em qualquer idioma, e **rejeita a tecla da vírgula**: o
   caractere não chega a ser inserido, então a tela não muda e nada indica que algo foi recusado.
@@ -254,8 +277,10 @@ espera rede**. O Supabase é uma cópia durável por cima disso.
   junta ponto repetido, descarta o que não é dígito (sem `type="number"` não há mais
   `min`/`step` para segurar sinal e letra) e devolve o valor normalizado ao campo — ver o
   número mudar de "10,5" para "10.5" é o retorno de que entrou. **Gravar sempre com ponto** é o
-  que mantém o número legível igual nos dois aparelhos e no Supabase. Os campos da nutrição
-  continuam `type="number"`: são inteiros, e sem casa decimal a vírgula não aparece no caminho.
+  que mantém o número legível igual nos dois aparelhos e no Supabase. As kcal e as macros da
+  nutrição continuam `type="number"`: são inteiros, e sem casa decimal a vírgula não aparece no
+  caminho. A Fibra é a exceção, `type="text"` com `texto:1` em `NUTRI`, porque guarda uma
+  faixa ("25 a 35"), não um número.
 
 ## Bike intervalado
 
@@ -293,9 +318,11 @@ recebem input. O que recebe input é o **pé do card**, e só ele.
   enumerar o `localStorage`), sem o retrato de carga, que não existe aqui. A meta guarda
   `versao` e não `semana`: o que muda a prescrição da bike é a versão, e é ela que dá sentido ao
   número de tiros de uma sessão antiga.
-- **A sessão inteira não cabe mais numa tela.** A prescrição cabe: do topo até o critério de
-  avanço são ~930px numa tela de 844, e o pé de registro leva a página a ~2040px. É o preço de
-  registrar, e é aceitável porque o pé é lido no fim, não entre os tiros. Ao mexer no cabeçalho
+- **A sessão inteira não cabe mais numa tela.** A prescrição quase cabe: em novembro de 2026,
+  numa tela de 390×844, do topo até o critério de avanço são ~880px, o pé de registro fecha o
+  card em ~1140px e a página inteira, com o bloco Nutricional, dá ~1630px (medido no Chromium
+  sem as fontes do Google, que estavam bloqueadas na medição; com elas o número muda um pouco).
+  É o preço de registrar, e é aceitável porque o pé é lido no fim, não entre os tiros. Ao mexer no cabeçalho
   desta aba, o que se confere agora é que a **prescrição** continua perto de uma tela.
 - **A intensidade é descrita em palavras, não em número.** "Resistência baixa", "forte",
   "fácil" — no `det` da etapa, como na especificação. Não há campo de velocidade nem de PSE, e
@@ -308,7 +335,16 @@ recebem input. O que recebe input é o **pé do card**, e só ele.
   `.tiro` divide o CSS com a `.set` dos cards de força, porque são a mesma bolinha; o que não se
   divide é o comportamento, e por isso são classes distintas com ramos distintos no handler de
   clique. A marcação é **cumulativa** (tocar no 5 marca do 1 ao 5, tocar de novo volta um): tiro
-  é sequência, e a pergunta em cima da bike é "em qual eu estou".
+  é sequência, e a pergunta em cima da bike é "em qual eu estou". Ao lado da contagem há um
+  "Zerar" por etapa, que apaga a chave daquela etapa sem confirmação. Não confundir com o
+  "Zerar treino" dos cards de força, que não existe mais.
+- **O tempo total é campo inteiro (`data-int`) e esvazia no toque**, porque o seletor do gesto
+  (`SELETOR_LIMPA`) pega todo `input[data-int]`, não só as repetições. Efeito colateral: o
+  tempo não tem `data-dec` nem `data-meta`, então apagar o número e sair devolve o número de
+  antes, e não há como deixar o tempo vazio por ali (dá para gravar 0; tirar a chave, só
+  finalizando a sessão). Conferido no Chromium em novembro de 2026; no Safari não foi testado.
+  **Fica assim por decisão do Felipe** (novembro de 2026): não vale o esforço de corrigir. Não
+  "consertar" sem pedido novo.
 - **Só a versão vigente é renderizada.** A V2, a V3, a V4 e o critério de avanço estão em
   `docs/bike-intervalado.md`, que também traz o passo a passo de trocar de versão. Prescrição
   que ainda não vale não pode ficar a um descuido de distância de ser desenhada.
@@ -317,13 +353,15 @@ recebem input. O que recebe input é o **pé do card**, e só ele.
   sempre na mesma coluna à direita, uma etapa por linha, e o bloco principal destacado com o
   `--accent` do card. O critério de avanço fica no **pé** da prescrição, que é quando ele é
   lido: no fim da sessão, logo antes do registro.
-- O amarelo (`--yellow15`) já era a cor do que não é musculação — "15 kg · futebol / recarga".
-  A bike herda ela, no card e no `h1 .slash.bk`.
+- O amarelo (`--yellow15`) é a cor do que não é musculação; o comentário dele no `:root` diz
+  "15 kg · futebol / bike" (a recarga, que também usava, saiu da Nutrição). A bike herda ele
+  no card, no `h1 .slash.bk` e na lista do histórico. A bolinha `.aq` usa o mesmo amarelo,
+  pelo mesmo motivo: não é série valendo.
 - Os macros do bloco Nutricional continuam fora da alternância, como nos outros dois planos.
 
 ## Nutrição
 
-A **estrutura** (quais cards, quais linhas, os rótulos, quais macros são fixas) é template e
+A **estrutura** (quais cards, quais linhas, os rótulos, as dicas de placeholder) é template e
 continua no código, em `NUTRI`. O que pertence a cada pessoa são só os **valores**, e esses
 vivem no `localStorage` e sobem para o Supabase como qualquer outra chave:
 `fittracker.nutri.v1.<card>.<campo>`.
@@ -353,10 +391,12 @@ Supabase é chave/valor genérica, então o histórico é só um conjunto de cha
 na fila, na lápide e no RLS que existiam. Quem for mexer nisso não precisa tocar em SQL.
 
 - **`atual.` é a sessão em andamento; `log.<id>.` é a sessão fechada.** Tudo sob
-  `fittracker.ab.v2.atual.<treino>.` é o que está sendo preenchido agora. `finalizar()` move
-  para `fittracker.ab.v2.log.<id>.` e apaga a origem, e a lápide faz a sessão sumir do card
-  nos outros aparelhos também.
-- **A CARGA NÃO MORA NA SESSÃO.** Ela fica em `fittracker.ab.v2.kg.<treino>.<exercício>`, fora
+  `<key>atual.<treino>.` (no A/B, `fittracker.ab.v2.atual.<treino>.`) é o que está sendo
+  preenchido agora. `finalizar()` move para `<key>log.<id>.` e apaga a origem, e a lápide faz a
+  sessão sumir do card nos outros aparelhos também. A bike usa o mesmo esquema sem o
+  `<treino>` (`fittracker.bike.v1.atual.tiros.<etapa>`, `.tempo`, `.esforco`).
+- **A CARGA NÃO MORA NA SESSÃO.** Ela fica em `fittracker.ab.v2.kg.<treino>.<exercício>` (com
+  `.<equipamento>` no fim quando o exercício tem chips, ver "`eq` é lista de ids"), fora
   de `atual.`, porque é o valor corrente daquele exercício e não um dado de uma sessão só. O
   Finalizar **copia** para o log e **deixa o campo preenchido**: voltar na quinta e reencontrar
   a barra vazia seria perder exatamente o número que o personal mandou anotar. Zerar é apagar o
@@ -364,13 +404,16 @@ na fila, na lápide e no RLS que existiam. Quem for mexer nisso não precisa toc
 - **O `<id>` da sessão é `Date.now()`.** Não colide entre aparelhos sem contador combinado e
   ordena o histórico sozinho. Relógio de cliente erra, e é exatamente por isso que ele **não**
   decide conflito em lugar nenhum desta página; aqui é só ordenação de leitura, o único uso em
-  que errar não corrompe nada. Data não é pedida nem mostrada: o Felipe não quer preencher data.
+  que errar não corrompe nada. Data não é pedida: o Felipe não quer preencher data. Ela é
+  mostrada no histórico, derivada do próprio `<id>` (ver "Histórico"), e por isso é a hora do
+  Finalizar, não a do treino.
 - **A presença da chave da série é o que marca a bolinha, e o valor dela são as repetições
   feitas.** Um campo guarda as duas coisas em vez de um `'1'` e um número que poderiam divergir.
   Exercício sem repetição contável (prancha, cardio) grava `'1'`: continua marcável, só não tem
   número a pedir. Quem decide é `metaDe()`, que extrai o primeiro número da prescrição e devolve
   vazio em `30s-1min`.
-- **O campo de repetições só aparece depois que a série é marcada, já com a meta dentro.** Card
+- **O campo de repetições só aparece depois que a série é marcada, já preenchido** (com a
+  meta, ou com o que foi feito na série anterior, ver abaixo). Card
   de treino que ainda não começou tem exatamente a densidade de antes: nenhuma linha extra,
   nenhum campo pedindo atenção. Bateu a meta, não se digita nada.
 - **Esvaziar o campo de repetições NÃO desmarca a série** (`data-meta` no input, tratado no
@@ -409,11 +452,14 @@ na fila, na lápide e no RLS que existiam. Quem for mexer nisso não precisa toc
 - **Não existe mais "Zerar treino".** A sessão é fechada pelo Finalizar, que guarda em vez de
   descartar, e desmarcar uma série é tocar nela de novo. O Finalizar é um botão de largura cheia
   porque é o último toque da sessão, dado em pé; ele herda o `--accent` do card, então o A é
-  vermelho e o B é azul.
+  vermelho, o B é azul e o "Finalizar sessão" da bike é amarelo.
 - **Existe UMA caixa de confirmação para toda a página** (`#confirmaBox`, um `<dialog>` fora de
   `#treinos` como manda a arquitetura). `pedirConfirmacao(titulo, texto, rotulo, acao)` preenche
-  o texto e guarda o que fazer no "sim". Usam ela o Finalizar e o apagar do histórico; duas
-  caixas quase iguais seriam uma para manter em sincronia com a outra.
+  o texto e guarda o que fazer no "sim". Usam ela os dois Finalizar (cards de força e bike) e
+  o apagar do histórico; duas caixas quase iguais seriam uma para manter em sincronia com a
+  outra. Os botões dela são tratados por um listener de clique próprio, também no `document`,
+  separado do listener principal da página (o comentário no código diz "o mesmo listener", mas
+  são dois).
 - **`confirmaAcao` guarda a ação em memória, não no DOM.** `render()` reescreve `#treinos` e o
   diálogo vive fora dele, então um `data-` no card não sobreviveria. O handler de `cancel` (o
   ESC do `<dialog>`) zera a variável: sem isso a ação ficaria pendurada e o próximo "sim"
@@ -428,8 +474,10 @@ na fila, na lápide e no RLS que existiam. Quem for mexer nisso não precisa toc
 ### Preferências de conta
 
 `fittracker.prefs.v1.*` é o namespace reservado para preferência **de conta**, não de aparelho:
-sincroniza, ao contrário de `fittracker.plano.v1` (a aba escolhida), que é a única chave
-`fittracker.` que `sincronizavel()` exclui. **Hoje não tem nenhum membro**: a única preferência
+sincroniza, ao contrário de `fittracker.plano.v1` (a aba escolhida), que é a única chave de
+dado ou preferência que `sincronizavel()` exclui (as `fittracker.sync.*` também ficam de fora,
+mas são o controle da própria sincronização: fila, cursor, sessão, `migrado` e dono). **Hoje
+não tem nenhum membro**: a única preferência
 que existiu ligava a faixa da semana, e saiu com ela. Se voltar a haver uma, ela vai no diálogo
 de conta, que já existe — não abrir uma tela de configurações para isso.
 
@@ -442,7 +490,8 @@ porque o título, o eyebrow e o link mudam com a vista e os três vivem fora de 
 - **Por que hash e não arquivo separado, já que o Felipe pediu uma página.** O hash entrega o
   que ele queria: endereço de verdade (o botão voltar do celular funciona, dá para favoritar),
   a vista já sai filtrada pelo plano de onde se entrou, e não é aba. Um `.html` separado
-  custaria as 862 linhas de CSS e, pior, as ~278 linhas da camada de sincronização, cujas
+  custaria o CSS inteiro (passa de mil linhas, em novembro de 2026) e, pior, a camada de
+  sincronização (perto de 300 linhas, sem contar o diálogo de conta), cujas
   sutilezas esta documentação inteira descreve: duas cópias significam uma correção que chega só
   numa metade, e o sintoma disso é dado errado, não erro. Se um dia valer o arquivo separado,
   ele pode ler o `localStorage` direto (mesma origem) e enfileirar a lápide sem duplicar o push
@@ -470,8 +519,10 @@ porque o título, o eyebrow e o link mudam com a vista e os três vivem fora de 
   muda a cada sessão finalizada e apagada, e esses caminhos redesenham os cards sem passar pelo
   cabeçalho; só no cabeçalho, o número ficava um passo atrás do que a pessoa acabou de fazer.
 - **Trocar de aba sai do histórico.** O histórico é de um plano, e continuar nele depois de
-  trocar mostraria a lista de um com o cabeçalho do outro. Plano sem `key` (a bike) não registra
+  trocar mostraria a lista de um com o cabeçalho do outro. Plano sem `key` não registra
   sessão, então o link não aparece e um `#historico` forçado na URL cai de volta no treino.
+  Hoje os três planos têm `key` (a bike desde setembro de 2026), então essa guarda está lá para
+  plano futuro, não para nenhum dos atuais.
 - **O PPL ganhou histórico de graça, e foi ele que revelou dois defeitos.** Nada no registro é
   específico do A/B: `plano.key` é o que decide, então qualquer plano com `key` e `treinos[]` já
   marca série, grava carga, finaliza e lista. Mas o PPL não tem `semanas[]`, e dois pontos do
@@ -519,10 +570,16 @@ serve com `max-age=600`, então sem ele um retorno depois de 10 minutos trava no
 
 > **Desligada por ora.** `MIDIA_ATIVA = false` no topo do bloco de mídia. Enquanto for
 > `false`, nenhum ícone é renderizado e nenhuma imagem é requisitada — mas o CSS, o
-> `<dialog>`, o handler de clique, o `img:1` nos dados e o `assets/ex/` continuam todos no
-> lugar. Voltar é virar a constante para `true`, nada mais. A decisão foi desligar em vez de
-> remover justamente para não conflitar com o trabalho de ilustrações ainda em aberto.
-> O resto desta seção descreve o comportamento com a chave ligada.
+> `<dialog>`, o handler de clique e o `assets/ex/` continuam todos no lugar. A decisão foi
+> desligar em vez de remover justamente para não conflitar com o trabalho de ilustrações ainda
+> em aberto. O resto desta seção descreve o comportamento com a chave ligada.
+>
+> **Nenhum exercício tem `img:1` hoje.** O único que tinha era o Agachamento Hack do Ciclo A/B
+> antigo, que saiu dos dados em setembro de 2026, quando a prescrição mudou. O PPL tem um
+> Agachamento Hack com o mesmo id, sem `img:1`. Por isso virar `MIDIA_ATIVA` para `true`
+> sozinho não mostra nada: é preciso também marcar `img:1` nos exercícios que têm arquivo em
+> `assets/ex/`. Os comentários no `index.html` que dizem "o `img:1` segue nos dados" estão
+> desatualizados.
 
 - `img:1` no objeto do exercício significa que existe `assets/ex/<id>.webp`, e faz aparecer um
   ícone discreto ao lado do nome. Sem `img`, nenhum ícone e nenhuma requisição.
@@ -554,8 +611,9 @@ Estas ausências foram escolhidas. Reintroduzi-las é regressão, não melhoria.
   `index.html` para qualquer visitante de qualquer jeito. O que sobraria era o risco de um erro
   de autenticação deixar alguém sem o treino em cima da bike. Decidido com o Felipe.
 - **Sem cadastro, magic link ou recuperação de senha na página.** O único endpoint de auth em
-  uso é `token?grant_type=…`; conta é criada na mão no painel do Supabase. São duas contas, e
-  cada tela dessas é rede a mais no caminho de quem só quer marcar uma série. Isto é uma
+  uso é `token?grant_type=…`; conta é criada na mão no painel do Supabase. São poucas contas
+  (as duas pessoas que usam a página, mais as de serviço dos agentes, como a conta de teste
+  dos previews), e cada tela dessas é rede a mais no caminho de quem só quer marcar uma série. Isto é uma
   ausência conhecida, não um esquecimento — se um dia houver mais gente, reavaliar.
 
 (A antiga entrada sobre offline / service worker saiu: `sw.js` existe desde então, e a seção
