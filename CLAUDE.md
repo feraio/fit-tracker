@@ -740,3 +740,32 @@ O repositório é **público**, então a procedência das imagens importa.
 
 `assets/ex/agachamento-hack.webp` é um **placeholder autoral**, feito só para o mecanismo ser
 verificável ponta a ponta. Substituir pela ilustração real.
+
+## Preview dos PRs (Cloudflare Workers)
+
+Produção é o GitHub Pages, a partir de `main`, e continua sendo (ver "Plataforma"). O
+Cloudflare Workers existe só para dar a cada PR um endereço de preview, no formato
+`<branch>-fit-tracker.<subdomínio>.workers.dev`, que o bot do Cloudflare comenta no próprio PR.
+É ali que a mudança é testada antes de chegar ao celular.
+
+- **`wrangler.jsonc` e `.assetsignore` são configuração do preview, não código de página**,
+  como o workflow do keepalive. Não contam como exceção ao arquivo único.
+- **O bloco `previews` é obrigatório, mesmo vazio.** Em branch que não é de produção o
+  Cloudflare roda `npx wrangler preview`, que recusa configuração sem ele. Antes deste arquivo o
+  build do `main` passava e o de PR falhava: o `wrangler deploy` do `main` gera configuração
+  sozinho quando não acha arquivo, e o `wrangler preview` não gera. O primeiro build de PR, em
+  novembro de 2026, falhou exatamente com "Your Wrangler configuration is missing a `previews`
+  block". O bloco fica vazio porque a página não tem binding nenhum: o Supabase é chamado pelo
+  navegador, não pelo Worker.
+- **A raiz do repositório é o diretório de assets**, porque a página não tem build. O
+  `.assetsignore` tira o `.git` e os arquivos de ambiente; o resto do repositório sobe junto, e
+  não há problema nisso porque ele já é público.
+- **`workers_dev: false` é o que mantém desligado o endereço workers.dev de produção.** Sem a
+  linha, cada build do `main` religaria esse endereço: quando a configuração não diz nada e não
+  há rota, o padrão do `wrangler deploy` é ligar. `preview_urls: true` fica explícito pelo
+  mesmo motivo, para o build do `main` não mexer no que está ligado no painel.
+- **O preview é outra origem, então tem service worker e `localStorage` próprios.** A primeira
+  abertura de um preview pode mostrar a versão anterior do branch, e recarregar resolve. Os
+  dados de quem entrar lá são os da conta, pelo Supabase, como em qualquer aparelho.
+- `compatibility_date` só importa para código de Worker, que esta página não tem. Não precisa
+  acompanhar o calendário.

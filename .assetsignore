@@ -1,0 +1,7 @@
+# Arquivos que o Cloudflare não sobe como página, no preview dos PRs.
+.git
+.wrangler
+node_modules
+.DS_Store
+.env*
+.dev.vars*
