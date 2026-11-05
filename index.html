@@ -18,7 +18,9 @@
     --red25:#C8322B;      /* 25 kg · Treino A */
     --blue20:#1F4E9C;     /* 20 kg · Treino B */
     --yellow15:#C98A06;   /* 15 kg · futebol / bike */
-    --green10:#2E7D5B;    /* 10 kg · concluído */
+    --green10:#2E7D5B;    /* 10 kg · concluído; também a seta de subir carga */
+    --laranja:#D9622B;    /* seta de baixar carga: fora da paleta das anilhas de
+                             propósito, para não se confundir com o vermelho do A */
 
     --ink:#16181B;
     --ink2:#525A63;
@@ -596,6 +598,13 @@
   }
   .kgwrap{margin-left:auto;display:flex;align-items:center;gap:6px}
   .kgwrap label{font-family:var(--mono);font-size:10px;color:var(--ink3);letter-spacing:.08em}
+  /* Seta de sugestão de carga, ao lado do KG. Só cor e direção: não herda o
+     --accent porque o significado é o mesmo nos dois cards. */
+  .seta{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px}
+  .seta svg{display:block}
+  .seta.sobe{color:var(--green10)}
+  .seta.desce{color:var(--laranja)}
+  .seta.desce svg{transform:rotate(180deg)}
   .kg{
     width:72px;
     padding:7px 8px;
@@ -2798,6 +2807,91 @@ function finalizarLeitura(plano){
   return true;
 }
 
+/* ---------- Sugestão de carga ----------
+   Uma seta ao lado do KG: verde para subir, laranja para baixar. Pedido do
+   Felipe, que escolheu a sugestão automática em vez de uma marcação manual.
+
+   A REGRA É PROVISÓRIA, e é a do app, não a do personal: quando a regra de
+   progressão dele chegar, ela entra no lugar desta. Os critérios são os mesmos
+   que o analista de treino já usa para apontar sinais, para os dois falarem a
+   mesma língua:
+   - as 2 últimas sessões finalizadas do mesmo treino em que o exercício foi
+     feito, com o mesmo equipamento;
+   - a mesma carga nas duas, e ela é a carga que está no campo agora (mudou a
+     carga, a seta some: a sugestão já foi seguida, ou recusada);
+   - subir: nas duas, todas as séries prescritas feitas, cada uma no topo da
+     faixa ou acima;
+   - baixar: nas duas, mais da metade das séries feitas abaixo do mínimo.
+   A faixa de cada série é a do bloco daquela sessão, não a de hoje: a semana 2
+   pede 10-12 na terceira série, e julgar uma sessão dela pela semana 1 erraria.
+   Exercício sem carga ou sem repetição contável (abdominal, cardio) não entra. */
+function faixaDe(r){
+  var m = /^(\d+)\s*[-–]\s*(\d+)/.exec(r || '');
+  if (m) return {min:+m[1], max:+m[2]};
+  m = /^(\d+)$/.exec(r || '');
+  return m ? {min:+m[1], max:+m[1]} : null;
+}
+
+/* O exercício como ele estava prescrito no bloco daquela sessão. */
+function exDaSessao(plano, ses, id){
+  var achou = null;
+  (plano.semanas || [plano]).forEach(function(b){
+    if (plano.semanas && b.id !== ses.meta.semana) return;
+    (b.treinos || []).forEach(function(t){
+      if (t.id !== ses.meta.treino) return;
+      t.ex.forEach(function(e){ if (e.id === id) achou = e; });
+    });
+  });
+  return achou;
+}
+
+function sugestaoCarga(plano, t, e, kgAtual, log){
+  if (e.semKg || metaDe(e, 1) === '' || !log) return '';
+  var kg = parseFloat(kgAtual);
+  if (!(kg > 0)) return '';
+  var eq = eqEscolhido(plano, t, e);
+  var juizos = [];
+  for (var i = 0; i < log.length && juizos.length < 2; i++){
+    var ses = log[i], c = ses.campos;
+    if (ses.meta.treino !== t.id) continue;
+    if ((c['eq.' + e.id] || '') !== eq) continue;
+    /* Sessão em que o exercício não foi feito não conta: o Finalizar copia a
+       carga de todo exercício do card, feito ou não. */
+    var feitas = 0, abaixo = 0, todasNoTopo = true;
+    var p = exDaSessao(plano, ses, e.id);
+    if (!p) continue;
+    for (var n = 1; n <= p.s; n++){
+      var v = c[e.id + '.' + n], f = faixaDe(repDe(p, n));
+      if (v === undefined || !f){ todasNoTopo = false; continue; }
+      feitas++;
+      if (+v < f.max) todasNoTopo = false;
+      if (+v < f.min) abaixo++;
+    }
+    if (!feitas) continue;
+    if (parseFloat(c['kg.' + e.id]) !== kg) return '';   /* carga diferente quebra a sequência */
+    juizos.push(todasNoTopo ? 'subir' : abaixo * 2 > feitas ? 'baixar' : '');
+  }
+  return juizos.length === 2 && juizos[0] === juizos[1] ? juizos[0] : '';
+}
+
+/* Seta de traço, sem preenchimento: mesma linguagem dos ícones de vídeo e de
+   mídia, que são contorno. Pedido do Felipe, depois de ver a primeira versão
+   cheia. A de baixar é esta mesma, girada no CSS. */
+var ICON_SETA =
+  '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">' +
+    '<path d="M8 13.5V2.5M3.5 7L8 2.5 12.5 7" fill="none" stroke="currentColor" ' +
+      'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>' +
+  '</svg>';
+
+function setaHtml(s){
+  if (!s) return '';
+  var txt = s === 'subir'
+    ? 'Sugestão: subir a carga. Topo da faixa em todas as séries nas 2 últimas sessões com esta carga.'
+    : 'Sugestão: baixar a carga. Abaixo da faixa nas 2 últimas sessões com esta carga.';
+  return '<span class="seta ' + (s === 'subir' ? 'sobe' : 'desce') + '" role="img" ' +
+         'aria-label="' + txt + '" title="' + txt + '">' + ICON_SETA + '</span>';
+}
+
 /* ---------- Treinos ---------- */
 function render(){
   var plano = planoAtual();
@@ -2818,6 +2912,9 @@ function render(){
   if (plano.leitura){ renderLeitura(plano); return; }
   var bloco = blocoAtual(plano);
   var html = '';
+  /* Lido uma vez por render, e não por exercício: a sugestão de carga de todos
+     os exercícios sai do mesmo histórico. */
+  var log = plano.key ? lerLog(plano) : null;
   bloco.treinos.forEach(function(t){
     var soma = t.ex.reduce(function(a,e){ return a + e.s; }, 0);
     html += '<article class="treino ' + t.cls + '" data-t="' + t.id + '">' +
@@ -2905,7 +3002,8 @@ function render(){
         '<div class="ex-bottom">' +
           '<div class="sets">' + chips + '</div>' +
           (e.semKg ? '' :
-            '<div class="kgwrap"><label for="' + esc(kgKey) + '">KG</label>' +
+            '<div class="kgwrap">' + setaHtml(sugestaoCarga(plano, t, e, kgVal, log)) +
+            '<label for="' + esc(kgKey) + '">KG</label>' +
             '<input class="kg" id="' + esc(kgKey) + '" type="text" inputmode="decimal" ' +
             'data-dec="1" autocomplete="off" ' +
             'value="' + esc(kgVal) + '" data-campo="' + esc(kgKey) + '" placeholder="—"></div>') +
@@ -3317,7 +3415,29 @@ document.addEventListener('change', function(ev){
 
   if (v === '') store.del(campo.dataset.campo);
   else store.set(campo.dataset.campo, v);
+  if (campo.dataset.dec) atualizarSeta(campo);
 });
+
+/* A carga muda sem re-render, de propósito (o foco não pode pular para fora do
+   campo seguinte), então a seta de sugestão daquele exercício é refeita no
+   lugar, e só ela. Sem isto, trocar a carga deixava a seta velha na tela até o
+   próximo toque. Chamada no `change` e no `focusout`, porque apagar a carga
+   inteira passa só pelo segundo. */
+function atualizarSeta(campo){
+  var li = campo.closest('li[data-ex]'), card = campo.closest('article[data-t]');
+  var wrap = campo.closest('.kgwrap');
+  if (!li || !card || !wrap) return;
+  var plano = planoAtual(), t = null, e = null;
+  blocoAtual(plano).treinos.forEach(function(x){ if (x.id === card.dataset.t) t = x; });
+  if (!t) return;
+  t.ex.forEach(function(x){ if (x.id === li.dataset.ex) e = x; });
+  if (!e) return;
+  e = comVariante(e, eqEscolhido(plano, t, e));
+  var velha = wrap.querySelector('.seta');
+  if (velha) wrap.removeChild(velha);
+  wrap.insertAdjacentHTML('afterbegin', setaHtml(sugestaoCarga(plano, t, e,
+    store.get(campo.dataset.campo) || '', plano.key ? lerLog(plano) : null)));
+}
 
 /* Tocar no campo de repetições ESVAZIA o campo, e o número que estava fica no
    placeholder. Pedido do Felipe e da Ana: o número já vem preenchido, e
@@ -3355,6 +3475,7 @@ document.addEventListener('focusout', function(ev){
     else c.value = c.dataset.antes;
   }
   c.placeholder = '—';
+  if (c.dataset.dec) atualizarSeta(c);
 });
 
 /* A carga é `type="text"`, e não `type="number"`, justamente para chegar aqui.
