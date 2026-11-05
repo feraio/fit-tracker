@@ -499,7 +499,9 @@ pelo histórico, em vez de uma marcação manual feita no fim da sessão.
 - **Laranja é token próprio (`--laranja`)**, fora da paleta das anilhas: o vermelho já é o
   `--accent` do Treino A, e uma seta vermelha nele sumiria. A seta não herda o `--accent`: o
   significado é o mesmo nos dois cards.
-- É só ícone, sem texto na tela: densidade primeiro. O motivo vai no `aria-label`.
+- É só ícone, sem texto na tela: densidade primeiro. O motivo vai no `aria-label`. A seta é de
+  traço, sem preenchimento, como os ícones de vídeo e de mídia; a primeira versão era cheia e o
+  Felipe pediu linhas mais simples.
 - Vale também para a Ana, que usa a mesma página: o cálculo é sobre o histórico de quem está
   usando, sem nada de específico do Felipe.
 

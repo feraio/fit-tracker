@@ -2874,9 +2874,13 @@ function sugestaoCarga(plano, t, e, kgAtual, log){
   return juizos.length === 2 && juizos[0] === juizos[1] ? juizos[0] : '';
 }
 
+/* Seta de traço, sem preenchimento: mesma linguagem dos ícones de vídeo e de
+   mídia, que são contorno. Pedido do Felipe, depois de ver a primeira versão
+   cheia. A de baixar é esta mesma, girada no CSS. */
 var ICON_SETA =
   '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">' +
-    '<path d="M8 2l5.5 6H10v6H6V8H2.5z" fill="currentColor"/>' +
+    '<path d="M8 13.5V2.5M3.5 7L8 2.5 12.5 7" fill="none" stroke="currentColor" ' +
+      'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>' +
   '</svg>';
 
 function setaHtml(s){
