@@ -1,0 +1,18 @@
+// Configuração do Cloudflare Workers, usado SÓ para o preview dos PRs.
+// A produção continua no GitHub Pages; ver "Preview dos PRs" no CLAUDE.md.
+{
+  "name": "fit-tracker",
+  "compatibility_date": "2026-11-05",
+  // A página é estática: a raiz do repositório é servida como está, sem build.
+  // O que não deve subir (.git e afins) está no .assetsignore.
+  "assets": { "directory": "." },
+  // O endereço workers.dev de produção fica desligado: produção é o GitHub
+  // Pages. Sem esta linha, cada build do main o religaria.
+  "workers_dev": false,
+  // Os endereços de preview continuam ligados, como estão no painel. Explícito
+  // para o build do main não mexer neles.
+  "preview_urls": true,
+  // Obrigatório para o `wrangler preview`, que o Cloudflare roda nos branches
+  // que não são de produção. Vazio porque a página não tem binding nenhum.
+  "previews": {}
+}
