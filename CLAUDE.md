@@ -339,11 +339,12 @@ recebem input. O que recebe input é o **pé do card**, e só ele.
   "Zerar" por etapa, que apaga a chave daquela etapa sem confirmação. Não confundir com o
   "Zerar treino" dos cards de força, que não existe mais.
 - **O tempo total é campo inteiro (`data-int`) e esvazia no toque**, porque o seletor do gesto
-  (`SELETOR_LIMPA`) pega todo `input[data-int]`, não só as repetições. Consequência, não
-  decisão: o tempo não tem `data-dec` nem `data-meta`, então apagar o número e sair devolve o
-  número de antes, e não há como deixar o tempo vazio por ali (dá para gravar 0; tirar a chave,
-  só finalizando a sessão). Conferido no Chromium em novembro de 2026; no Safari não foi
-  testado.
+  (`SELETOR_LIMPA`) pega todo `input[data-int]`, não só as repetições. Efeito colateral: o
+  tempo não tem `data-dec` nem `data-meta`, então apagar o número e sair devolve o número de
+  antes, e não há como deixar o tempo vazio por ali (dá para gravar 0; tirar a chave, só
+  finalizando a sessão). Conferido no Chromium em novembro de 2026; no Safari não foi testado.
+  **Fica assim por decisão do Felipe** (novembro de 2026): não vale o esforço de corrigir. Não
+  "consertar" sem pedido novo.
 - **Só a versão vigente é renderizada.** A V2, a V3, a V4 e o critério de avanço estão em
   `docs/bike-intervalado.md`, que também traz o passo a passo de trocar de versão. Prescrição
   que ainda não vale não pode ficar a um descuido de distância de ser desenhada.
