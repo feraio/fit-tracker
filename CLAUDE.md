@@ -471,6 +471,38 @@ na fila, na lápide e no RLS que existiam. Quem for mexer nisso não precisa toc
   e não há campo em foco quando se toca numa bolinha (o `change` do campo dispara antes, no
   blur).
 
+### Sugestão de carga (a seta ao lado do KG)
+
+Desde novembro de 2026, a pedido do Felipe: seta verde quando a sugestão é subir a carga,
+laranja quando é baixar, nenhuma no resto. Ele escolheu a sugestão **automática**, calculada
+pelo histórico, em vez de uma marcação manual feita no fim da sessão.
+
+- **A regra é provisória e é do app, não do personal.** Até a regra de progressão do personal
+  chegar, vale esta, decidida com o Felipe para andar de forma independente. Quando a do
+  personal vier, ela entra no lugar desta em `sugestaoCarga()`, e no analista de treino junto.
+- **Os critérios são os mesmos que o analista usa para apontar sinais**, para o app e a análise
+  falarem a mesma língua: as 2 últimas sessões finalizadas do mesmo treino em que o exercício
+  foi feito, com o mesmo equipamento e a mesma carga, e essa carga tem que ser a que está no
+  campo agora. **Subir:** nas duas, todas as séries prescritas feitas, cada uma no topo da faixa
+  ou acima. **Baixar:** nas duas, mais da metade das séries feitas abaixo do mínimo.
+- **A faixa de cada série é a do bloco daquela sessão** (`exDaSessao()`), não a de hoje. A
+  semana 2 pede 10-12 na terceira série; julgar uma sessão dela pela semana 1 nunca daria seta
+  verde.
+- **Sessão em que o exercício não foi feito não conta**, nem para um lado nem para o outro. O
+  Finalizar copia a carga de todo exercício do card, feito ou não, então ter `kg.` no log não
+  quer dizer que o exercício aconteceu: quem decide é ter pelo menos uma série gravada.
+- **Mudar a carga apaga a seta na hora.** A carga não dispara `render()` (o foco não pode pular),
+  então `atualizarSeta()` refaz só a seta daquele exercício, no `change` e no `focusout` (apagar a
+  carga inteira passa só pelo segundo). Voltar à carga antiga traz a seta de volta.
+- Exercício `semKg` ou sem repetição contável (abdominal, cardio) não ganha seta. Equipamento
+  diferente não se compara, pelo mesmo motivo da carga por equipamento.
+- **Laranja é token próprio (`--laranja`)**, fora da paleta das anilhas: o vermelho já é o
+  `--accent` do Treino A, e uma seta vermelha nele sumiria. A seta não herda o `--accent`: o
+  significado é o mesmo nos dois cards.
+- É só ícone, sem texto na tela: densidade primeiro. O motivo vai no `aria-label`.
+- Vale também para a Ana, que usa a mesma página: o cálculo é sobre o histórico de quem está
+  usando, sem nada de específico do Felipe.
+
 ### Preferências de conta
 
 `fittracker.prefs.v1.*` é o namespace reservado para preferência **de conta**, não de aparelho:
