@@ -107,7 +107,8 @@ abaixo).
   concluído", e `seriesDaSessao()` ignora o sufixo `.aq`. Chave `atual.<treino>.<ex>.aq`, valor
   `'1'`, levada ao log pelo Finalizar como as séries. Tracejada quando vazia e amarela
   (`--yellow15`, a cor do que não é série valendo) quando marcada; não herda o `--accent`.
-  Exercício `semKg` (abdominal, cardio) não ganha. O histórico mostra "aq" e o Copiar,
+  Exercício `semKg` (abdominal sem carga, cardio) não ganha; o abdominal na máquina, que tem
+  carga, ganha (ver a variante `maquina` abaixo). O histórico mostra "aq" e o Copiar,
   "aquec."
 - **`eq` é a lista de equipamentos aceitos, e fica fora do `n`.** "Crucifixo" é o que se varre na
   lista; "halter · cabo · máquina" é o que se lê uma vez e depois vira ruído. Separado, o nome
@@ -155,6 +156,13 @@ abaixo).
     pernas", suspenso), meta 12-15 como o crunch, pedido do Felipe. O `vid` dela aponta para
     um id sem entrada em `VIDEOS` de propósito: vazio cairia no id do exercício e abriria o
     vídeo da prancha ou do crunch.
+    Desde novembro de 2026 há uma quarta, `maquina`, nos dois treinos, pedido do Felipe
+    ("com peso em kg"). É a única opção do abdominal com carga: a variante traz `semKg:0`,
+    que desliga o `semKg:1` do exercício e devolve o campo de carga, a bolinha de
+    aquecimento e a seta de sugestão. A carga usa a chave por equipamento de sempre
+    (`kg.A.prancha.maquina`, `kg.B.abdominal-crunch.maquina`), sem chave nova. Meta 12-15,
+    como o crunch e a elevação de pernas (suposição do agente, a confirmar com o Felipe). O
+    `vid` (`abdominal-maquina`) também aponta para id sem entrada em `VIDEOS`.
   - **O cardio também tem variante: `moderado · intenso`.** Moderado é o de sempre (30 min,
     conversa fácil); intenso é 10 min em intensidade alta, que o Felipe passou a fazer em
     outubro de 2026. A variante troca o `r` e a `nota`, que descreve o ritmo e por isso não
@@ -181,7 +189,8 @@ abaixo).
 - Os macros do bloco Nutricional não dependem do plano: o bloco é o mesmo nas três abas, então
   fica fora da alternância.
 - `semKg:1` no exercício esconde o campo de carga e a bolinha de aquecimento (abdominal,
-  cardio, a barra fixa de aquecimento do PPL: trabalho por tempo ou sem carga).
+  cardio, a barra fixa de aquecimento do PPL: trabalho por tempo ou sem carga). Uma
+  `variante` pode desligar isso com `semKg:0`, e hoje só a `maquina` do abdominal faz isso.
 - **O cabeçalho "Treinamento" não tem mais contador de séries à direita** (`#totalMeta`, que lia
   "57 séries no ciclo A-B" e, na bike, "V1 · sessão de 35 a 40 min"). Saiu a pedido do Felipe:
   o número que importa entre séries é o do card que está na mão, e esse continua no `t-prog` e
@@ -497,8 +506,11 @@ pelo histórico, em vez de uma marcação manual feita no fim da sessão.
 - **Mudar a carga apaga a seta na hora.** A carga não dispara `render()` (o foco não pode pular),
   então `atualizarSeta()` refaz só a seta daquele exercício, no `change` e no `focusout` (apagar a
   carga inteira passa só pelo segundo). Voltar à carga antiga traz a seta de volta.
-- Exercício `semKg` ou sem repetição contável (abdominal, cardio) não ganha seta. Equipamento
-  diferente não se compara, pelo mesmo motivo da carga por equipamento.
+- Exercício `semKg` ou sem repetição contável (prancha, crunch, elevação de pernas, cardio) não
+  ganha seta. Equipamento diferente não se compara, pelo mesmo motivo da carga por equipamento.
+- **O abdominal na máquina ganha seta, e cada sessão é julgada pela faixa da variante.**
+  `sugestaoCarga()` aplica `comVariante()` sobre `exDaSessao()`: no Treino A o abdominal base
+  é a prancha, em tempo ("30s-1min"), e sem isso nenhuma sessão na máquina contaria.
 - **Laranja é token próprio (`--laranja`)**, fora da paleta das anilhas: o vermelho já é o
   `--accent` do Treino A, e uma seta vermelha nele sumiria. A seta não herda o `--accent`: o
   significado é o mesmo nos dois cards.

@@ -1496,7 +1496,9 @@ var KEY_PLANO = 'fittracker.plano.v1';
    do arquivo em assets/ex/. Renomear `n` é livre; renomear `id` zera a carga salva
    e quebra o caminho da ilustração.
    `img:1` marca que existe assets/ex/<id>.webp e faz aparecer o ícone de mídia.
-   `semKg:1` esconde o campo de carga (prancha, cardio).
+   `semKg:1` esconde o campo de carga (prancha, cardio). Uma variante pode
+   devolver o campo com `semKg:0`: o abdominal na máquina tem carga, a prancha
+   e o crunch não.
    `eq` é a lista de equipamentos aceitos, e fica fora do `n` de propósito: o
    nome é o que se varre na lista, o equipamento é o que se lê uma vez.
    `r` é a prescrição de repetição quando ela é igual em todas as séries; `rs` é
@@ -1533,7 +1535,7 @@ var planos = [
               {id:'desenvolvimento-sentado', n:'Desenvolvimento Sentado', eq:['halter','cabo','maquina'], s:3, r:'12-15'},
               {id:'triceps-corda', n:'Tríceps', eq:['corda','maquina','halter'], eqBase:'corda', s:3, r:'12-15'},
               {id:'rosca-direta', n:'Rosca Direta', eq:['barra-w','corda','halter'], eqRot:{corda:'máquina'}, s:3, r:'12-15'},
-              {id:'prancha', n:'Abdominal', eq:['prancha','crunch','pernas'], variante:{crunch:{r:'12-15', vid:'abdominal-crunch'}, pernas:{r:'12-15', vid:'elevacao-pernas'}}, s:3, r:'30s-1min', semKg:1},
+              {id:'prancha', n:'Abdominal', eq:['prancha','crunch','pernas','maquina'], variante:{crunch:{r:'12-15', vid:'abdominal-crunch'}, pernas:{r:'12-15', vid:'elevacao-pernas'}, maquina:{r:'12-15', vid:'abdominal-maquina', semKg:0}}, s:3, r:'30s-1min', semKg:1},
               {id:'cardio', n:'Cardio pós-treino', eq:['moderado','intenso'], variante:{intenso:{r:'10 min', nota:'Esteira, bike ou elíptico em intensidade alta.'}}, s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
                   massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
@@ -1548,7 +1550,7 @@ var planos = [
               {id:'cadeira-extensora', n:'Cadeira Extensora', s:3, r:'12-15'},
               {id:'leg-press', n:'Leg Press', s:3, r:'12-15'},
               {id:'panturrilha-em-pe', n:'Panturrilha em Pé', eq:['maquina','halter'], s:3, r:'12-15'},
-              {id:'abdominal-crunch', n:'Abdominal', eq:['crunch','prancha','pernas'], variante:{prancha:{r:'30s-1min', vid:'prancha'}, pernas:{r:'12-15', vid:'elevacao-pernas'}}, s:3, r:'12-15', semKg:1},
+              {id:'abdominal-crunch', n:'Abdominal', eq:['crunch','prancha','pernas','maquina'], variante:{prancha:{r:'30s-1min', vid:'prancha'}, pernas:{r:'12-15', vid:'elevacao-pernas'}, maquina:{r:'12-15', vid:'abdominal-maquina', semKg:0}}, s:3, r:'12-15', semKg:1},
               {id:'cardio', n:'Cardio pós-treino', eq:['moderado','intenso'], variante:{intenso:{r:'10 min', nota:'Esteira, bike ou elíptico em intensidade alta.'}}, s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
                   massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
@@ -1573,7 +1575,7 @@ var planos = [
               {id:'desenvolvimento-sentado', n:'Desenvolvimento Sentado', eq:['halter','cabo','maquina'], s:3, rs:['12-15','12-15','10-12']},
               {id:'triceps-polia', n:'Tríceps', eq:['polia','maquina','halter'], eqBase:'polia', s:3, rs:['12-15','12-15','10-12']},
               {id:'rosca-direta', n:'Rosca Direta', eq:['barra-w','corda','halter'], eqRot:{corda:'máquina'}, s:3, rs:['12-15','12-15','10-12']},
-              {id:'prancha', n:'Abdominal', eq:['prancha','crunch','pernas'], variante:{crunch:{r:'12-15', vid:'abdominal-crunch'}, pernas:{r:'12-15', vid:'elevacao-pernas'}}, s:3, r:'30s-1min', semKg:1},
+              {id:'prancha', n:'Abdominal', eq:['prancha','crunch','pernas','maquina'], variante:{crunch:{r:'12-15', vid:'abdominal-crunch'}, pernas:{r:'12-15', vid:'elevacao-pernas'}, maquina:{r:'12-15', vid:'abdominal-maquina', semKg:0}}, s:3, r:'30s-1min', semKg:1},
               {id:'cardio', n:'Cardio pós-treino', eq:['moderado','intenso'], variante:{intenso:{r:'10 min', nota:'Esteira, bike ou elíptico em intensidade alta.'}}, s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
                   massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
@@ -1588,7 +1590,7 @@ var planos = [
               {id:'cadeira-extensora', n:'Cadeira Extensora', s:3, r:'12-15'},
               {id:'leg-press', n:'Leg Press', s:3, r:'12-15'},
               {id:'panturrilha-em-pe', n:'Panturrilha em Pé', eq:['maquina','halter'], s:3, r:'12-15'},
-              {id:'abdominal-crunch', n:'Abdominal', eq:['crunch','prancha','pernas'], variante:{prancha:{r:'30s-1min', vid:'prancha'}, pernas:{r:'12-15', vid:'elevacao-pernas'}}, s:3, r:'12-15', semKg:1},
+              {id:'abdominal-crunch', n:'Abdominal', eq:['crunch','prancha','pernas','maquina'], variante:{prancha:{r:'30s-1min', vid:'prancha'}, pernas:{r:'12-15', vid:'elevacao-pernas'}, maquina:{r:'12-15', vid:'abdominal-maquina', semKg:0}}, s:3, r:'12-15', semKg:1},
               {id:'cardio', n:'Cardio pós-treino', eq:['moderado','intenso'], variante:{intenso:{r:'10 min', nota:'Esteira, bike ou elíptico em intensidade alta.'}}, s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
                   massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
@@ -1618,7 +1620,7 @@ var planos = [
               /* O PDF traz "10 a 12 reps" na quarta série da prancha, o que não
                  existe: prancha é medida em tempo. Lido como arrasto da linha de
                  cima e corrigido para as quatro em tempo. */
-              {id:'prancha', n:'Abdominal', eq:['prancha','crunch','pernas'], variante:{crunch:{r:'12-15', vid:'abdominal-crunch'}, pernas:{r:'12-15', vid:'elevacao-pernas'}}, s:4, r:'45s-1min', semKg:1},
+              {id:'prancha', n:'Abdominal', eq:['prancha','crunch','pernas','maquina'], variante:{crunch:{r:'12-15', vid:'abdominal-crunch'}, pernas:{r:'12-15', vid:'elevacao-pernas'}, maquina:{r:'12-15', vid:'abdominal-maquina', semKg:0}}, s:4, r:'45s-1min', semKg:1},
               {id:'cardio', n:'Cardio pós-treino', eq:['moderado','intenso'], variante:{intenso:{r:'10 min', nota:'Esteira, bike ou elíptico em intensidade alta.'}}, s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
                   massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
@@ -1634,7 +1636,7 @@ var planos = [
               {id:'agachamento', n:'Agachamento', eq:['halter','barra','hack'], s:4, r:'12-15'},
               {id:'leg-press', n:'Leg Press', s:4, r:'12-15'},
               {id:'panturrilha-em-pe', n:'Panturrilha em Pé', eq:['maquina','halter'], s:4, r:'12-15'},
-              {id:'abdominal-crunch', n:'Abdominal', eq:['crunch','prancha','pernas'], variante:{prancha:{r:'45s-1min', vid:'prancha'}, pernas:{r:'12-15', vid:'elevacao-pernas'}}, s:4, r:'12-15', semKg:1},
+              {id:'abdominal-crunch', n:'Abdominal', eq:['crunch','prancha','pernas','maquina'], variante:{prancha:{r:'45s-1min', vid:'prancha'}, pernas:{r:'12-15', vid:'elevacao-pernas'}, maquina:{r:'12-15', vid:'abdominal-maquina', semKg:0}}, s:4, r:'12-15', semKg:1},
               {id:'cardio', n:'Cardio pós-treino', eq:['moderado','intenso'], variante:{intenso:{r:'10 min', nota:'Esteira, bike ou elíptico em intensidade alta.'}}, s:1, r:'30 min', semKg:1, notaOk:1,
                /* 30 min é o número do Felipe, não o do PDF: para ganho de
                   massa a tabela dele pede 25-30. Não "corrigir" para 25-30. */
@@ -2343,7 +2345,10 @@ function rotuloEq(id, e){ return (e && e.eqRot && e.eqRot[id]) || EQUIP[id] || i
 /* Os chips também servem para trocar de EXERCÍCIO quando a troca muda só a
    prescrição: o abdominal é prancha ou crunch, nos dois treinos. A primeira
    opção é o próprio exercício; as outras trazem em `variante` o que muda (`r`,
-   e `vid`, o id do vídeo). Devolve uma cópia: o objeto dos dados não muda. */
+   e `vid`, o id do vídeo). Devolve uma cópia: o objeto dos dados não muda.
+   A `maquina` do abdominal traz também `semKg:0`, e com ela o campo de carga,
+   a bolinha de aquecimento e a seta. A carga cai na chave por equipamento de
+   sempre (`kg.<treino>.<exercício>.maquina`), então nada novo é gravado. */
 function comVariante(e, v){
   var alt = e && e.variante && e.variante[v];
   if (!alt) return e;
@@ -2820,7 +2825,8 @@ function finalizarLeitura(plano){
    - baixar: nas duas, mais da metade das séries feitas abaixo do mínimo.
    A faixa de cada série é a do bloco daquela sessão, não a de hoje: a semana 2
    pede 10-12 na terceira série, e julgar uma sessão dela pela semana 1 erraria.
-   Exercício sem carga ou sem repetição contável (abdominal, cardio) não entra. */
+   Exercício sem carga ou sem repetição contável (prancha, crunch, cardio) não
+   entra. O abdominal na máquina entra, julgado pela faixa da variante. */
 function faixaDe(r){
   var m = /^(\d+)\s*[-–]\s*(\d+)/.exec(r || '');
   if (m) return {min:+m[1], max:+m[2]};
@@ -2854,7 +2860,10 @@ function sugestaoCarga(plano, t, e, kgAtual, log){
     /* Sessão em que o exercício não foi feito não conta: o Finalizar copia a
        carga de todo exercício do card, feito ou não. */
     var feitas = 0, abaixo = 0, todasNoTopo = true;
-    var p = exDaSessao(plano, ses, e.id);
+    /* Com a variante daquela sessão aplicada (é a mesma de agora, conferida
+       acima): no Treino A o abdominal base é a prancha, em tempo, e sem isto a
+       sessão na máquina era julgada pela faixa "30s-1min" e nunca contava. */
+    var p = comVariante(exDaSessao(plano, ses, e.id), eq);
     if (!p) continue;
     for (var n = 1; n <= p.s; n++){
       var v = c[e.id + '.' + n], f = faixaDe(repDe(p, n));
@@ -2960,7 +2969,8 @@ function render(){
          uma série leve antes das valendo na maioria dos exercícios. Classe
          própria (`.aq`, não `.set`) para NÃO entrar na contagem do treino nem
          no "exercício concluído": aquecimento não é série prescrita. Só em
-         exercício com carga; abdominal e cardio não aquecem assim. */
+         exercício com carga; cardio e abdominal sem carga não aquecem assim
+         (o abdominal na máquina tem carga, e ganha a bolinha). */
       if (!e.semKg){
         var ka = chaveAquec(plano, t, e);
         chips = '<button class="aq" type="button" aria-pressed="' + (store.get(ka) !== null) + '" ' +
