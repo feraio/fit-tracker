@@ -51,8 +51,8 @@ abaixo).
   que vivem **fora** de `#treinos`; `render()` cuida dos cards.
 - **Não existe mais faixa da semana (o calendário Seg a Dom).** Ela saiu de todos os planos, a
   pedido do Felipe, junto com `renderSemana()`, o CSS de `.week`/`.day`/`.legend` e o campo
-  `semana[]` dos dados. Sobrou uma regra órfã, `.day .what`, dentro do
-  `@media (max-width:520px)`: não casa com nada e pode sair na próxima mexida no CSS. O treino virou três sessões por semana em rotação A-B-A-B, sem dia fixo,
+  `semana[]` dos dados (a última regra órfã, `.day .what`, saiu em novembro de 2026). O treino
+  virou três sessões por semana em rotação A-B-A-B, sem dia fixo,
   então um calendário desenhado mentiria sobre qual treino é o de hoje. Não confundir com a
   faixa de **semana do ciclo** (`.semanas`), que é outra coisa e está viva.
 - **A preferência `fittracker.prefs.v1.semana` morreu junto**, porque existia só para ligar e
@@ -196,7 +196,8 @@ abaixo).
   o número que importa entre séries é o do card que está na mão, e esse continua no `t-prog` e
   no rodapé de cada treino. Um total de ciclo no topo é contabilidade, não prescrição. O `.meta`
   que o bloco Nutricional tinha ("Proteína e gordura fixas") também já saiu, com o card de
-  Recarga (ver "Nutrição"); sobra a regra `.sec-head .meta` no CSS, sem uso.
+  Recarga (ver "Nutrição"), e a regra `.sec-head .meta`, que ficou sem uso, saiu do CSS em
+  novembro de 2026.
 
 ## O contrato do `id`
 
@@ -357,7 +358,10 @@ recebem input. O que recebe input é o **pé do card**, e só ele.
 - **Só a versão vigente é renderizada.** A V2, a V3, a V4 e o critério de avanço estão em
   `docs/bike-intervalado.md`, que também traz o passo a passo de trocar de versão. Prescrição
   que ainda não vale não pode ficar a um descuido de distância de ser desenhada.
-  Trocar de versão é um deploy, não uma edição de dados.
+  Trocar de versão é um deploy, não uma edição de dados. Na troca, o `id` das etapas fica (ele
+  chaveia os tiros no registro). Lacuna conhecida, registrada no mesmo arquivo: o histórico lê
+  `reps` e o texto da etapa da prescrição de hoje, então depois da troca uma sessão da V1
+  aparece com o total de tiros da versão nova (o selo da versão continua certo).
 - **O componente é desenhado para ser lido de longe**, com o corpo em movimento: número grande
   sempre na mesma coluna à direita, uma etapa por linha, e o bloco principal destacado com o
   `--accent` do card. O critério de avanço fica no **pé** da prescrição, que é quando ele é
@@ -467,8 +471,7 @@ na fila, na lápide e no RLS que existiam. Quem for mexer nisso não precisa toc
   o texto e guarda o que fazer no "sim". Usam ela os dois Finalizar (cards de força e bike) e
   o apagar do histórico; duas caixas quase iguais seriam uma para manter em sincronia com a
   outra. Os botões dela são tratados por um listener de clique próprio, também no `document`,
-  separado do listener principal da página (o comentário no código diz "o mesmo listener", mas
-  são dois).
+  separado do listener principal da página.
 - **`confirmaAcao` guarda a ação em memória, não no DOM.** `render()` reescreve `#treinos` e o
   diálogo vive fora dele, então um `data-` no card não sobreviveria. O handler de `cancel` (o
   ESC do `<dialog>`) zera a variável: sem isso a ação ficaria pendurada e o próximo "sim"
@@ -624,8 +627,7 @@ serve com `max-age=600`, então sem ele um retorno depois de 10 minutos trava no
 > antigo, que saiu dos dados em setembro de 2026, quando a prescrição mudou. O PPL tem um
 > Agachamento Hack com o mesmo id, sem `img:1`. Por isso virar `MIDIA_ATIVA` para `true`
 > sozinho não mostra nada: é preciso também marcar `img:1` nos exercícios que têm arquivo em
-> `assets/ex/`. Os comentários no `index.html` que dizem "o `img:1` segue nos dados" estão
-> desatualizados.
+> `assets/ex/`.
 
 - `img:1` no objeto do exercício significa que existe `assets/ex/<id>.webp`, e faz aparecer um
   ícone discreto ao lado do nome. Sem `img`, nenhum ícone e nenhuma requisição.

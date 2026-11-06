@@ -270,12 +270,6 @@
     margin:0;
     font-weight:700;
   }
-  .sec-head .meta{
-    margin-left:auto;
-    font-family:var(--mono);
-    font-size:11px;
-    color:var(--ink3);
-  }
 
   /* ---------- Histórico ----------
      Lista lida sentado, não entre séries: pode ser mais arejada que o card de
@@ -559,8 +553,10 @@
   }
   /* `.tiro` (contador da bike) divide o visual com `.set` em vez de repetir:
      as duas são a mesma bolinha. O que não se divide é o comportamento — a
-     `.set` grava no localStorage e a `.tiro` não, e por isso são classes
-     separadas, cada uma com o seu ramo no handler de clique. */
+     `.set` liga e desliga uma série (e guarda as repetições feitas nela), a
+     `.tiro` é cumulativa (tocar no 5 marca do 1 ao 5) e guarda quantos tiros
+     a etapa teve. As duas gravam; por isso são classes separadas, cada uma
+     com o seu ramo no handler de clique. */
   .sets{display:flex;gap:6px;flex-wrap:wrap}
   .set,.tiro{
     width:36px;height:36px;
@@ -1058,7 +1054,6 @@
 
   @media (max-width:520px){
     .kgwrap{margin-left:0;width:100%;justify-content:flex-end}
-    .day .what{font-size:9px}
   }
   @media (prefers-reduced-motion:reduce){
     *{transition:none!important}
@@ -1470,27 +1465,24 @@ function sincronizar(){
     pintarSync();
   });
 }
-/* Cada plano tem o seu prefixo de persistência. O do Ciclo A/B não muda nunca:
-   é onde já estão as cargas e as séries salvas no navegador.
+/* Cada plano tem o seu prefixo de persistência. Trocar um prefixo deixa para
+   trás tudo o que já está salvo com ele, no navegador e no Supabase.
 
-   `KEY_AB` continua aqui só porque `KEY_MODO` morava nele e a chave órfã
-   `fittracker.ab.v1.modo` ainda existe no navegador de quem usava a página.
-   Nenhum código lê nenhum dos dois. O Ciclo A/B saiu quando o Adaptativo
-   entrou, e as chaves dele ficaram para trás por escolha: apagar seria
-   escrever lápide e propagá-la a todos os aparelhos para limpar alguns bytes
-   inertes. Não confundir com `fittracker.plano.v1`, que é a aba escolhida.
-
-   NÃO EXISTE MAIS FASE, e não vai voltar: o corte global de séries virou
-   prescrição por semana, escrita exercício a exercício no Adaptativo. */
-/* O plano é o Ciclo A/B e o nome dele não muda a cada bloco de quatro semanas:
+   O plano é o Ciclo A/B e o nome dele não muda a cada bloco de quatro semanas:
    "Adaptação" é a FASE em que o Felipe está, não um plano novo. Por isso a
    chave é `ab.v2.` e não `adapt.`: quando a fase virar Iniciante, o que muda
-   são os exercícios e o `fase` do cabeçalho, não o lugar onde a carga mora.
+   são os exercícios dos blocos e os dois textos do cabeçalho que citam a fase
+   (o `eyebrow` e o começo do `lede`), não o lugar onde a carga mora.
 
    `v2` porque o `v1` é outro conjunto de exercícios, de antes desta prescrição.
-   As chaves `fittracker.ab.v1.*` continuam gravadas, órfãs, e ficam assim:
+   As chaves `fittracker.ab.v1.*` continuam gravadas, órfãs, e ficam assim
+   (inclusive a `fittracker.ab.v1.modo`, da fase de retorno que já saiu):
    nenhum código as lê, e apagá-las seria escrever lápide e propagá-la a todos
-   os aparelhos para limpar bytes inertes. */
+   os aparelhos para limpar bytes inertes. Não confundir com
+   `fittracker.plano.v1`, que é a aba escolhida.
+
+   NÃO EXISTE MAIS FASE de retorno, e ela não volta sem prescrição nova: o corte
+   global de séries virou prescrição por semana, escrita exercício a exercício. */
 var KEY_AB = 'fittracker.ab.v2.';
 var KEY_PPL = 'fittracker.ppl.v1.';
 var KEY_BIKE = 'fittracker.bike.v1.';
@@ -2001,9 +1993,10 @@ function enviarLogin(ev){
 }
 
 /* ---------- Mídia ----------
-   DESLIGADA por ora, a retomar depois. Virar MIDIA_ATIVA para true devolve o
-   ícone e o overlay inteiros: o CSS, o <dialog>, o handler de clique e o
-   assets/ex/ continuam todos no lugar, e o `img:1` segue nos dados.
+   DESLIGADA por ora, a retomar depois. O CSS, o <dialog>, o handler de clique
+   e o assets/ex/ continuam todos no lugar. Nenhum exercício tem `img:1` hoje (o
+   único que tinha saiu com a prescrição antiga), então virar a chave sozinha
+   não mostra nada: é preciso marcar `img:1` nos exercícios com arquivo.
    Enquanto for false, nenhum ícone é renderizado e nenhuma imagem é requisitada. */
 var MIDIA_ATIVA = false;
 var MEDIA_DIR = 'assets/ex/';
@@ -2150,9 +2143,11 @@ function trocarPlano(id){
 }
 
 /* ---------- Prescrição somente leitura ----------
-   A bike não tem estado: esta função não lê nem grava chave nenhuma, e por isso
-   nada daqui entra na fila de sincronização. Desenha a sessão inteira em ordem,
-   com o bloco principal destacado — é o que se procura no meio da série. */
+   A PRESCRIÇÃO da bike não recebe input: as etapas são conferidas em cima do
+   aparelho. O que grava é o pé do card (tiros por etapa, tempo total e
+   esforço), sob `fittracker.bike.v1.atual.`, e o Finalizar move para o log
+   como nos cards de força. Desenha a sessão inteira em ordem, com o bloco
+   principal destacado — é o que se procura no meio da série. */
 /* A partir de quantas repetições a etapa ganha contador. Abaixo disso dá para
    guardar de cabeça, e a fileira só ocuparia tela. */
 var MIN_TIROS = 4;
@@ -2329,9 +2324,10 @@ function chaveKg(plano, t, e){
    ou nenhuma, a chave de carga é a de sempre, sem sufixo, e nada muda.
    A escolha sincroniza: na próxima sessão abre no último equipamento usado.
    O halter é o reserva de quando falta aparelho, e por isso é o último da
-   lista onde não era opção da personal (Rosca Direta, Panturrilha). Não entra
-   onde viraria outro exercício (leg press, cadeiras, polia): ali a troca é de
-   exercício, e quem decide é a personal. */
+   lista onde não era opção da personal: Rosca Direta, Panturrilha e, desde
+   outubro de 2026, os tríceps, a pedido do Felipe ("ter mais opções para cada
+   músculo trabalhado"). Leg press, cadeiras e puxada continuam sem chips: ali
+   a troca seria de exercício, e quem decide é a personal. */
 var EQUIP = {
   'halter':'halter', 'cabo':'cabo', 'maquina':'máquina', 'barra':'barra',
   'barra-w':'barra W', 'corda':'corda', 'hack':'hack squat',
@@ -3348,7 +3344,8 @@ function fecharConfirma(){
   document.getElementById('confirmaBox').close();
 }
 
-/* Delegado no mesmo listener de clique do resto da página. ESC e toque no
+/* Um segundo listener de clique no `document`, só da caixa de confirmação,
+   separado do listener principal da página. ESC e toque no
    backdrop caem no ramo do "não", que é o lado seguro: quem esbarrou no botão
    não perde a sessão por não achar o cancelar. */
 document.addEventListener('click', function(ev){
