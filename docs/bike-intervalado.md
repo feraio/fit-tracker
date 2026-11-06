@@ -40,7 +40,9 @@ seguindo a prescrição em cima do aparelho.
 
 **PSE (percepção de esforço, de 0 a 10) chegou a ser implementado e foi retirado**, porque
 resolvia o problema errado: quem tem marcador na bike quer um número para comparar com o
-marcador, não outra escala subjetiva.
+marcador, não outra escala subjetiva. O **nível de esforço** que o registro da sessão pede no
+fim (o mesmo componente dos cards de força) é outra coisa: avalia a sessão inteira depois que
+ela acabou, e não é alvo de nenhuma etapa.
 
 O que faria funcionar é calibração, não estimativa: medir na **sua** bike, uma vez, a que
 velocidade e resistência cada etapa acontece, e fixar esses números aqui. Aí eles são medidos,
@@ -78,8 +80,10 @@ que o componente de etapas, que hoje desenha uma sessão só, vai precisar mudar
 
 ## Quando trocar de versão
 
-Avaliação **por percepção**. O app não registra nada disto: não há campo, não há histórico, não
-há nada salvo na aba da bike. Avançar quando as duas condições valerem:
+Avaliação **por percepção**, com apoio do registro. Desde setembro de 2026 a aba registra, por
+sessão, quantos tiros saíram em cada etapa com contador, o tempo total e o nível de esforço, e
+o histórico da aba lista as sessões. O ritmo de cada tiro e a qualidade da força na semana não
+estão lá: o detalhe fino continua no Garmin. Avançar quando as duas condições valerem:
 
 1. Todos os tiros completos e o último no mesmo ritmo do primeiro, em **duas sessões seguidas**
 2. Qualidade dos treinos de força na sequência da semana mantida
@@ -93,19 +97,27 @@ Se a segunda condição cair, **reduzir o número de tiros antes de trocar de ve
 Tudo num commit só, em `index.html`, no objeto `id:'bike'` de `planos[]`:
 
 1. `abaTag` — o rótulo da aba (`'V1'` → `'V2'`).
-2. `sessao.badge` e `sessao.meta` — o círculo do card e o texto ao lado de "Treinamento".
+2. `sessao.badge` — o círculo do card. É também o que o Finalizar grava como `versao` no
+   registro de cada sessão, e o selo que o histórico mostra.
 3. A etapa com `forte:1` — `num`, `det` e **`reps`** do bloco principal. O `reps` é o que
    desenha a fileira de bolinhas do contador, e ela precisa ter o número de tiros da versão
-   nova. Errar aqui não dá erro: dá contador com o número errado de bolinhas.
+   nova. Errar aqui não dá erro: dá contador com o número errado de bolinhas. **O `id` da
+   etapa (`principal`) fica como está**: é ele que chaveia os tiros, no card e no registro, e
+   trocá-lo faz as sessões antigas perderem a linha do bloco principal no histórico.
 4. `sessao.avanco` — o critério no pé do card cita a versão seguinte pelo nome.
 5. **`VERSAO` em `sw.js`.** Sem isso a correção não chega no celular, que é o único lugar onde
    esta página é lida.
 
 Depois, aqui: mover o `**em vigor**` para a versão nova.
 
-Nada de migração, nada de chave nova, nada para limpar no `localStorage` — a aba não grava
-nada. O contador de tiros vive em memória e zera ao recarregar, de propósito: ele é do treino
-de hoje, não um registro.
+Nada de migração nem de chave nova, desde que o `id` das etapas fique o mesmo. Os tiros da
+sessão em andamento ficam em `fittracker.bike.v1.atual.tiros.<etapa>`, e o Finalizar move
+tudo para o log, como nos cards de força.
+
+**Lacuna conhecida, não corrigida:** o histórico lê o total de tiros (`reps`) e o texto da
+etapa da prescrição **de hoje**, não da versão em que a sessão foi feita. Depois da troca, uma
+sessão da V1 com 8 tiros aparece como "8/10" na lista e no detalhe. O selo da sessão continua
+certo (V1), porque vem do `versao` gravado.
 
 ## O contador de tiros
 

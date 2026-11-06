@@ -2,8 +2,8 @@
 -- Rodar inteiro no SQL Editor do projeto. É idempotente: dá para rodar de novo.
 --
 -- Modelo: uma linha por chave do localStorage, por pessoa. As chaves são as
--- mesmas que a página já usa (fittracker.ab.v1.B.puxada-frontal.1), então não
--- existe tradução entre o navegador e o banco.
+-- mesmas que a página já usa (fittracker.ab.v2.atual.A.puxada-frontal.1, por
+-- exemplo), então não existe tradução entre o navegador e o banco.
 
 create table if not exists estado (
   user_id       uuid not null references auth.users on delete cascade default auth.uid(),
@@ -117,7 +117,9 @@ $$;
 revoke all on function keepalive_toca() from public;
 grant execute on function keepalive_toca() to anon, authenticated;
 
--- Chamada: POST /rest/v1/rpc/keepalive_toca com o header apikey e mais nada.
+-- Chamada: POST /rest/v1/rpc/keepalive_toca com os headers apikey (a chave
+-- publicável) e Content-Type: application/json, e corpo {}. A função não
+-- recebe argumento, mas o PostgREST exige JSON válido: corpo vazio dá 400.
 -- POST e não GET porque a função escreve, e o PostgREST só aceita GET em
 -- função declarada stable ou immutable.
 
