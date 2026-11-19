@@ -503,6 +503,17 @@
   }
   ol.ex li.done{background:#F2F6F3}
   .ex-top{display:flex;align-items:baseline;gap:8px}
+  /* Alça de arrastar: o toque nela não rola a página (touch-action) e não
+     seleciona texto. Fica fora do nome para o nome não perder largura. */
+  .arrasta{
+    flex:none;align-self:center;width:28px;height:36px;margin:-6px 0 -6px -8px;
+    padding:0;border:0;background:none;color:var(--ink3);
+    display:flex;align-items:center;justify-content:center;
+    touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;
+  }
+  .arrasta svg{width:14px;height:14px;fill:currentColor}
+  .arrasta:focus-visible{outline:2px solid var(--accent);border-radius:6px}
+  ol.ex li.arrastando{background:var(--line2);box-shadow:0 2px 10px rgba(0,0,0,.18);position:relative;z-index:1}
   .ex-id{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 0}
   .ex-name{font-weight:600;font-size:15px;line-height:1.25}
   .ex-eq{
@@ -2051,6 +2062,7 @@ var VIDEOS = {
   'abdominal-crunch':        'https://www.youtube.com/watch?v=27hLFDTivBg'
 };
 
+var ICON_ARRASTA = '<svg viewBox="0 0 14 14" aria-hidden="true"><circle cx="4" cy="3" r="1.3"/><circle cx="10" cy="3" r="1.3"/><circle cx="4" cy="7" r="1.3"/><circle cx="10" cy="7" r="1.3"/><circle cx="4" cy="11" r="1.3"/><circle cx="10" cy="11" r="1.3"/></svg>';
 var ICON_VIDEO =
   '<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" focusable="false">' +
     '<rect x="1.5" y="3" width="13" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.4"/>' +
@@ -2380,6 +2392,24 @@ function eqHtml(plano, t, e){
 }
 function chaveSensacao(plano, t){ return plano.key + 'atual.' + t.id + '.sensacao'; }
 function chaveObs(plano, t){ return plano.key + 'atual.' + t.id + '.obs'; }
+/* Ordem em que os exercícios foram feitos: lista de ids separada por vírgula.
+   Só existe quando a pessoa arrastou; sem a chave vale a ordem da prescrição.
+   Chaveada por id (nunca por posição), como o resto da sessão. */
+function chaveOrdem(plano, t){ return plano.key + 'atual.' + t.id + '.ordem'; }
+/* Exercícios do treino na ordem gravada. Id gravado que saiu do bloco (troca de
+   semana no meio da sessão) é ignorado, e exercício novo entra no fim, na ordem
+   da prescrição: a lista nunca perde um exercício por causa da ordem. */
+function exNaOrdem(plano, t){
+  var salva = store.get(chaveOrdem(plano, t));
+  if (!salva) return t.ex;
+  var porId = {}, saida = [];
+  t.ex.forEach(function(e){ porId[e.id] = e; });
+  salva.split(',').forEach(function(id){
+    if (porId[id]){ saida.push(porId[id]); delete porId[id]; }
+  });
+  t.ex.forEach(function(e){ if (porId[e.id]) saida.push(e); });
+  return saida;
+}
 
 var SENSACOES = [
   {id:'facil',  rot:'Fácil'},
@@ -2578,6 +2608,12 @@ function renderHistorico(plano){
    Função própria porque o detalhe e o texto copiado precisam da mesma ordem. */
 function ordemDaSessao(plano, ses){
   var ordem = [], vistos = {};
+  /* A ordem em que foi feito, quando a pessoa arrastou, vem primeiro. */
+  if (ses.campos.ordem){
+    ses.campos.ordem.split(',').forEach(function(id){
+      if (id && !vistos[id]){ vistos[id] = 1; ordem.push(id); }
+    });
+  }
   (plano.semanas || [plano]).forEach(function(b){
     if (plano.semanas && ses.meta.semana && b.id !== ses.meta.semana) return;
     (b.treinos || []).forEach(function(t){
@@ -2935,7 +2971,7 @@ function render(){
       '<p class="t-nota">Aquecimento localizado no primeiro exercício: 2 séries de 15 a 20 com carga moderada, antes das séries valendo.</p>' +
       '<ol class="ex">';
 
-    t.ex.forEach(function(e){
+    exNaOrdem(plano, t).forEach(function(e){
       e = comVariante(e, eqEscolhido(plano, t, e));   /* crunch no lugar da prancha, etc. */
       var chips = '', feitas = '';
       for (var i = 1; i <= e.s; i++){
@@ -2981,6 +3017,8 @@ function render(){
       var mid = midiaDe(e);
       html += '<li data-ex="' + e.id + '">' +
         '<div class="ex-top">' +
+          '<button class="arrasta" type="button" aria-label="Mover ' + esc(e.n) + ' (arraste, ou use as setas para cima e para baixo)">' +
+            ICON_ARRASTA + '</button>' +
           '<div class="ex-id">' +
           '<span class="ex-name">' + e.n +
             (e.flag ? '<span class="flag' + (e.flagOk ? ' ok' : '') + '" title="' +
@@ -3071,14 +3109,15 @@ function finalizar(plano, t){
        varredura resolve. Reconstruir a partir do bloco desenhado cobre a sessão
        de hoje; o que ficaria de fora é chave de um bloco que já não está na
        tela, e nesse modo a página mal guarda a sessão atual. */
-    achadas = [pre + 'sensacao', pre + 'obs'];
+    achadas = [pre + 'sensacao', pre + 'obs', pre + 'ordem'];
     t.ex.forEach(function(e){
       for (var i = 1; i <= e.s; i++) achadas.push(pre + e.id + '.' + i);
       achadas.push(pre + e.id + '.aq');
     });
     achadas = achadas.filter(function(k){ return store.get(k) !== null; });
   }
-  if (!achadas.length) return false;
+  /* Só a ordem arrastada, sem nenhuma série, carga ou nota, não é sessão. */
+  if (!achadas.filter(function(k){ return k !== pre + 'ordem'; }).length) return false;
 
   var bloco = blocoAtual(plano);
   var id = String(Date.now());
@@ -3362,6 +3401,76 @@ document.addEventListener('click', function(ev){
 /* O `cancel` do <dialog> é o ESC. Sem soltar a ação aqui, ela ficaria pendurada
    e o próximo "sim" executaria a anterior. */
 document.getElementById('confirmaBox').addEventListener('cancel', function(){ confirmaAcao = null; });
+
+/* ---------- Reordenar exercícios (arrastar) ----------
+   Registra a ordem em que os exercícios foram feitos: a academia nem sempre tem
+   o aparelho livre. Eventos de ponteiro delegados no document, como o resto, e
+   sem biblioteca. A alça tem touch-action:none, então só o toque nela arrasta;
+   o resto do card continua rolando. O DOM é reordenado ao vivo e a ordem final
+   é gravada no soltar, sem render(): refazer a lista no meio do gesto soltaria
+   o dedo do item. */
+var arrasto = null;
+
+function salvarOrdem(li){
+  var ol = li.parentNode, card = ol.closest('[data-t]');
+  var plano = planoAtual();
+  var t = null;
+  blocoAtual(plano).treinos.forEach(function(x){ if (x.id === card.dataset.t) t = x; });
+  if (!t) return;
+  var ids = [].map.call(ol.querySelectorAll('li[data-ex]'), function(x){ return x.dataset.ex; });
+  var padrao = t.ex.map(function(e){ return e.id; }).join(',');
+  /* Voltar à ordem da prescrição apaga a chave, em vez de gravar o padrão. */
+  if (ids.join(',') === padrao) store.del(chaveOrdem(plano, t));
+  else store.set(chaveOrdem(plano, t), ids.join(','));
+}
+
+document.addEventListener('pointerdown', function(ev){
+  var h = ev.target.closest('.arrasta');
+  if (!h) return;
+  var li = h.closest('li');
+  arrasto = {li: li, h: h, id: ev.pointerId};
+  li.classList.add('arrastando');
+  try { h.setPointerCapture(ev.pointerId); } catch (e) {}
+});
+
+document.addEventListener('pointermove', function(ev){
+  if (!arrasto || ev.pointerId !== arrasto.id) return;
+  var li = arrasto.li, ol = li.parentNode, y = ev.clientY;
+  var alvo = null;
+  [].some.call(ol.children, function(x){
+    if (x === li) return false;
+    var r = x.getBoundingClientRect();
+    if (y < r.top + r.height / 2){ alvo = x; return true; }
+    return false;
+  });
+  if (alvo !== li.nextElementSibling && alvo !== li) ol.insertBefore(li, alvo);
+  /* Perto da borda da tela, rola: o treino é mais alto que a tela. */
+  if (y < 80) window.scrollBy(0, -12);
+  else if (y > window.innerHeight - 80) window.scrollBy(0, 12);
+});
+
+function fimDoArrasto(ev){
+  if (!arrasto || ev.pointerId !== arrasto.id) return;
+  var li = arrasto.li;
+  li.classList.remove('arrastando');
+  arrasto = null;
+  salvarOrdem(li);
+}
+document.addEventListener('pointerup', fimDoArrasto);
+document.addEventListener('pointercancel', fimDoArrasto);
+
+/* Teclado: as setas movem o exercício uma posição, para quem não arrasta. */
+document.addEventListener('keydown', function(ev){
+  var h = ev.target.closest && ev.target.closest('.arrasta');
+  if (!h || (ev.key !== 'ArrowUp' && ev.key !== 'ArrowDown')) return;
+  ev.preventDefault();
+  var li = h.closest('li'), ol = li.parentNode;
+  if (ev.key === 'ArrowUp' && li.previousElementSibling) ol.insertBefore(li, li.previousElementSibling);
+  else if (ev.key === 'ArrowDown' && li.nextElementSibling) ol.insertBefore(li.nextElementSibling, li);
+  else return;
+  h.focus();
+  salvarOrdem(li);
+});
 
 /* Navegação por setas entre as abas, como manda o padrão de tablist.
    Delegado no document pelo mesmo motivo do clique: renderAbas() reescreve os
