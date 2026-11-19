@@ -16,7 +16,8 @@ coisa nesta página.
   para não reintroduzir dependência.
 - JS em estilo ES5: templating por concatenação de string dentro de `render()`, e **eventos
   delegados no `document`**: um listener de clique para a página inteira, mais `keydown`,
-  `submit`, `change` e `focusin`/`input`/`focusout`. A exceção é a caixa de confirmação, que tem
+  `submit`, `change`, `focusin`/`input`/`focusout` e, desde novembro de 2026, `pointerdown`/
+  `pointermove`/`pointerup`/`pointercancel` (só para arrastar exercício, ver "Ordem dos exercícios"). A exceção é a caixa de confirmação, que tem
   um segundo listener de clique só dela, também no `document` (ver "Sessão e registro"). Por
   causa da delegação, componentes novos não precisam ser re-ligados depois que `render()`
   reescreve `#treinos`.
@@ -482,6 +483,29 @@ na fila, na lápide e no RLS que existiam. Quem for mexer nisso não precisa toc
   repetições aparece e some com a marcação. É barato: a delegação no `document` não religa nada,
   e não há campo em foco quando se toca numa bolinha (o `change` do campo dispara antes, no
   blur).
+
+### Ordem dos exercícios (arrastar)
+
+Desde novembro de 2026, a pedido do Felipe: nem sempre o aparelho está livre, e o treino às vezes
+é feito fora da ordem da prescrição. Cada exercício tem uma alça (`.arrasta`, seis pontos) à
+esquerda do nome; arrastar por ela reordena o card, e as setas para cima e para baixo fazem o
+mesmo no teclado.
+
+- **A ordem é dado da sessão**: chave `<key>atual.<treino>.ordem`, lista de `id` separada por
+  vírgula. O Finalizar a leva ao log como qualquer campo de `atual.`, e `ordemDaSessao()` a usa
+  primeiro, então o detalhe e o Copiar mostram os exercícios na ordem em que foram feitos.
+- **Só existe quando a pessoa arrastou.** Voltar à ordem da prescrição apaga a chave. Sem ela,
+  `render()` desenha na ordem dos dados, como sempre.
+- **Chaveada por `id`, nunca por posição** (contrato do `id`). `exNaOrdem()` ignora id que saiu
+  do bloco e põe no fim o exercício que não está na lista, então trocar de semana no meio da
+  sessão não perde exercício.
+- **O arrasto reordena o DOM ao vivo e grava só ao soltar, sem `render()`**: refazer a lista no
+  meio do gesto soltaria o dedo do item. A alça tem `touch-action:none`, então o resto do card
+  continua rolando. É código próprio com eventos de ponteiro, sem biblioteca, o que mantém a
+  decisão de não ter lib de swipe. [Não verificado] no Safari do iPhone: o teste foi só no
+  Chromium.
+- Só a ordem arrastada, sem série, carga ou nota, não vira sessão no Finalizar.
+- Não existe a ordem no plano da bike (sem exercício) e o card da bike não tem alça.
 
 ### Sugestão de carga (a seta ao lado do KG)
 
